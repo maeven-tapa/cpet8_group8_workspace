@@ -21,4 +21,4 @@ This workspace is dedicated to our coursework and projects for the Software Desi
 ## 📬 Contact
 For any inquiries about this repository, please contact any of the team members listed above.
 
-## ⭐ Made with dedication by Group 8 | CPET8/L 2025**
+## ⭐ Made with dedication by Group 8 | CPET8/L © 2025
