@@ -14,7 +14,7 @@ ___
 This workspace is dedicated to our coursework and projects for the Software Design subject. Here you'll find our team's collaborative efforts in developing software solutions and implementing design principles.
 ___
 **🎯 Course Details**
-- Course Code: CPET8
+- Course Code: CPET8/L
 - Course Title: Software Design
 - Institution: TUP Cavite
 ___
