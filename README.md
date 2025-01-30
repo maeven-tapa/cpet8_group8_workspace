@@ -1,7 +1,10 @@
 # 🚀 Group 8 - Workspace for CPET8
-
-📚 About
-This repository contains our team's work and outputs for the CPET8 (Software Design) subject at Technological University of the Philippines - Cavite Campus.
+***
+***
+# 📚 About
+** This repository contains our team's work and outputs for the CPET8 (Software Design) subject at Technological University of the Philippines - Cavite Campus. **
+***
+***
 👥 Team Members
 
 👨‍💻 Siegmond Jean Amador
