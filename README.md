@@ -1,6 +1,6 @@
 # 🚀 Group 8 - Workspace for CPET8
 ![School](https://img.shields.io/badge/School-TUP_Cavite-red)
-![School](https://img.shields.io/badge/School-TUP_Cavite-yellow)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 **Hello World its Group 8!**
 
 ## 📚 About
