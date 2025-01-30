@@ -1,6 +1,6 @@
 
 ![TUP](https://img.shields.io/badge/TUP-Cavite-red?style=for-the-badge)
-![Section](https://img.shields.io/badge/TUP-BET-CEOT-2A-red?style=for-the-badge)
+![BET-COET-2A](https://img.shields.io/badge/BET--COET--2A-green?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ![PySide6](https://img.shields.io/badge/PySide6-41CD52?style=for-the-badge&logo=qt&logoColor=white)
 # 🚀 Group 8 - Workspace for CPET8
