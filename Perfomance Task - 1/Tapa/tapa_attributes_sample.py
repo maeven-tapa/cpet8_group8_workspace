@@ -8,7 +8,7 @@ class MainWindow(QMainWindow):
         self.Sample_UI()
 
     def Sample_UI(self):
-        self.setWindowTitle("PyQt6 UI Example")
+        self.setWindowTitle("PySide6 Class Attributes & Methods Sample")
         self.setGeometry(100, 100, 400, 200)
         central_widget = QtWidgets.QWidget(self)
         self.setCentralWidget(central_widget)
@@ -20,7 +20,6 @@ class MainWindow(QMainWindow):
         self.tab1 = QtWidgets.QWidget()
         self.tabWidget.addTab(self.tab1, "Tab 1")
         tab1_layout = QtWidgets.QVBoxLayout(self.tab1)
-        
         self.stackedWidget = QtWidgets.QStackedWidget()
         tab1_layout.addWidget(self.stackedWidget)
         
@@ -67,19 +66,19 @@ class MainWindow(QMainWindow):
         nav_buttons1.addWidget(self.prev_button1)
         nav_buttons1.addWidget(self.next_button1)
         tab1_layout.addLayout(nav_buttons1)
-        
         self.prev_button1.clicked.connect(self.prev_page1)
         self.next_button1.clicked.connect(self.next_page1)
+
+
 
         # Tab 2
         self.tab2 = QtWidgets.QWidget()
         self.tabWidget.addTab(self.tab2, "Tab 2")
         tab2_layout = QtWidgets.QVBoxLayout(self.tab2)
-        
         self.stackedWidget2 = QtWidgets.QStackedWidget()
         tab2_layout.addWidget(self.stackedWidget2)
         
-        # Page 5
+        # Tab 2 - Page 1
         page5 = QtWidgets.QWidget()
         grid_layout5 = QtWidgets.QGridLayout(page5)
         slider = QtWidgets.QSlider()
@@ -90,7 +89,7 @@ class MainWindow(QMainWindow):
         grid_layout5.addWidget(scrollbar, 1, 0)
         self.stackedWidget2.addWidget(page5)
         
-        # Page 6
+        # Tab 2 - Page 2
         page6 = QtWidgets.QWidget()
         hbox_layout6 = QtWidgets.QHBoxLayout(page6)
         v_slider = QtWidgets.QSlider()
@@ -108,9 +107,10 @@ class MainWindow(QMainWindow):
         nav_buttons2.addWidget(self.prev_button2)
         nav_buttons2.addWidget(self.next_button2)
         tab2_layout.addLayout(nav_buttons2)
-        
         self.prev_button2.clicked.connect(self.prev_page2)
         self.next_button2.clicked.connect(self.next_page2)
+
+
 
     def prev_page1(self):
         index = self.stackedWidget.currentIndex()
