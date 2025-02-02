@@ -1,0 +1,55 @@
+from PySide6.QtWidgets import QApplication, QWidget, QGridLayout, QScrollArea, QVBoxLayout, QDial, QProgressBar, QLCDNumber, QFrame
+import sys
+
+class Ui_Form(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Form")
+        self.setGeometry(0, 0, 400, 300)
+    
+        self.gridLayout = QGridLayout(self)
+        
+        self.scrollArea = QScrollArea(self)
+        self.scrollArea.setMinimumSize(382, 282)
+        self.scrollArea.setMaximumSize(382, 282)
+        self.scrollArea.setWidgetResizable(True)
+        
+        self.scrollAreaWidgetContents = QWidget()
+        self.scrollAreaWidgetContents.setGeometry(0, -18, 368, 298)
+        self.gridLayout_2 = QGridLayout(self.scrollAreaWidgetContents)
+        
+        self.widget = QWidget()
+        self.widget.setMinimumSize(0, 280)
+        self.gridLayout_3 = QGridLayout(self.widget)
+        
+        self.dial = QDial(self.widget)
+        self.gridLayout_3.addWidget(self.dial, 0, 0)
+        
+        self.progressBar = QProgressBar(self.widget)
+        self.progressBar.setValue(0)
+        self.gridLayout_3.addWidget(self.progressBar, 0, 1)
+        
+        self.line = QFrame(self.widget)
+        self.line.setFrameShape(QFrame.HLine)
+        self.line.setFrameShadow(QFrame.Sunken)
+        self.gridLayout_3.addWidget(self.line, 1, 0, 1, 2)
+        
+        self.lcdNumber = QLCDNumber(self.widget)
+        self.gridLayout_3.addWidget(self.lcdNumber, 2, 0, 1, 2)
+        
+        self.gridLayout_2.addWidget(self.widget, 0, 0)
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        
+        self.gridLayout.addWidget(self.scrollArea, 0, 0)
+        
+        self.dial.valueChanged.connect(self.update_display)
+    
+    def update_display(self, value):
+        self.progressBar.setValue(value)
+        self.lcdNumber.display(value)
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = Ui_Form()
+    window.show()
+    sys.exit(app.exec())
