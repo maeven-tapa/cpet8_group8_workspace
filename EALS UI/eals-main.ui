@@ -13,18 +13,24 @@
   <property name="minimumSize">
    <size>
     <width>0</width>
-    <height>291</height>
+    <height>0</height>
    </size>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="minimumSize">
+    <size>
+     <width>1280</width>
+     <height>720</height>
+    </size>
+   </property>
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>3</number>
+       <number>9</number>
       </property>
       <widget class="QWidget" name="main_page">
        <layout class="QGridLayout" name="gridLayout_2">
@@ -1567,7 +1573,7 @@ border: none;</string>
                  <string notr="true">background-color: rgb(238, 238, 238);</string>
                 </property>
                 <property name="placeholderText">
-                 <string>Enter you number</string>
+                 <string>Enter the I.D number.</string>
                 </property>
                </widget>
               </item>
@@ -1617,7 +1623,7 @@ border: none;</string>
                  <string notr="true">background-color: rgb(238, 238, 238);</string>
                 </property>
                 <property name="placeholderText">
-                 <string>Enter you number</string>
+                 <string>Enter the password.</string>
                 </property>
                </widget>
               </item>
@@ -1745,7 +1751,7 @@ border: none;</string>
                  <string notr="true">background-color: rgb(238, 238, 238);</string>
                 </property>
                 <property name="placeholderText">
-                 <string>Enter you number</string>
+                 <string>Enter the employee full name.</string>
                 </property>
                </widget>
               </item>
@@ -1801,7 +1807,7 @@ border: none;</string>
                  <string notr="true">background-color: rgb(238, 238, 238);</string>
                 </property>
                 <property name="placeholderText">
-                 <string>Enter you number</string>
+                 <string>Enter department.</string>
                 </property>
                </widget>
               </item>
@@ -1857,7 +1863,7 @@ border: none;</string>
                  <string notr="true">background-color: rgb(238, 238, 238);</string>
                 </property>
                 <property name="placeholderText">
-                 <string>Enter you number</string>
+                 <string>Enter the position.</string>
                 </property>
                </widget>
               </item>
@@ -3088,7 +3094,8 @@ border: none;</string>
            </size>
           </property>
           <property name="text">
-           <string>Employees</string>
+           <string>Employees/
+HR</string>
           </property>
          </widget>
         </item>
@@ -3145,6 +3152,29 @@ border: none;</string>
               <string>HR NOTICE:</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_22">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_41">
+                <property name="text">
+                 <string>Concern:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1" colspan="2">
+               <widget class="QLabel" name="label_75">
+                <property name="minimumSize">
+                 <size>
+                  <width>303</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(255, 255, 255);</string>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="3">
                <widget class="QPushButton" name="pushButton_36">
                 <property name="minimumSize">
@@ -3167,19 +3197,26 @@ border: none;</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="1" colspan="2">
-               <widget class="QLabel" name="label_75">
+              <item row="1" column="0" colspan="4">
+               <widget class="QTextBrowser" name="textBrowser"/>
+              </item>
+              <item row="2" column="0" colspan="4">
+               <widget class="Line" name="line_20">
                 <property name="minimumSize">
                  <size>
-                  <width>303</width>
-                  <height>0</height>
+                  <width>0</width>
+                  <height>3</height>
                  </size>
                 </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(255, 255, 255);</string>
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="2">
+               <widget class="QLabel" name="label_42">
                 <property name="text">
-                 <string/>
+                 <string>Employee Involve:</string>
                 </property>
                </widget>
               </item>
@@ -3197,43 +3234,6 @@ border: none;</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0" colspan="4">
-               <widget class="QTextBrowser" name="textBrowser"/>
-              </item>
-              <item row="5" column="0" colspan="4">
-               <widget class="Line" name="line_21">
-                <property name="orientation">
-                 <enum>Qt::Orientation::Horizontal</enum>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0" colspan="2">
-               <widget class="QLabel" name="label_42">
-                <property name="text">
-                 <string>Employee Involve:</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="0">
-               <widget class="QLabel" name="label_41">
-                <property name="text">
-                 <string>Concern:</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0" colspan="4">
-               <widget class="Line" name="line_20">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>3</height>
-                 </size>
-                </property>
-                <property name="orientation">
-                 <enum>Qt::Orientation::Horizontal</enum>
-                </property>
-               </widget>
-              </item>
               <item row="4" column="0" colspan="4">
                <widget class="QTableWidget" name="tableWidget_8">
                 <attribute name="horizontalHeaderDefaultSectionSize">
@@ -3247,6 +3247,20 @@ border: none;</string>
                   <string>Name:</string>
                  </property>
                 </column>
+               </widget>
+              </item>
+              <item row="5" column="0" colspan="4">
+               <widget class="Line" name="line_42">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0" colspan="3">
+               <widget class="QLabel" name="label_80">
+                <property name="text">
+                 <string>Note: Select the arrow button to navigate notice.</string>
+                </property>
                </widget>
               </item>
              </layout>
@@ -4018,280 +4032,6 @@ border: none;</string>
            <enum>QFrame::Shadow::Raised</enum>
           </property>
           <layout class="QGridLayout" name="gridLayout_50">
-           <item row="0" column="0" rowspan="2">
-            <widget class="QGroupBox" name="groupBox_16">
-             <property name="minimumSize">
-              <size>
-               <width>451</width>
-               <height>351</height>
-              </size>
-             </property>
-             <property name="title">
-              <string>Backup Configuration:</string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_47">
-              <item row="7" column="0" colspan="2">
-               <widget class="QFrame" name="frame_77">
-                <property name="styleSheet">
-                 <string notr="true">background-color: transparent;
-border: none;</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::Shape::StyledPanel</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Shadow::Raised</enum>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0" colspan="2">
-               <widget class="QFrame" name="frame_79">
-                <property name="styleSheet">
-                 <string notr="true">background-color: transparent;
-border: none;</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::Shape::StyledPanel</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Shadow::Raised</enum>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1" colspan="2">
-               <widget class="QDateEdit" name="dateEdit"/>
-              </item>
-              <item row="2" column="4">
-               <widget class="QLabel" name="label_83">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>To:</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignmentFlag::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="7" column="5">
-               <widget class="QFrame" name="frame_78">
-                <property name="styleSheet">
-                 <string notr="true">background-color: transparent;
-border: none;</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::Shape::StyledPanel</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Shadow::Raised</enum>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="0" colspan="6">
-               <widget class="QLineEdit" name="lineEdit_17">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(238, 238, 238);</string>
-                </property>
-                <property name="placeholderText">
-                 <string>Enter you number</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="2" colspan="3">
-               <widget class="QPushButton" name="manual_backup_btn">
-                <property name="minimumSize">
-                 <size>
-                  <width>151</width>
-                  <height>41</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(204, 204, 204);</string>
-                </property>
-                <property name="text">
-                 <string>Backup</string>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="0" colspan="6">
-               <widget class="Line" name="line_43">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>46</height>
-                 </size>
-                </property>
-                <property name="orientation">
-                 <enum>Qt::Orientation::Horizontal</enum>
-                </property>
-               </widget>
-              </item>
-              <item row="8" column="0" colspan="6">
-               <widget class="Line" name="line_42">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>21</height>
-                 </size>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">border: 0px;</string>
-                </property>
-                <property name="orientation">
-                 <enum>Qt::Orientation::Horizontal</enum>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="5">
-               <widget class="QDateEdit" name="dateEdit_2"/>
-              </item>
-              <item row="0" column="0" colspan="6">
-               <widget class="QLabel" name="label_85">
-                <property name="minimumSize">
-                 <size>
-                  <width>281</width>
-                  <height>27</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>Manual Backup:</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="label_84">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>From:</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignmentFlag::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="3">
-               <widget class="QFrame" name="frame_76">
-                <property name="styleSheet">
-                 <string notr="true">background-color: transparent;
-border: none;</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::Shape::StyledPanel</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Shadow::Raised</enum>
-                </property>
-               </widget>
-              </item>
-              <item row="6" column="0" colspan="6">
-               <widget class="QFrame" name="frame_75">
-                <property name="layoutDirection">
-                 <enum>Qt::LayoutDirection::RightToLeft</enum>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::Shape::StyledPanel</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Shadow::Raised</enum>
-                </property>
-                <layout class="QHBoxLayout" name="horizontalLayout_4">
-                 <item>
-                  <widget class="QRadioButton" name="radioButton_10">
-                   <property name="text">
-                    <string>1 year</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QRadioButton" name="radioButton_11">
-                   <property name="text">
-                    <string>6 months</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QRadioButton" name="radioButton_12">
-                   <property name="text">
-                    <string>3 months</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </item>
-              <item row="7" column="2" colspan="3">
-               <widget class="QPushButton" name="automatic_backup_btn">
-                <property name="minimumSize">
-                 <size>
-                  <width>151</width>
-                  <height>41</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(204, 204, 204);</string>
-                </property>
-                <property name="text">
-                 <string>Backup</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="5">
-               <widget class="QFrame" name="frame_80">
-                <property name="styleSheet">
-                 <string notr="true">background-color: transparent;
-border: none;</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::Shape::StyledPanel</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Shadow::Raised</enum>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="0" colspan="6">
-               <widget class="QLabel" name="label_82">
-                <property name="minimumSize">
-                 <size>
-                  <width>281</width>
-                  <height>27</height>
-                 </size>
-                </property>
-                <property name="text">
-                 <string>Automatic:</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
            <item row="0" column="1">
             <widget class="QGroupBox" name="groupBox_14">
              <property name="minimumSize">
@@ -4324,34 +4064,30 @@ border: none;</string>
                 </column>
                </widget>
               </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="1" column="1" rowspan="3">
-            <widget class="QGroupBox" name="groupBox_15">
-             <property name="minimumSize">
-              <size>
-               <width>631</width>
-               <height>311</height>
-              </size>
-             </property>
-             <property name="title">
-              <string>Database Logs</string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_52">
-              <item row="0" column="0">
-               <widget class="QTableWidget" name="tableWidget_6">
-                <attribute name="horizontalHeaderDefaultSectionSize">
-                 <number>300</number>
-                </attribute>
-                <attribute name="horizontalHeaderStretchLastSection">
-                 <bool>true</bool>
-                </attribute>
-                <column>
-                 <property name="text">
-                  <string>Date:</string>
-                 </property>
-                </column>
+              <item row="1" column="0">
+               <widget class="Line" name="line_60">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_77">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Note: This is the listed backup logs.</string>
+                </property>
                </widget>
               </item>
              </layout>
@@ -4363,7 +4099,27 @@ border: none;</string>
               <string>Restore Configuration:</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_48">
-              <item row="0" column="4" colspan="2">
+              <item row="1" column="0" colspan="2">
+               <widget class="QFrame" name="frame_82">
+                <property name="minimumSize">
+                 <size>
+                  <width>166</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: transparent;
+border: none;</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="4">
                <widget class="QLabel" name="label_87">
                 <property name="minimumSize">
                  <size>
@@ -4378,9 +4134,6 @@ border: none;</string>
                  <set>Qt::AlignmentFlag::AlignCenter</set>
                 </property>
                </widget>
-              </item>
-              <item row="0" column="6">
-               <widget class="QDateEdit" name="dateEdit_4"/>
               </item>
               <item row="0" column="0">
                <widget class="QLabel" name="label_86">
@@ -4397,6 +4150,32 @@ border: none;</string>
                  <set>Qt::AlignmentFlag::AlignCenter</set>
                 </property>
                </widget>
+              </item>
+              <item row="1" column="5">
+               <widget class="QFrame" name="frame_83">
+                <property name="minimumSize">
+                 <size>
+                  <width>143</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: transparent;
+border: none;</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="5">
+               <widget class="QDateEdit" name="dateEdit_4"/>
+              </item>
+              <item row="0" column="1" colspan="2">
+               <widget class="QDateEdit" name="dateEdit_3"/>
               </item>
               <item row="0" column="3">
                <widget class="QFrame" name="frame_81">
@@ -4417,29 +4196,6 @@ border: none;</string>
                  <enum>QFrame::Shadow::Raised</enum>
                 </property>
                </widget>
-              </item>
-              <item row="1" column="0" colspan="2">
-               <widget class="QFrame" name="frame_82">
-                <property name="minimumSize">
-                 <size>
-                  <width>138</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: transparent;
-border: none;</string>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::Shape::StyledPanel</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Shadow::Raised</enum>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1" colspan="2">
-               <widget class="QDateEdit" name="dateEdit_3"/>
               </item>
               <item row="1" column="2" colspan="3">
                <widget class="QPushButton" name="restore_btn">
@@ -4463,17 +4219,59 @@ border: none;</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="5" colspan="2">
-               <widget class="QFrame" name="frame_83">
-                <property name="styleSheet">
-                 <string notr="true">background-color: transparent;
-border: none;</string>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="1" rowspan="3">
+            <widget class="QGroupBox" name="groupBox_15">
+             <property name="minimumSize">
+              <size>
+               <width>631</width>
+               <height>311</height>
+              </size>
+             </property>
+             <property name="title">
+              <string>Database  Saving Logs</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_52">
+              <item row="0" column="0">
+               <widget class="QTableWidget" name="tableWidget_6">
+                <attribute name="horizontalHeaderDefaultSectionSize">
+                 <number>300</number>
+                </attribute>
+                <attribute name="horizontalHeaderStretchLastSection">
+                 <bool>true</bool>
+                </attribute>
+                <column>
+                 <property name="text">
+                  <string>Date:</string>
+                 </property>
+                </column>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="Line" name="line_62">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
                 </property>
-                <property name="frameShape">
-                 <enum>QFrame::Shape::StyledPanel</enum>
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Shadow::Raised</enum>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_78">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Note: This is logs every time data savs files from the database.</string>
                 </property>
                </widget>
               </item>
@@ -4524,6 +4322,400 @@ border: none;</string>
                 </property>
                 <property name="text">
                  <string>Archive</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="0" column="0" rowspan="2">
+            <widget class="QGroupBox" name="groupBox_16">
+             <property name="minimumSize">
+              <size>
+               <width>451</width>
+               <height>351</height>
+              </size>
+             </property>
+             <property name="title">
+              <string>Backup Configuration:</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_47">
+              <item row="0" column="0" colspan="5">
+               <widget class="QFrame" name="frame_99">
+                <property name="minimumSize">
+                 <size>
+                  <width>138</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: transparent;
+border: none;</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0" colspan="5">
+               <widget class="QLabel" name="label_85">
+                <property name="minimumSize">
+                 <size>
+                  <width>471</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Manual Backup:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="5">
+               <widget class="QFrame" name="frame_98">
+                <property name="minimumSize">
+                 <size>
+                  <width>138</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: transparent;
+border: none;</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="5">
+               <widget class="QLineEdit" name="lineEdit_17">
+                <property name="minimumSize">
+                 <size>
+                  <width>471</width>
+                  <height>41</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(238, 238, 238);</string>
+                </property>
+                <property name="placeholderText">
+                 <string>Enter the backup name.</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_84">
+                <property name="minimumSize">
+                 <size>
+                  <width>88</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>From:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignmentFlag::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1" colspan="2">
+               <widget class="QDateEdit" name="dateEdit">
+                <property name="minimumSize">
+                 <size>
+                  <width>121</width>
+                  <height>24</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="3">
+               <widget class="QLabel" name="label_83">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>To:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignmentFlag::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="4">
+               <widget class="QDateEdit" name="dateEdit_2">
+                <property name="minimumSize">
+                 <size>
+                  <width>121</width>
+                  <height>24</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0" colspan="2">
+               <widget class="QFrame" name="frame_90">
+                <property name="minimumSize">
+                 <size>
+                  <width>138</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: transparent;
+border: none;</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="2" colspan="2">
+               <widget class="QPushButton" name="manual_backup_btn">
+                <property name="minimumSize">
+                 <size>
+                  <width>151</width>
+                  <height>42</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(204, 204, 204);</string>
+                </property>
+                <property name="text">
+                 <string>Backup</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="4">
+               <widget class="QFrame" name="frame_91">
+                <property name="minimumSize">
+                 <size>
+                  <width>138</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: transparent;
+border: none;</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0" colspan="5">
+               <widget class="Line" name="line_61">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0" colspan="5">
+               <widget class="QLabel" name="label_82">
+                <property name="minimumSize">
+                 <size>
+                  <width>464</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Automatic:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0" colspan="5">
+               <widget class="QFrame" name="frame_93">
+                <property name="minimumSize">
+                 <size>
+                  <width>138</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: transparent;
+border: none;</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="0" colspan="5">
+               <widget class="QFrame" name="frame_75">
+                <property name="minimumSize">
+                 <size>
+                  <width>471</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="layoutDirection">
+                 <enum>Qt::LayoutDirection::RightToLeft</enum>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+                <layout class="QHBoxLayout" name="horizontalLayout_4">
+                 <item>
+                  <widget class="QRadioButton" name="radioButton_10">
+                   <property name="text">
+                    <string>1 year</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="radioButton_11">
+                   <property name="text">
+                    <string>6 months</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="radioButton_12">
+                   <property name="text">
+                    <string>3 months</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="10" column="0" colspan="2">
+               <widget class="QFrame" name="frame_88">
+                <property name="minimumSize">
+                 <size>
+                  <width>138</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: transparent;
+border: none;</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="2" colspan="2">
+               <widget class="QPushButton" name="automatic_backup_btn">
+                <property name="minimumSize">
+                 <size>
+                  <width>151</width>
+                  <height>41</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(204, 204, 204);</string>
+                </property>
+                <property name="text">
+                 <string>Backup</string>
+                </property>
+               </widget>
+              </item>
+              <item row="10" column="4">
+               <widget class="QFrame" name="frame_89">
+                <property name="minimumSize">
+                 <size>
+                  <width>138</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: transparent;
+border: none;</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="0" colspan="5">
+               <widget class="QFrame" name="frame_92">
+                <property name="minimumSize">
+                 <size>
+                  <width>138</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: transparent;
+border: none;</string>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="12" column="0" colspan="5">
+               <widget class="Line" name="line_59">
+                <property name="minimumSize">
+                 <size>
+                  <width>1</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="13" column="0" colspan="5">
+               <widget class="QLabel" name="label_76">
+                <property name="minimumSize">
+                 <size>
+                  <width>461</width>
+                  <height>20</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Note: You have to two configuration backup &amp; automatick backup.</string>
                 </property>
                </widget>
               </item>
@@ -5249,6 +5441,32 @@ border: None;</string>
                   <string>Remarks:</string>
                  </property>
                 </column>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="Line" name="line_63">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_79">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Note: This is the realtime authentication logs</string>
+                </property>
                </widget>
               </item>
              </layout>
