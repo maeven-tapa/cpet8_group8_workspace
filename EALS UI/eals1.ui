@@ -18,7 +18,7 @@
     <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>15</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="main_page">
        <layout class="QGridLayout" name="gridLayout_2">
@@ -175,7 +175,7 @@
                <string>Peek</string>
               </property>
              </widget>
-             <widget class="QPushButton" name="pushButton_2">
+             <widget class="QPushButton" name="login_btn">
               <property name="geometry">
                <rect>
                 <x>150</x>
@@ -407,7 +407,7 @@
             <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
           </widget>
-          <widget class="QPushButton" name="pushButton_3">
+          <widget class="QPushButton" name="pass_change_btn">
            <property name="geometry">
             <rect>
              <x>490</x>
