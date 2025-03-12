@@ -24,7 +24,7 @@
     <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>9</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="main_page">
        <layout class="QGridLayout" name="gridLayout_2">
@@ -872,7 +872,7 @@ border: none;</string>
          </widget>
         </item>
         <item row="3" column="7">
-         <widget class="QPushButton" name="pushButton_5">
+         <widget class="QPushButton" name="veri1_cancel_btn">
           <property name="minimumSize">
            <size>
             <width>101</width>
@@ -1117,7 +1117,7 @@ border: none;</string>
          </widget>
         </item>
         <item row="3" column="5">
-         <widget class="QPushButton" name="pushButton_6">
+         <widget class="QPushButton" name="veri2_cancel_btn">
           <property name="minimumSize">
            <size>
             <width>101</width>
@@ -1909,7 +1909,7 @@ border: none;</string>
             </widget>
            </item>
            <item row="3" column="3">
-            <widget class="QPushButton" name="pushButton_8">
+            <widget class="QPushButton" name="enroll_employee_btn">
              <property name="minimumSize">
               <size>
                <width>101</width>
@@ -1931,7 +1931,7 @@ border: none;</string>
             </widget>
            </item>
            <item row="3" column="4">
-            <widget class="QPushButton" name="pushButton_9">
+            <widget class="QPushButton" name="add_employee_btn">
              <property name="minimumSize">
               <size>
                <width>101</width>
@@ -3623,7 +3623,7 @@ border: none;</string>
                </widget>
               </item>
               <item row="9" column="1">
-               <widget class="QPushButton" name="employee_add_btn_2">
+               <widget class="QPushButton" name="manage_hr_add_btn">
                 <property name="minimumSize">
                  <size>
                   <width>101</width>
@@ -3717,7 +3717,7 @@ border: none;
             </widget>
            </item>
            <item row="3" column="1">
-            <widget class="QPushButton" name="employee_edit_btn_3">
+            <widget class="QPushButton" name="manage_edit_btn">
              <property name="minimumSize">
               <size>
                <width>101</width>
@@ -3739,7 +3739,7 @@ border: none;
             </widget>
            </item>
            <item row="3" column="2">
-            <widget class="QPushButton" name="employee_edit_btn_4">
+            <widget class="QPushButton" name="manage_deactivate_btn">
              <property name="minimumSize">
               <size>
                <width>101</width>
@@ -3768,7 +3768,7 @@ border: none;
             </widget>
            </item>
            <item row="3" column="4">
-            <widget class="QPushButton" name="employee_edit_btn_5">
+            <widget class="QPushButton" name="manager_hr_back_btn">
              <property name="minimumSize">
               <size>
                <width>101</width>
@@ -4992,7 +4992,7 @@ border: None;</string>
             </widget>
            </item>
            <item row="1" column="2">
-            <widget class="QPushButton" name="pushButton_12">
+            <widget class="QPushButton" name="view_employee_back_btn">
              <property name="minimumSize">
               <size>
                <width>101</width>

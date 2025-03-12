@@ -10,6 +10,7 @@ class EALS:
     
         self.ui.login_btn.clicked.connect(self.go_to_admin_changepass)
         self.ui.change_pass_btn.clicked.connect(self.go_to_home)
+        self.ui.skip_change_btn.clicked.connect(self.go_to_home)
         
         #for home page
         self.ui.home_employee_btn.clicked.connect(self.goto_employee)
@@ -22,7 +23,24 @@ class EALS:
         self.ui.manage_hr_btn.clicked.connect(self.goto_manage_hr)
         self.ui.employee_edit_btn.clicked.connect(self.goto_edit_employee)
         self.ui.employee_add_btn.clicked.connect(self.goto_employee_add)
-        self.ui.employee_view_btn(self.goto_view_employee)
+        self.ui.employee_view_btn.clicked.connect(self.goto_view_employee)
+        
+        #for admin - manage hr
+        self.ui.manager_hr_back_btn.clicked.connect(self.goto_employee)
+        
+        #for admin - edit employee
+        self.ui.save_employee_btn.clicked.connect(self.goto_employee)
+        self.ui.edit_employee_back_btn.clicked.connect(self.goto_employee)
+        
+        #for admin - view employee
+        self.ui.view_employee_back_btn.clicked.connect(self.goto_employee)
+        
+        #for admin - enroll emnployee
+        self.ui.add_employee_btn.clicked.connect(self.goto_employee)
+        self.ui.enroll_employee_btn.clicked.connect(self.goto_veri1)
+        self.ui.veri1_cancel_btn.clicked.connect(self.goto_veri2)
+        self.ui.veri2_cancel_btn.clicked.connect(self.goto_employee)
+        
         
         #for settings page
         self.ui.settings_home_btn.clicked.connect(self.goto_home)
@@ -54,11 +72,29 @@ class EALS:
         self.ui.stackedWidget.setCurrentIndex(home_employee_index) 
         
      #for admin - employee menu
-    def goto_manage_hr(Self):
-        manage_hr_index = self.ui.stackedWidget.indexOf(self.uiadmin_hr_page)
+    def goto_manage_hr(self):
+        manage_hr_index = self.ui.stackedWidget.indexOf(self.ui.admin_hr_page)
         self.ui.stackedWidget.setCurrentIndex(manage_hr_index)
-    def goto_edit_employee
-
+    def goto_edit_employee(self):
+        edit_employee_index = self.ui.stackedWidget.indexOf(self.ui.edit_employee_page)
+        self.ui.stackedWidget.setCurrentIndex(edit_employee_index)
+    def goto_employee_add(self):
+        add_employee_index = self.ui.stackedWidget.indexOf(self.ui.employee_enroll_page)
+        self.ui.stackedWidget.setCurrentIndex(add_employee_index)
+    def goto_view_employee(self):
+        view_employee_index = self.ui.stackedWidget.indexOf(self.ui.view_employee_page)
+        self.ui.stackedWidget.setCurrentIndex(view_employee_index)
+        
+    #for admin - enroll emnployee
+    def goto_veri1(self):
+        veri1_index = self.ui.stackedWidget.indexOf(self.ui.veri1_employee_page)
+        self.ui.stackedWidget.setCurrentIndex(veri1_index)
+    def goto_veri2(self):
+        veri2_index = self.ui.stackedWidget.indexOf(self.ui.veri2_employee_page)
+        self.ui.stackedWidget.setCurrentIndex(veri2_index)
+        
+    
+     
 
 if __name__ == "__main__":
     app = QApplication([])
