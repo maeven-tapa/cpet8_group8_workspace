@@ -38,8 +38,8 @@ class EALS:
         #for admin - enroll emnployee
         self.ui.add_employee_btn.clicked.connect(self.goto_employee)
         self.ui.enroll_employee_btn.clicked.connect(self.goto_veri1)
-        self.ui.veri1_cancel_btn.clicked.connect(self.goto_veri2)
-        self.ui.veri2_cancel_btn.clicked.connect(self.goto_employee)
+        self.ui.bio_cancel_btn.clicked.connect(self.goto_veri2)
+        self.ui.face_cancel_btn.clicked.connect(self.goto_employee)
         
         
         #for settings page
@@ -87,10 +87,10 @@ class EALS:
         
     #for admin - enroll emnployee
     def goto_veri1(self):
-        veri1_index = self.ui.stackedWidget.indexOf(self.ui.veri1_employee_page)
+        veri1_index = self.ui.stackedWidget.indexOf(self.ui.employee_enroll_bio1_page)
         self.ui.stackedWidget.setCurrentIndex(veri1_index)
     def goto_veri2(self):
-        veri2_index = self.ui.stackedWidget.indexOf(self.ui.veri2_employee_page)
+        veri2_index = self.ui.stackedWidget.indexOf(self.ui.employee_enroll_bio2_page)
         self.ui.stackedWidget.setCurrentIndex(veri2_index)
         
     

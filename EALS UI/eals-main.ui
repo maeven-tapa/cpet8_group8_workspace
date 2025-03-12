@@ -30,7 +30,7 @@
     <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>9</number>
+       <number>16</number>
       </property>
       <widget class="QWidget" name="main_page">
        <layout class="QGridLayout" name="gridLayout_2">
@@ -5854,7 +5854,7 @@ border: None;</string>
             </widget>
            </item>
            <item row="2" column="5">
-            <widget class="QPushButton" name="pushButton_18">
+            <widget class="QPushButton" name="hr_logout_btn">
              <property name="minimumSize">
               <size>
                <width>101</width>
@@ -6051,7 +6051,7 @@ border: none;</string>
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QPushButton" name="hr_employee_feedback_btn">
+            <widget class="QPushButton" name="hr_employee_view_btn">
              <property name="minimumSize">
               <size>
                <width>101</width>
