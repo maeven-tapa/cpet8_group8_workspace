@@ -79,6 +79,9 @@ color: #15305b;
        <property name="rightMargin">
         <number>15</number>
        </property>
+       <property name="bottomMargin">
+        <number>14</number>
+       </property>
        <item row="0" column="0">
         <layout class="QGridLayout" name="gridLayout" rowstretch="0,2,0,1,2,2,0,0,2,2,0,2">
          <property name="leftMargin">
@@ -116,7 +119,7 @@ color: #15305b;
           </widget>
          </item>
          <item row="11" column="0">
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="home_login_btn">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -152,7 +155,7 @@ background-color: #d8e1e8;</string>
           </widget>
          </item>
          <item row="9" column="0">
-          <widget class="QLineEdit" name="lineEdit_2">
+          <widget class="QLineEdit" name="home_pass_box">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -204,7 +207,7 @@ border-radius: 5px;</string>
           </spacer>
          </item>
          <item row="5" column="0">
-          <widget class="QLineEdit" name="lineEdit">
+          <widget class="QLineEdit" name="home_id_box">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>

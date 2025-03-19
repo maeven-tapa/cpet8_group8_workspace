@@ -34,9 +34,9 @@ border-radius: 8px;
 </string>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
-     <widget class="QWidget" name="page_1">
+     <widget class="QWidget" name="hr_add_page">
       <layout class="QGridLayout" name="gridLayout_4" rowstretch="5,8,1,1" columnstretch="2,0,0,0">
        <item row="0" column="1" rowspan="2" colspan="3">
         <widget class="QFrame" name="frame_19">
@@ -395,7 +395,7 @@ border-radius: 10px;</string>
         </widget>
        </item>
        <item row="3" column="3">
-        <widget class="QPushButton" name="pushButton_10">
+        <widget class="QPushButton" name="hr_add_save">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
            <horstretch>1</horstretch>
@@ -624,7 +624,7 @@ border-radius: 10px;</string>
         </widget>
        </item>
        <item row="3" column="2">
-        <widget class="QPushButton" name="pushButton_9">
+        <widget class="QPushButton" name="hr_add_cancel">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>1</horstretch>
@@ -645,7 +645,7 @@ color: rgb(250, 163, 64);</string>
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="page_2">
+     <widget class="QWidget" name="hr_edit_page">
       <layout class="QGridLayout" name="gridLayout_2" rowstretch="5,8,1,1" columnstretch="3,0,0,0">
        <item row="0" column="0">
         <widget class="QFrame" name="frame_29">
@@ -1213,7 +1213,7 @@ border: none;</string>
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QPushButton" name="pushButton_17">
+        <widget class="QPushButton" name="hr_edit_cancel">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>1</horstretch>
@@ -1233,7 +1233,7 @@ color: rgb(250, 163, 64);</string>
         </widget>
        </item>
        <item row="3" column="2">
-        <widget class="QPushButton" name="pushButton_18">
+        <widget class="QPushButton" name="hr_edit_deactivate">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
            <horstretch>1</horstretch>
@@ -1253,7 +1253,7 @@ color: rgb(250, 163, 64);</string>
         </widget>
        </item>
        <item row="3" column="3">
-        <widget class="QPushButton" name="pushButton_14">
+        <widget class="QPushButton" name="hr_edit_save">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
            <horstretch>1</horstretch>
@@ -1274,7 +1274,7 @@ color: rgb(250, 163, 64);</string>
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="page_6">
+     <widget class="QWidget" name="hr_view_page">
       <layout class="QGridLayout" name="gridLayout_3" rowstretch="4,6,1,1" columnstretch="1,2,2,1">
        <item row="3" column="1" colspan="2">
         <widget class="QFrame" name="frame_23">
@@ -1305,7 +1305,7 @@ border: none;</string>
         </widget>
        </item>
        <item row="3" column="3">
-        <widget class="QPushButton" name="pushButton_13">
+        <widget class="QPushButton" name="hr_view_back">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>1</horstretch>
