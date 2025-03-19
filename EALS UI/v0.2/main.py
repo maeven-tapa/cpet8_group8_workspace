@@ -1,6 +1,7 @@
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QDialog, QWidget, QStackedWidget, QTabWidget
 from PySide6.QtUiTools import QUiLoader
+from PySide6.QtCore import Qt
 
 class UIController:
     def __init__(self):
@@ -11,12 +12,25 @@ class UIController:
         self.admin_ui = self.loader.load("admin.ui")
         self.enroll_employee_ui = self.loader.load("enroll_employee.ui")
         self.enroll_hr_ui = self.loader.load("enroll_hr.ui")
+        
         self.employee_stack = self.find_stacked_widget(self.enroll_employee_ui)
         self.hr_stack = self.find_stacked_widget(self.enroll_hr_ui)
         
+        self.setup_always_on_top()
         self.setup_connections()
         
         self.home_ui.show()
+    
+    def setup_always_on_top(self):
+        self.admin_change_pass_ui.setWindowFlags(
+            self.admin_change_pass_ui.windowFlags() | Qt.WindowStaysOnTopHint
+        )
+        self.enroll_employee_ui.setWindowFlags(
+            self.enroll_employee_ui.windowFlags() | Qt.WindowStaysOnTopHint
+        )
+        self.enroll_hr_ui.setWindowFlags(
+            self.enroll_hr_ui.windowFlags() | Qt.WindowStaysOnTopHint
+        )
     
     def find_stacked_widget(self, parent_widget):
         stack = parent_widget.findChild(QStackedWidget, "stackedWidget")
@@ -30,27 +44,39 @@ class UIController:
     
     def setup_connections(self):
         self.home_ui.home_login_btn.clicked.connect(self.show_admin_change_pass)
+        
         self.admin_change_pass_ui.admin_change_pass_btn.clicked.connect(self.show_admin_main)
+        
         self.admin_ui.admin_logout_btn.clicked.connect(self.logout_to_home)
+        
         self.admin_ui.employee_edit_btn.clicked.connect(self.goto_employee_edit_page)
         self.admin_ui.employee_enroll_btn.clicked.connect(self.goto_employee_enroll_page)
         self.admin_ui.employee_view_btn.clicked.connect(self.goto_employee_view_page)
+        
         self.admin_ui.hr_edit_btn.clicked.connect(self.goto_hr_edit_page)
         self.admin_ui.hr_add_btn.clicked.connect(self.goto_hr_add_page)
         self.admin_ui.hr_view_btn.clicked.connect(self.goto_hr_view_page)
+        
         self.enroll_employee_ui.employee_enroll_cancel.clicked.connect(self.close_employee_ui)
         self.enroll_employee_ui.employee_enroll_1.clicked.connect(self.goto_employee_enroll2_page)
+        
         self.enroll_employee_ui.employee_enroll_back1.clicked.connect(self.goto_employee_enroll_page)
         self.enroll_employee_ui.employee_enroll_2.clicked.connect(self.goto_employee_enroll3_page)
+        
         self.enroll_employee_ui.employee_enroll_back2.clicked.connect(self.goto_employee_enroll2_page)
         self.enroll_employee_ui.employee_enroll_3.clicked.connect(self.close_employee_ui)
+        
         self.enroll_employee_ui.employee_view_back.clicked.connect(self.close_employee_ui)
+        
         self.enroll_employee_ui.employee_edit_back.clicked.connect(self.close_employee_ui)
         self.enroll_employee_ui.employee_edit_save.clicked.connect(self.close_employee_ui)
+        
         self.enroll_hr_ui.hr_add_cancel.clicked.connect(self.close_hr_ui)
         self.enroll_hr_ui.hr_add_save.clicked.connect(self.close_hr_ui)
+        
         self.enroll_hr_ui.hr_edit_cancel.clicked.connect(self.close_hr_ui)
         self.enroll_hr_ui.hr_edit_save.clicked.connect(self.close_hr_ui)
+        
         self.enroll_hr_ui.hr_view_back.clicked.connect(self.close_hr_ui)
     
     def show_admin_change_pass(self):
