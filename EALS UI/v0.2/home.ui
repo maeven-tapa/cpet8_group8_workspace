@@ -252,7 +252,10 @@ border-radius: 5px;</string>
             </font>
            </property>
            <property name="styleSheet">
-            <string notr="true"/>
+            <string notr="true">QLabel {
+    font-size: 3vw;  /* Responsive font based on window width */
+}
+</string>
            </property>
            <property name="text">
             <string>Sign in</string>
