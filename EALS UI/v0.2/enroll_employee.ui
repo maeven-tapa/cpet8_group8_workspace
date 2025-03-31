@@ -34,7 +34,7 @@ border-radius: 8px;
 </string>
      </property>
      <property name="currentIndex">
-      <number>3</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="employee_enroll_page">
       <layout class="QGridLayout" name="gridLayout_3" rowstretch="6,6,5,1" columnstretch="4,2,0,0">
@@ -106,7 +106,8 @@ border-radius: 10px;</string>
              <item row="1" column="2">
               <widget class="QPushButton" name="pushButton_3">
                <property name="styleSheet">
-                <string notr="true">background-color: rgb(255, 255, 255);</string>
+                <string notr="true">background-color: rgb(255, 239, 221);
+color: rgb(250, 163, 64);</string>
                </property>
                <property name="text">
                 <string>Add</string>
@@ -157,14 +158,19 @@ border-radius:10px;</string>
            </widget>
           </item>
           <item>
-           <widget class="QWidget" name="widget_3" native="true">
+           <widget class="QWidget" name="widget_42" native="true">
+            <property name="font">
+             <font>
+              <stylestrategy>PreferAntialias</stylestrategy>
+             </font>
+            </property>
             <property name="styleSheet">
              <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 10px;</string>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout_18">
-             <item>
-              <widget class="QLineEdit" name="lineEdit_11">
+            <layout class="QGridLayout" name="gridLayout_13" columnstretch="2,0,2,0,2">
+             <item row="0" column="0">
+              <widget class="QLineEdit" name="lineEdit_23">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
@@ -174,9 +180,1206 @@ border-radius: 10px;</string>
                <property name="styleSheet">
                 <string notr="true">background-color: rgb(255, 255, 255);</string>
                </property>
-               <property name="placeholderText">
-                <string>Enter account id.</string>
+               <property name="text">
+                <string/>
                </property>
+               <property name="placeholderText">
+                <string>Prefix</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="label_47">
+               <property name="font">
+                <font>
+                 <pointsize>16</pointsize>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>-</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QComboBox" name="comboBox_6">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(255, 255, 255);</string>
+               </property>
+               <property name="editable">
+                <bool>false</bool>
+               </property>
+               <item>
+                <property name="text">
+                 <string>24</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>25</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>26</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>27</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>28</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>29</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>30</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>31</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>32</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>33</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>34</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>35</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>36</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>37</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>38</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>39</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>40</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>41</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>42</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>43</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>44</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>45</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>46</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>47</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>48</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>49</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>50</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="label_48">
+               <property name="font">
+                <font>
+                 <pointsize>16</pointsize>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>-</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="4">
+              <widget class="QComboBox" name="comboBox_9">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(255, 255, 255);</string>
+               </property>
+               <property name="editable">
+                <bool>false</bool>
+               </property>
+               <item>
+                <property name="text">
+                 <string>0001</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0001</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0002</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0003</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0004</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0005</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0006</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0007</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0008</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0009</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0010</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0011</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0012</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0013</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0014</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0015</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0016</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0017</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0018</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0019</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0020</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0021</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0023</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0024</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0025</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0026</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0027</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0028</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0029</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0030</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0031</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0032</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0033</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0034</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0035</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0036</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0038</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0039</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0040</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0041</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0042</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0043</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0044</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0045</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0046</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0047</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0048</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0049</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0050</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0051</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0052</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0053</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0054</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0055</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0056</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0057</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0058</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0059</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0060</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0061</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0062</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0063</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0064</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0065</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0066</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0067</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0068</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0069</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0070</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0071</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0072</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0073</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0074</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0075</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0076</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0077</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0078</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0079</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0080</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0081</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0082</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0083</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0084</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0085</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0086</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0087</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0088</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0089</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0090</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0091</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0092</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0093</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0094</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0095</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0096</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0097</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0098</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0099</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0100</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0101</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0102</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0103</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0104</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0105</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0106</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0107</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0108</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0109</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0110</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0111</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0112</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0113</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0114</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0115</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0116</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0117</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0118</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0119</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0120</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0121</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0122</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0123</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0124</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0125</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0126</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0127</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0128</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0129</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0130</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0131</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0132</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0133</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0134</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0135</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0136</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0137</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0138</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0139</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0140</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0141</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0142</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0143</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0144</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0145</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0146</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0147</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0148</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0149</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0150</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0151</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0152</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0153</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0154</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0155</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0156</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0157</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0158</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0159</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0160</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0161</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0162</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0163</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0164</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0165</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0166</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0167</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0168</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0169</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0170</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0171</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0172</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0173</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0174</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0175</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0176</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0177</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0178</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0179</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0180</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0181</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0182</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0183</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0184</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0185</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0186</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0187</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0188</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0189</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0190</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0191</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0192</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0193</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0194</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0195</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0196</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0197</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0198</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0199</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0200</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>
@@ -404,9 +1607,12 @@ border-radius:10px;</string>
          <property name="frameShadow">
           <enum>QFrame::Shadow::Raised</enum>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout" stretch="2,2,0,2,2,0,2,2,0,2,2,0,2,2">
+         <layout class="QVBoxLayout" name="verticalLayout" stretch="3,0,1,2,0,1,2,0,1,2,0,1,2">
           <property name="leftMargin">
            <number>12</number>
+          </property>
+          <property name="topMargin">
+           <number>16</number>
           </property>
           <property name="rightMargin">
            <number>12</number>
@@ -415,37 +1621,143 @@ border-radius:10px;</string>
            <number>20</number>
           </property>
           <item>
-           <widget class="QLabel" name="label_2">
-            <property name="font">
-             <font>
-              <bold>true</bold>
-             </font>
+           <widget class="QFrame" name="frame_27">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
             </property>
-            <property name="text">
-             <string>Name:</string>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QWidget" name="widget_2" native="true">
-            <property name="styleSheet">
-             <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_9">
-             <item>
-              <widget class="QLineEdit" name="lineEdit">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
+            <layout class="QGridLayout" name="gridLayout_12">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <property name="horizontalSpacing">
+              <number>10</number>
+             </property>
+             <property name="verticalSpacing">
+              <number>6</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_52">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
                </property>
+               <property name="text">
+                <string>First Name</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QWidget" name="widget_46" native="true">
                <property name="styleSheet">
-                <string notr="true">background-color: rgb(255, 255, 255);</string>
+                <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
                </property>
-               <property name="placeholderText">
-                <string>Enter the employee name.</string>
+               <layout class="QVBoxLayout" name="verticalLayout_47">
+                <item>
+                 <widget class="QLineEdit" name="lineEdit_21">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                  <property name="placeholderText">
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="label_53">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Last Name</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QWidget" name="widget_47" native="true">
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_48">
+                <item>
+                 <widget class="QLineEdit" name="lineEdit_22">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                  <property name="placeholderText">
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QWidget" name="widget_48" native="true">
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_49">
+                <item>
+                 <widget class="QLineEdit" name="lineEdit_25">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                  <property name="placeholderText">
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLabel" name="label_54">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>M.I</string>
                </property>
               </widget>
              </item>
@@ -470,7 +1782,7 @@ border-radius: 10px;</string>
              </font>
             </property>
             <property name="text">
-             <string>Age:</string>
+             <string>Birthday</string>
             </property>
            </widget>
           </item>
@@ -482,7 +1794,7 @@ border-radius: 10px;</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_10">
              <item>
-              <widget class="QLineEdit" name="lineEdit_3">
+              <widget class="QDateEdit" name="dateEdit_2">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
@@ -492,8 +1804,15 @@ border-radius: 10px;</string>
                <property name="styleSheet">
                 <string notr="true">background-color: rgb(255, 255, 255);</string>
                </property>
-               <property name="placeholderText">
-                <string>Enter the age.</string>
+               <property name="calendarPopup">
+                <bool>true</bool>
+               </property>
+               <property name="date">
+                <date>
+                 <year>2025</year>
+                 <month>3</month>
+                 <day>21</day>
+                </date>
                </property>
               </widget>
              </item>
@@ -607,7 +1926,7 @@ border-radius: 10px;</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_8">
              <item>
-              <widget class="QLineEdit" name="lineEdit_5">
+              <widget class="QComboBox" name="comboBox_7">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
@@ -617,9 +1936,69 @@ border-radius: 10px;</string>
                <property name="styleSheet">
                 <string notr="true">background-color: rgb(255, 255, 255);</string>
                </property>
-               <property name="placeholderText">
-                <string>Enter the department of the company</string>
+               <property name="currentText">
+                <string>Administration &amp; Management</string>
                </property>
+               <item>
+                <property name="text">
+                 <string>Administration &amp; Management</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Finance &amp; Accounting</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Information Technology (IT)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Marketing &amp; Public Relations</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales &amp; Business Development</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Customer Support &amp; Service</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Research &amp; Development (R&amp;D)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Operations &amp; Logistics</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Legal &amp; Compliance</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Facilities &amp; Maintenance</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Manufacturing &amp; Production </string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Healthcare</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>
@@ -655,7 +2034,7 @@ border-radius: 10px;</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_11">
              <item>
-              <widget class="QLineEdit" name="lineEdit_4">
+              <widget class="QComboBox" name="comboBox_8">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
@@ -665,9 +2044,276 @@ border-radius: 10px;</string>
                <property name="styleSheet">
                 <string notr="true">background-color: rgb(255, 255, 255);</string>
                </property>
-               <property name="placeholderText">
-                <string>Enter position.</string>
-               </property>
+               <item>
+                <property name="text">
+                 <string>Chief Executive Officer (CEO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Operating Officer (COO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Office Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Executive Assistant</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Administrative Coordinator</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Financial Officer (CFO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Financial Analyst</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Accountant</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Payroll Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Technology Officer (CTO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>IT Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Software Engineer</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Network Administrator</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>IT Support Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Marketing Officer (CMO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Marketing Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Content Strategist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Social Media Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Public Relations (PR) Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales Director</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Account Executive</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Business Development Representative</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales Associate</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Customer Support Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Customer Service Representative</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Technical Support Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Call Center Agent</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Client Success Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>R&amp;D Director</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Product Development Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Data Scientist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Research Analyst</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Innovation Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Operations Officer (COO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Operations Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Logistics Coordinator</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Supply Chain Analyst</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Procurement Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>General Counsel</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Legal Advisor</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Compliance Officer</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Contract Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Facilities Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Maintenance Technician</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Security Officer</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Janitorial Staff</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Production Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Quality Assurance (QA) Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Factory Worker</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Warehouse Associate</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Medical Director</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Nurse Practitioner</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Physician</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>
@@ -774,6 +2420,9 @@ color: rgb(250, 163, 64);</string>
              <bold>true</bold>
             </font>
            </property>
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(235, 235, 235);</string>
+           </property>
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fingerprint &lt;br/&gt;Enrollment&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -784,6 +2433,9 @@ color: rgb(250, 163, 64);</string>
          </item>
          <item>
           <widget class="QLabel" name="label_21">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(235, 235, 235);</string>
+           </property>
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Note: Place your finger on the fingerprint sensor &lt;br/&gt;to confirm your identity.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -872,6 +2524,9 @@ color: rgb(250, 163, 64);</string>
              <bold>true</bold>
             </font>
            </property>
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(235, 235, 235);</string>
+           </property>
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Face &lt;br/&gt;Enrollment&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -882,6 +2537,9 @@ color: rgb(250, 163, 64);</string>
          </item>
          <item>
           <widget class="QLabel" name="label_19">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(235, 235, 235);</string>
+           </property>
            <property name="text">
             <string>Note: Ensure your face is fully visible in the frame.</string>
            </property>
@@ -990,9 +2648,12 @@ border-radius:10px;</string>
          <property name="frameShadow">
           <enum>QFrame::Shadow::Raised</enum>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_20" stretch="2,2,0,2,2,0,2,2,0,2,2,0,2,2">
+         <layout class="QVBoxLayout" name="verticalLayout_20" stretch="3,0,1,2,0,1,2,0,1,2,0,1,2">
           <property name="leftMargin">
            <number>12</number>
+          </property>
+          <property name="topMargin">
+           <number>16</number>
           </property>
           <property name="rightMargin">
            <number>12</number>
@@ -1001,37 +2662,143 @@ border-radius:10px;</string>
            <number>20</number>
           </property>
           <item>
-           <widget class="QLabel" name="label_25">
-            <property name="font">
-             <font>
-              <bold>true</bold>
-             </font>
+           <widget class="QFrame" name="frame_6">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
             </property>
-            <property name="text">
-             <string>Name</string>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QWidget" name="widget_22" native="true">
-            <property name="styleSheet">
-             <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_21">
-             <item>
-              <widget class="QLineEdit" name="lineEdit_12">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
+            <layout class="QGridLayout" name="gridLayout_10">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <property name="horizontalSpacing">
+              <number>10</number>
+             </property>
+             <property name="verticalSpacing">
+              <number>6</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_49">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
                </property>
+               <property name="text">
+                <string>First Name</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QWidget" name="widget_43" native="true">
                <property name="styleSheet">
-                <string notr="true">background-color: rgb(255, 255, 255);</string>
+                <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
                </property>
-               <property name="placeholderText">
-                <string>Enter the employee name.</string>
+               <layout class="QVBoxLayout" name="verticalLayout_44">
+                <item>
+                 <widget class="QLineEdit" name="lineEdit_19">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                  <property name="placeholderText">
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="label_50">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Last Name</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QWidget" name="widget_44" native="true">
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_45">
+                <item>
+                 <widget class="QLineEdit" name="lineEdit_20">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                  <property name="placeholderText">
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QWidget" name="widget_45" native="true">
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_46">
+                <item>
+                 <widget class="QLineEdit" name="lineEdit_24">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                  <property name="placeholderText">
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLabel" name="label_51">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>M.I</string>
                </property>
               </widget>
              </item>
@@ -1056,7 +2823,7 @@ border-radius: 10px;</string>
              </font>
             </property>
             <property name="text">
-             <string>Age</string>
+             <string>Birthday</string>
             </property>
            </widget>
           </item>
@@ -1068,7 +2835,7 @@ border-radius: 10px;</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_22">
              <item>
-              <widget class="QLineEdit" name="lineEdit_13">
+              <widget class="QDateEdit" name="dateEdit">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
@@ -1078,8 +2845,15 @@ border-radius: 10px;</string>
                <property name="styleSheet">
                 <string notr="true">background-color: rgb(255, 255, 255);</string>
                </property>
-               <property name="placeholderText">
-                <string>Enter the age.</string>
+               <property name="calendarPopup">
+                <bool>true</bool>
+               </property>
+               <property name="date">
+                <date>
+                 <year>2025</year>
+                 <month>3</month>
+                 <day>21</day>
+                </date>
                </property>
               </widget>
              </item>
@@ -1190,7 +2964,7 @@ border-radius: 10px;</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_24">
              <item>
-              <widget class="QLineEdit" name="lineEdit_14">
+              <widget class="QComboBox" name="comboBox_2">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
@@ -1200,9 +2974,69 @@ border-radius: 10px;</string>
                <property name="styleSheet">
                 <string notr="true">background-color: rgb(255, 255, 255);</string>
                </property>
-               <property name="placeholderText">
-                <string>Enter the department of the company</string>
+               <property name="currentText">
+                <string>Administration &amp; Management</string>
                </property>
+               <item>
+                <property name="text">
+                 <string>Administration &amp; Management</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Finance &amp; Accounting</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Information Technology (IT)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Marketing &amp; Public Relations</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales &amp; Business Development</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Customer Support &amp; Service</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Research &amp; Development (R&amp;D)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Operations &amp; Logistics</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Legal &amp; Compliance</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Facilities &amp; Maintenance</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Manufacturing &amp; Production </string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Healthcare</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>
@@ -1238,7 +3072,7 @@ border-radius: 10px;</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_25">
              <item>
-              <widget class="QLineEdit" name="lineEdit_15">
+              <widget class="QComboBox" name="comboBox_3">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
@@ -1248,9 +3082,276 @@ border-radius: 10px;</string>
                <property name="styleSheet">
                 <string notr="true">background-color: rgb(255, 255, 255);</string>
                </property>
-               <property name="placeholderText">
-                <string>Enter position.</string>
-               </property>
+               <item>
+                <property name="text">
+                 <string>Chief Executive Officer (CEO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Operating Officer (COO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Office Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Executive Assistant</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Administrative Coordinator</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Financial Officer (CFO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Financial Analyst</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Accountant</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Payroll Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Technology Officer (CTO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>IT Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Software Engineer</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Network Administrator</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>IT Support Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Marketing Officer (CMO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Marketing Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Content Strategist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Social Media Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Public Relations (PR) Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales Director</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Account Executive</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Business Development Representative</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales Associate</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Customer Support Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Customer Service Representative</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Technical Support Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Call Center Agent</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Client Success Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>R&amp;D Director</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Product Development Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Data Scientist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Research Analyst</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Innovation Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Operations Officer (COO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Operations Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Logistics Coordinator</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Supply Chain Analyst</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Procurement Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>General Counsel</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Legal Advisor</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Compliance Officer</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Contract Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Facilities Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Maintenance Technician</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Security Officer</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Janitorial Staff</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Production Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Quality Assurance (QA) Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Factory Worker</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Warehouse Associate</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Medical Director</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Nurse Practitioner</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Physician</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>
@@ -1309,12 +3410,17 @@ border-radius:10px;</string>
           </item>
           <item>
            <widget class="QWidget" name="widget_27" native="true">
+            <property name="font">
+             <font>
+              <stylestrategy>PreferAntialias</stylestrategy>
+             </font>
+            </property>
             <property name="styleSheet">
              <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 10px;</string>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout_27">
-             <item>
+            <layout class="QGridLayout" name="gridLayout_11" columnstretch="2,0,2,0,2">
+             <item row="0" column="0">
               <widget class="QLineEdit" name="lineEdit_16">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -1325,9 +3431,1206 @@ border-radius: 10px;</string>
                <property name="styleSheet">
                 <string notr="true">background-color: rgb(255, 255, 255);</string>
                </property>
-               <property name="placeholderText">
-                <string>Enter account id.</string>
+               <property name="text">
+                <string/>
                </property>
+               <property name="placeholderText">
+                <string>Prefix</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="label_8">
+               <property name="font">
+                <font>
+                 <pointsize>16</pointsize>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>-</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QComboBox" name="comboBox_4">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(255, 255, 255);</string>
+               </property>
+               <property name="editable">
+                <bool>false</bool>
+               </property>
+               <item>
+                <property name="text">
+                 <string>24</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>25</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>26</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>27</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>28</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>29</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>30</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>31</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>32</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>33</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>34</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>35</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>36</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>37</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>38</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>39</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>40</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>41</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>42</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>43</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>44</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>45</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>46</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>47</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>48</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>49</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>50</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="0" column="3">
+              <widget class="QLabel" name="label_9">
+               <property name="font">
+                <font>
+                 <pointsize>16</pointsize>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>-</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="4">
+              <widget class="QComboBox" name="comboBox_5">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(255, 255, 255);</string>
+               </property>
+               <property name="editable">
+                <bool>false</bool>
+               </property>
+               <item>
+                <property name="text">
+                 <string>0001</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0001</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0002</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0003</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0004</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0005</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0006</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0007</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0008</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0009</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0010</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0011</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0012</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0013</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0014</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0015</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0016</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0017</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0018</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0019</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0020</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0021</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0023</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0024</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0025</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0026</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0027</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0028</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0029</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0030</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0031</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0032</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0033</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0034</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0035</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0036</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0038</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0039</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0040</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0041</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0042</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0043</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0044</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0045</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0046</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0047</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0048</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0049</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0050</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0051</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0052</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0053</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0054</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0055</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0056</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0057</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0058</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0059</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0060</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0061</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0062</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0063</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0064</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0065</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0066</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0067</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0068</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0069</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0070</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0071</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0072</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0073</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0074</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0075</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0076</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0077</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0078</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0079</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0080</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0081</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0082</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0083</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0084</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0085</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0086</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0087</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0088</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0089</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0090</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0091</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0092</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0093</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0094</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0095</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0096</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0097</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0098</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0099</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0100</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0101</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0102</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0103</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0104</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0105</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0106</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0107</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0108</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0109</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0110</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0111</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0112</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0113</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0114</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0115</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0116</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0117</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0118</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0119</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0120</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0121</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0122</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0123</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0124</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0125</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0126</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0127</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0128</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0129</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0130</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0131</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0132</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0133</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0134</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0135</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0136</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0137</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0138</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0139</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0140</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0141</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0142</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0143</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0144</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0145</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0146</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0147</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0148</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0149</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0150</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0151</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0152</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0153</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0154</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0155</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0156</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0157</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0158</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0159</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0160</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0161</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0162</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0163</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0164</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0165</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0166</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0167</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0168</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0169</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0170</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0171</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0172</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0173</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0174</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0175</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0176</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0177</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0178</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0179</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0180</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0181</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0182</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0183</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0184</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0185</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0186</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0187</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0188</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0189</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0190</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0191</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0192</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0193</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0194</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0195</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0196</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0197</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0198</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0199</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>0200</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>
@@ -1602,7 +4905,8 @@ border-radius: 10px;</string>
              <item row="1" column="2">
               <widget class="QPushButton" name="pushButton_8">
                <property name="styleSheet">
-                <string notr="true">background-color: rgb(255, 255, 255);</string>
+                <string notr="true">background-color: rgb(255, 239, 221);
+color: rgb(250, 163, 64);</string>
                </property>
                <property name="text">
                 <string>Change</string>
@@ -1658,7 +4962,7 @@ color: rgb(250, 163, 64);</string>
       </layout>
      </widget>
      <widget class="QWidget" name="employee_view_page">
-      <layout class="QGridLayout" name="gridLayout_9" rowstretch="6,6,6,1" columnstretch="3,2,0,0">
+      <layout class="QGridLayout" name="gridLayout_9" rowstretch="6,7,5,1" columnstretch="3,2,0,0">
        <item row="0" column="0">
         <widget class="QFrame" name="frame_20">
          <property name="styleSheet">
@@ -1714,23 +5018,13 @@ border-radius: 10px;</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="2">
+             <item row="0" column="2" rowspan="2">
               <widget class="QFrame" name="frame_22">
                <property name="frameShape">
                 <enum>QFrame::Shape::StyledPanel</enum>
                </property>
                <property name="frameShadow">
                 <enum>QFrame::Shadow::Raised</enum>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QPushButton" name="pushButton_12">
-               <property name="styleSheet">
-                <string notr="true">background-color: rgb(255, 255, 255);</string>
-               </property>
-               <property name="text">
-                <string>Add</string>
                </property>
               </widget>
              </item>
@@ -1752,7 +5046,7 @@ border-radius:10px;</string>
          <property name="frameShadow">
           <enum>QFrame::Shadow::Raised</enum>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_32" stretch="2,2,0,2,2,0,2,2,0,2,0,0,2,2">
+         <layout class="QVBoxLayout" name="verticalLayout_32" stretch="3,0,3,2,1,2,2,1,2,2,1,2">
           <property name="leftMargin">
            <number>12</number>
           </property>
@@ -1763,40 +5057,122 @@ border-radius:10px;</string>
            <number>20</number>
           </property>
           <item>
-           <widget class="QLabel" name="label_36">
-            <property name="font">
-             <font>
-              <bold>true</bold>
-             </font>
+           <widget class="QFrame" name="frame_5">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
             </property>
-            <property name="text">
-             <string>Name</string>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QWidget" name="widget_32" native="true">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_33">
-             <item>
-              <widget class="QLabel" name="label_42">
+            <layout class="QGridLayout" name="gridLayout_15" rowstretch="1,2">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <property name="horizontalSpacing">
+              <number>12</number>
+             </property>
+             <property name="verticalSpacing">
+              <number>6</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_10">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>First Name</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QWidget" name="widget_41" native="true">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_43">
+                <item>
+                 <widget class="QLabel" name="label_36">
+                  <property name="text">
+                   <string>First Name</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="label_42">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
+               </property>
                <property name="text">
-                <string>Sample Name Sample Name</string>
+                <string>Last Name</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QWidget" name="widget_39" native="true">
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_41">
+                <item>
+                 <widget class="QLabel" name="label_7">
+                  <property name="text">
+                   <string>Last Name</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="1" column="2">
+              <widget class="QWidget" name="widget_49" native="true">
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_50">
+                <item>
+                 <widget class="QLabel" name="label_55">
+                  <property name="text">
+                   <string>Last Name</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLabel" name="label_56">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>M.I</string>
                </property>
               </widget>
              </item>
@@ -1814,34 +5190,93 @@ border-radius: 10px;</string>
            </widget>
           </item>
           <item>
-           <widget class="QLabel" name="label_37">
-            <property name="font">
-             <font>
-              <bold>true</bold>
-             </font>
+           <widget class="QFrame" name="frame_4">
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
             </property>
-            <property name="text">
-             <string>Age</string>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QWidget" name="widget_33" native="true">
-            <property name="styleSheet">
-             <string notr="true">background-color: rgb(235, 235, 235);
+            <layout class="QGridLayout" name="gridLayout_16" rowstretch="1,2">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <property name="horizontalSpacing">
+              <number>12</number>
+             </property>
+             <property name="verticalSpacing">
+              <number>6</number>
+             </property>
+             <item row="1" column="1">
+              <widget class="QWidget" name="widget_38" native="true">
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 10px;</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_34">
-             <item>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_40">
+                <item>
+                 <widget class="QLabel" name="label_37">
+                  <property name="text">
+                   <string>XX</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="0" column="1">
               <widget class="QLabel" name="label_43">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Age</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QWidget" name="widget_50" native="true">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_39">
+                <item>
+                 <widget class="QLabel" name="label_57">
+                  <property name="text">
+                   <string>XXXX XX, XXXX</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_58">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
+               </property>
                <property name="text">
-                <string>21</string>
+                <string>Birthday</string>
                </property>
               </widget>
              </item>
@@ -1955,16 +5390,82 @@ border-radius: 10px;</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_36">
              <item>
-              <widget class="QLabel" name="label_45">
+              <widget class="QComboBox" name="comboBox_11">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
-               <property name="text">
-                <string>Sample Department Sample Department</string>
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(255, 255, 255);</string>
                </property>
+               <property name="currentText">
+                <string>Administration &amp; Management</string>
+               </property>
+               <item>
+                <property name="text">
+                 <string>Administration &amp; Management</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Finance &amp; Accounting</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Information Technology (IT)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Marketing &amp; Public Relations</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales &amp; Business Development</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Customer Support &amp; Service</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Research &amp; Development (R&amp;D)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Operations &amp; Logistics</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Legal &amp; Compliance</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Facilities &amp; Maintenance</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Manufacturing &amp; Production </string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Healthcare</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>
@@ -2000,10 +5501,289 @@ border-radius: 10px;</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_37">
              <item>
-              <widget class="QLabel" name="label_46">
-               <property name="text">
-                <string>Sample Position Sample Position</string>
+              <widget class="QComboBox" name="comboBox_10">
+               <property name="enabled">
+                <bool>false</bool>
                </property>
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(255, 255, 255);</string>
+               </property>
+               <item>
+                <property name="text">
+                 <string>Chief Executive Officer (CEO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Operating Officer (COO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Office Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Executive Assistant</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Administrative Coordinator</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Financial Officer (CFO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Financial Analyst</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Accountant</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Payroll Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Technology Officer (CTO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>IT Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Software Engineer</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Network Administrator</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>IT Support Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Marketing Officer (CMO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Marketing Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Content Strategist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Social Media Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Public Relations (PR) Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales Director</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Account Executive</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Business Development Representative</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sales Associate</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Customer Support Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Customer Service Representative</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Technical Support Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Call Center Agent</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Client Success Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>R&amp;D Director</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Product Development Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Data Scientist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Research Analyst</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Innovation Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Chief Operations Officer (COO)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Operations Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Logistics Coordinator</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Supply Chain Analyst</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Procurement Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>General Counsel</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Legal Advisor</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Compliance Officer</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Contract Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Facilities Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Maintenance Technician</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Security Officer</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Janitorial Staff</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Production Manager</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Quality Assurance (QA) Specialist</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Factory Worker</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Warehouse Associate</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Medical Director</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Nurse Practitioner</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Physician</string>
+                </property>
+               </item>
               </widget>
              </item>
             </layout>
@@ -2072,16 +5852,58 @@ border-radius:10px;</string>
          <property name="frameShadow">
           <enum>QFrame::Shadow::Raised</enum>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_38" stretch="1,1,12,2,0,1">
+         <layout class="QVBoxLayout" name="verticalLayout_38" stretch="1,2,0,1,1,12,2,0,2">
           <property name="leftMargin">
            <number>12</number>
+          </property>
+          <property name="topMargin">
+           <number>11</number>
           </property>
           <property name="rightMargin">
            <number>12</number>
           </property>
           <property name="bottomMargin">
-           <number>20</number>
+           <number>17</number>
           </property>
+          <item>
+           <widget class="QLabel" name="label_45">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Account ID</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="widget_51" native="true">
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_51">
+             <item>
+              <widget class="QLabel" name="label_46">
+               <property name="text">
+                <string>PREFIX-YEAR-NO</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_19">
+            <property name="styleSheet">
+             <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
           <item>
            <widget class="QLabel" name="label_41">
             <property name="font">
@@ -2156,6 +5978,12 @@ border-radius:10px;</string>
            <widget class="QWidget" name="widget_40" native="true">
             <property name="enabled">
              <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
             <property name="styleSheet">
              <string notr="true">background-color: rgb(235, 235, 235);

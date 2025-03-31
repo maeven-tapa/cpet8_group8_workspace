@@ -92,7 +92,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <property name="iconSize">
        <size>
@@ -452,7 +452,7 @@ border-radius: 1px;</string>
                   </column>
                   <column>
                    <property name="text">
-                    <string>Remarks</string>
+                    <string>Account ID:</string>
                    </property>
                   </column>
                  </widget>
@@ -825,6 +825,11 @@ border-radius: 1px;</string>
                   <column>
                    <property name="text">
                     <string>Name:</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Account ID</string>
                    </property>
                   </column>
                   <column>
