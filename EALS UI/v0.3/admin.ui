@@ -92,7 +92,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="iconSize">
        <size>
@@ -663,7 +663,7 @@ color: rgb(37, 19, 16);</string>
          <widget class="QWidget" name="widget_12" native="true">
           <layout class="QGridLayout" name="gridLayout_11">
            <item row="0" column="0">
-            <widget class="QLabel" name="label_16">
+            <widget class="QLabel" name="date_today">
              <property name="font">
               <font>
                <stylestrategy>NoAntialias</stylestrategy>
@@ -714,7 +714,7 @@ border-radius: 5px;</string>
         <item row="0" column="0">
          <widget class="QStackedWidget" name="admin_employee_sc_pages">
           <property name="currentIndex">
-           <number>4</number>
+           <number>8</number>
           </property>
           <widget class="QWidget" name="employee_hr_page">
            <layout class="QGridLayout" name="gridLayout_12" rowstretch="7,1">
@@ -9139,7 +9139,7 @@ border-radius:10px;</string>
                   </font>
                  </property>
                  <property name="text">
-                  <string>Employee Picture</string>
+                  <string>Human Resource Picture</string>
                  </property>
                 </widget>
                </item>
@@ -9245,7 +9245,7 @@ border-radius:10px;</string>
                   </font>
                  </property>
                  <property name="text">
-                  <string>Employee Picture</string>
+                  <string>Human Resource Picture</string>
                  </property>
                 </widget>
                </item>
@@ -11199,7 +11199,7 @@ border-radius:10px;</string>
                   </font>
                  </property>
                  <property name="text">
-                  <string>Employee Picture</string>
+                  <string>Human Resource Picture</string>
                  </property>
                 </widget>
                </item>
