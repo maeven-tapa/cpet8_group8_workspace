@@ -110,7 +110,7 @@ border-radius: 5px;</string>
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="home_page">
        <layout class="QGridLayout" name="gridLayout_4" rowstretch="2,5,2" columnstretch="3,4,3">
@@ -623,7 +623,7 @@ QProgressBar::chunk {
          </widget>
         </item>
         <item row="1" column="3">
-         <widget class="QPushButton" name="pushButton">
+         <widget class="QPushButton" name="bio1_next">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>
@@ -631,7 +631,7 @@ QProgressBar::chunk {
            </sizepolicy>
           </property>
           <property name="text">
-           <string>PushButton</string>
+           <string>Next</string>
           </property>
          </widget>
         </item>
@@ -807,7 +807,7 @@ QProgressBar::chunk {
          </widget>
         </item>
         <item row="1" column="3">
-         <widget class="QPushButton" name="pushButton_2">
+         <widget class="QPushButton" name="bio2_next">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>
@@ -815,7 +815,7 @@ QProgressBar::chunk {
            </sizepolicy>
           </property>
           <property name="text">
-           <string>PushButton</string>
+           <string>Next</string>
           </property>
          </widget>
         </item>
