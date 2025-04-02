@@ -92,7 +92,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="iconSize">
        <size>
@@ -714,7 +714,7 @@ border-radius: 5px;</string>
         <item row="0" column="0">
          <widget class="QStackedWidget" name="admin_employee_sc_pages">
           <property name="currentIndex">
-           <number>8</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="employee_hr_page">
            <layout class="QGridLayout" name="gridLayout_12" rowstretch="7,1">
@@ -815,7 +815,7 @@ border-radius: none;</string>
                   <item row="1" column="0" colspan="2">
                    <layout class="QVBoxLayout" name="verticalLayout_7">
                     <item>
-                     <widget class="QTableWidget" name="tableWidget_2">
+                     <widget class="QTableWidget" name="employee_list_tbl">
                       <property name="font">
                        <font>
                         <stylestrategy>PreferDefault</stylestrategy>
@@ -848,7 +848,7 @@ border-radius: 1px;</string>
                       </column>
                       <column>
                        <property name="text">
-                        <string>Account ID</string>
+                        <string>Account ID:</string>
                        </property>
                       </column>
                       <column>
@@ -3981,7 +3981,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QGridLayout" name="gridLayout_28" columnstretch="2,0,2,0,2">
                   <item row="0" column="0">
-                   <widget class="QLineEdit" name="lineEdit_23">
+                   <widget class="QLineEdit" name="employee_id_pref">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -4016,7 +4016,7 @@ border-radius: 10px;</string>
                    </widget>
                   </item>
                   <item row="0" column="2">
-                   <widget class="QComboBox" name="comboBox_11">
+                   <widget class="QComboBox" name="employee_id_year">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -4183,7 +4183,7 @@ border-radius: 10px;</string>
                    </widget>
                   </item>
                   <item row="0" column="4">
-                   <widget class="QComboBox" name="comboBox_12">
+                   <widget class="QComboBox" name="employee_id_no">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -5226,7 +5226,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_37">
                   <item>
-                   <widget class="QLineEdit" name="lineEdit_10">
+                   <widget class="QLineEdit" name="employee_password">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -5277,7 +5277,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_38">
                   <item>
-                   <widget class="QLineEdit" name="lineEdit_9">
+                   <widget class="QLineEdit" name="employee_confirm_password">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -5351,7 +5351,7 @@ border-radius: 10px;</string>
                      <number>0</number>
                     </property>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_4">
+                     <widget class="QRadioButton" name="employee_sched_1">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -5367,7 +5367,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_5">
+                     <widget class="QRadioButton" name="employee_sched_2">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -5383,7 +5383,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_11">
+                     <widget class="QRadioButton" name="employee_sched_3">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -5478,7 +5478,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_47">
                      <item>
-                      <widget class="QLineEdit" name="lineEdit_21">
+                      <widget class="QLineEdit" name="employee_first_name">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                          <horstretch>0</horstretch>
@@ -5516,7 +5516,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_48">
                      <item>
-                      <widget class="QLineEdit" name="lineEdit_22">
+                      <widget class="QLineEdit" name="employee_last_name">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                          <horstretch>0</horstretch>
@@ -5542,7 +5542,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_49">
                      <item>
-                      <widget class="QLineEdit" name="lineEdit_25">
+                      <widget class="QLineEdit" name="employee_mi">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                          <horstretch>0</horstretch>
@@ -5605,7 +5605,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_41">
                   <item>
-                   <widget class="QDateEdit" name="dateEdit_7">
+                   <widget class="QDateEdit" name="employee_birthday_edit">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -5671,7 +5671,7 @@ border-radius: 10px;</string>
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_8">
                     <item>
-                     <widget class="QRadioButton" name="radioButton_12">
+                     <widget class="QRadioButton" name="employee_male">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -5687,7 +5687,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_13">
+                     <widget class="QRadioButton" name="employee_female">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -5737,7 +5737,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_43">
                   <item>
-                   <widget class="QComboBox" name="comboBox_13">
+                   <widget class="QComboBox" name="employee_department_box">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -5845,7 +5845,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_50">
                   <item>
-                   <widget class="QComboBox" name="comboBox_14">
+                   <widget class="QComboBox" name="employee_position_box">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>

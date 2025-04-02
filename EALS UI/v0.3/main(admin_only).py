@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QDialog, QWidget, QStackedWidget, QTabWidget, QMessageBox
+from PySide6.QtWidgets import QApplication, QMainWindow, QDialog, QWidget, QStackedWidget, QTabWidget, QMessageBox, QTableWidgetItem
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt
 from datetime import datetime
@@ -104,6 +104,7 @@ class Admin:
         self.admin_ui = self.loader.load("admin.ui")
         self.admin_ui.home_tabs.setCurrentWidget(self.admin_ui.admin_dashboard)
         self.admin_ui.admin_employee_sc_pages.setCurrentWidget(self.admin_ui.employee_hr_page)
+        self.employees = []
 
         self.admin_ui.admin_logout_btn.clicked.connect(self.goto_home)
 
@@ -114,11 +115,11 @@ class Admin:
 
         self.admin_ui.employee_enroll_btn.clicked.connect(self.goto_employee_enroll)
         self.admin_ui.employee_enroll_cancel.clicked.connect(self.goto_employee_hr)
-        self.admin_ui.employee_enroll_1.clicked.connect(self.goto_employee_enroll_2)
+        self.admin_ui.employee_enroll_1.clicked.connect(self.goto_employee_enroll_2_with_validation)
         self.admin_ui.employee_enroll_back1.clicked.connect(self.goto_employee_enroll)
         self.admin_ui.employee_enroll_2.clicked.connect(self.goto_employee_enroll_3)
         self.admin_ui.employee_enroll_back2.clicked.connect(self.goto_employee_enroll_2)
-        self.admin_ui.employee_enroll_3.clicked.connect(self.goto_employee_hr)
+        self.admin_ui.employee_enroll_3.clicked.connect(self.finalize_employee_enrollment)
 
         self.admin_ui.employee_view_btn.clicked.connect(self.goto_employee_view)
         self.admin_ui.employee_view_back.clicked.connect(self.goto_employee_hr)
@@ -151,6 +152,7 @@ class Admin:
     def goto_employee_hr(self):
         employee_hr_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_hr_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_hr_page)
+        self.load_employee_table()
 
     def goto_employee_edit(self):
         employee_edit_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_edit_page)
@@ -184,6 +186,158 @@ class Admin:
         hr_view_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.hr_view_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(hr_view_page)
 
+
+    def validate_employee_data(self):
+        first_name = self.admin_ui.employee_first_name.text().strip()
+        last_name = self.admin_ui.employee_last_name.text().strip()
+        mi = self.admin_ui.employee_mi.text().strip()
+        id_pref = self.admin_ui.employee_id_pref.text().strip()
+        id_year = self.admin_ui.employee_id_year.currentText()
+        id_no = self.admin_ui.employee_id_no.currentText()
+        password = self.admin_ui.employee_password.text()
+        confirm_password = self.admin_ui.employee_confirm_password.text()
+        
+        gender = None
+        if self.admin_ui.employee_male.isChecked():
+            gender = "Male"
+        elif self.admin_ui.employee_female.isChecked():
+            gender = "Female"
+        
+        department = self.admin_ui.employee_department_box.currentText()
+        position = self.admin_ui.employee_position_box.currentText()
+        
+        schedule = None
+        if self.admin_ui.employee_sched_1.isChecked():
+            schedule = "6am to 2pm"
+        elif self.admin_ui.employee_sched_2.isChecked():
+            schedule = "2pm to 10pm"
+        elif self.admin_ui.employee_sched_3.isChecked():
+            schedule = "10pm to 6am"
+        
+        missing_fields = []
+        
+        if not first_name:
+            missing_fields.append("First Name")
+        if not last_name:
+            missing_fields.append("Last Name")
+        if not id_pref:
+            missing_fields.append("ID Prefix")
+        if not password:
+            missing_fields.append("Password")
+        if not confirm_password:
+            missing_fields.append("Confirm Password")
+        if not gender:
+            missing_fields.append("Gender")
+        if not schedule:
+            missing_fields.append("Schedule")
+        
+        if password and confirm_password and password != confirm_password:
+            return False, "Password and Confirm Password do not match"
+        
+        if missing_fields:
+            return False, f"Please fill in the following required fields: {', '.join(missing_fields)}"
+        
+        employee_data = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "middle_initial": mi,
+            "employee_id": f"{id_pref}-{id_year}-{id_no}",
+            "password": password,
+            "gender": gender,
+            "birthday": self.admin_ui.employee_birthday_edit.date().toString("yyyy-MM-dd"),
+            "department": department,
+            "position": position,
+            "schedule": schedule
+        }
+        
+        return True, employee_data
+
+    def load_employee_table(self):
+        self.admin_ui.employee_list_tbl.setRowCount(0)
+
+        if hasattr(self, 'employees') and self.employees:
+            for employee in self.employees:
+                self.add_employee_to_table(employee)
+
+    def add_employee_to_table(self, employee_data):
+        row_position = self.admin_ui.employee_list_tbl.rowCount()
+        self.admin_ui.employee_list_tbl.insertRow(row_position)
+        middle_initial = f" {employee_data['middle_initial']}." if employee_data['middle_initial'] else ""
+        full_name = f"{employee_data['last_name']}, {employee_data['first_name']}{middle_initial}"
+        dept_pos = f"{employee_data['department']} / {employee_data['position']}"
+        
+        name_item = QTableWidgetItem(full_name)
+        id_item = QTableWidgetItem(employee_data['employee_id'])
+        dept_pos_item = QTableWidgetItem(dept_pos)
+        status_item = QTableWidgetItem("Active")  # New employees are active by default
+        
+        name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
+        id_item.setFlags(id_item.flags() & ~Qt.ItemIsEditable)
+        dept_pos_item.setFlags(dept_pos_item.flags() & ~Qt.ItemIsEditable)
+        status_item.setFlags(status_item.flags() & ~Qt.ItemIsEditable)
+        
+        self.admin_ui.employee_list_tbl.setItem(row_position, 0, name_item)
+        self.admin_ui.employee_list_tbl.setItem(row_position, 1, id_item)
+        self.admin_ui.employee_list_tbl.setItem(row_position, 2, dept_pos_item)
+        self.admin_ui.employee_list_tbl.setItem(row_position, 3, status_item)
+        
+        self.admin_ui.employee_list_tbl.resizeColumnsToContents()
+
+    def save_employee_data(self, employee_data):
+        if not hasattr(self, 'employees'):
+            self.employees = []
+
+        self.employees.append(employee_data)
+        
+        print("Saving employee data:")
+        for key, value in employee_data.items():
+            print(f"{key}: {value}")
+        
+        if self.admin_ui.admin_employee_sc_pages.currentWidget() == self.admin_ui.employee_hr_page:
+            self.add_employee_to_table(employee_data)
+        
+        return True
+
+    def goto_employee_enroll_2_with_validation(self):
+        valid, result = self.validate_employee_data()
+        if valid:
+            self.current_employee_data = result
+            self.goto_employee_enroll_2()
+        else:
+            error_msg = QMessageBox()
+            error_msg.setIcon(QMessageBox.Critical)
+            error_msg.setText("Validation Error")
+            error_msg.setInformativeText(result)
+            error_msg.setWindowTitle("Enrollment Error")
+            error_msg.exec()
+
+    def finalize_employee_enrollment(self):
+        if hasattr(self, 'current_employee_data'):
+            success = self.save_employee_data(self.current_employee_data)
+            
+            if success:
+                success_msg = QMessageBox()
+                success_msg.setIcon(QMessageBox.Information)
+                success_msg.setText("Employee Enrolled Successfully")
+                success_msg.setInformativeText(f"Employee {self.current_employee_data['first_name']} {self.current_employee_data['last_name']} has been enrolled.")
+                success_msg.setWindowTitle("Enrollment Success")
+                success_msg.exec()
+                self.goto_employee_hr()
+                self.load_employee_table()
+            else:
+                error_msg = QMessageBox()
+                error_msg.setIcon(QMessageBox.Critical)
+                error_msg.setText("Enrollment Error")
+                error_msg.setInformativeText("Failed to save employee data. Please try again.")
+                error_msg.setWindowTitle("Enrollment Error")
+                error_msg.exec()
+        else:
+            error_msg = QMessageBox()
+            error_msg.setIcon(QMessageBox.Critical)
+            error_msg.setText("Process Error")
+            error_msg.setInformativeText("No employee data found. Please restart the enrollment process.")
+            error_msg.setWindowTitle("Enrollment Error")
+            error_msg.exec()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
