@@ -92,7 +92,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="iconSize">
        <size>
@@ -189,7 +189,7 @@ border-radius:10px;</string>
               </font>
              </property>
              <property name="text">
-              <string>Looged Today:</string>
+              <string>Logged Today:</string>
              </property>
             </widget>
            </item>
@@ -717,8 +717,8 @@ border-radius: 5px;</string>
            <number>0</number>
           </property>
           <widget class="QWidget" name="employee_hr_page">
-           <layout class="QGridLayout" name="gridLayout_12" rowstretch="7,1">
-            <item row="0" column="0">
+           <layout class="QGridLayout" name="gridLayout_47" rowstretch="10,1" columnstretch="1,0,0,1">
+            <item row="0" column="0" colspan="2">
              <widget class="QFrame" name="frame_4">
               <property name="styleSheet">
                <string notr="true">background-color: rgb(249, 249, 249);
@@ -868,22 +868,10 @@ border-radius: 1px;</string>
                  </layout>
                 </widget>
                </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="label_14">
-                 <property name="font">
-                  <font>
-                   <stylestrategy>NoAntialias</stylestrategy>
-                  </font>
-                 </property>
-                 <property name="text">
-                  <string>Note: Select employee then pressed the buttons on the left side to edit, view.</string>
-                 </property>
-                </widget>
-               </item>
               </layout>
              </widget>
             </item>
-            <item row="0" column="1" rowspan="2">
+            <item row="0" column="2">
              <widget class="Line" name="line_4">
               <property name="styleSheet">
                <string notr="true">border: 2px solid rgb(249, 249, 249)</string>
@@ -893,7 +881,7 @@ border-radius: 1px;</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="2">
+            <item row="0" column="3">
              <widget class="QFrame" name="frame_3">
               <property name="styleSheet">
                <string notr="true">background-color: rgb(249, 249, 249);
@@ -1026,22 +1014,33 @@ border-radius: 1px;</string>
                  </layout>
                 </widget>
                </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="label_12">
-                 <property name="font">
-                  <font>
-                   <stylestrategy>NoAntialias</stylestrategy>
-                  </font>
-                 </property>
+              </layout>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QFrame" name="frame_60">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(249, 249, 249);
+border-radius:10px;</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_12">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_16">
                  <property name="text">
-                  <string>Note: Select HR then pressed the buttons on the left side to edit, view.</string>
+                  <string>Note: Select employee then pressed the buttons on the left side to edit, view.</string>
                  </property>
                 </widget>
                </item>
               </layout>
              </widget>
             </item>
-            <item row="1" column="0">
+            <item row="1" column="1" colspan="3">
              <widget class="QWidget" name="widget_10" native="true">
               <property name="styleSheet">
                <string notr="true">background-color: rgb(249, 249, 249);
@@ -1107,132 +1106,8 @@ border-radius: 5px;</string>
                    </property>
                   </widget>
                  </item>
-                </layout>
-               </item>
-               <item>
-                <widget class="Line" name="line">
-                 <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(228, 228, 228)</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Orientation::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <layout class="QVBoxLayout" name="verticalLayout_9">
                  <item>
                   <widget class="QPushButton" name="employee_view_btn">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <bold>true</bold>
-                     <stylestrategy>NoAntialias</stylestrategy>
-                    </font>
-                   </property>
-                   <property name="cursor">
-                    <cursorShape>PointingHandCursor</cursorShape>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">background-color: rgb(255, 218, 167);
-color: rgb(235, 68, 32);
-    font-weight: bold;
-	border-radius: 5px;</string>
-                   </property>
-                   <property name="text">
-                    <string>View</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item row="1" column="2">
-             <widget class="QWidget" name="widget_11" native="true">
-              <property name="styleSheet">
-               <string notr="true">background-color: rgb(249, 249, 249);
-border-radius:10px;</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_10">
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_3">
-                 <item>
-                  <widget class="QPushButton" name="hr_edit_btn">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <bold>true</bold>
-                     <stylestrategy>NoAntialias</stylestrategy>
-                    </font>
-                   </property>
-                   <property name="cursor">
-                    <cursorShape>PointingHandCursor</cursorShape>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">background-color: rgb(235, 230, 245);
-color: rgb(166, 152, 216);
-border-radius: 5px;</string>
-                   </property>
-                   <property name="text">
-                    <string>Edit</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="hr_add_btn">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <bold>true</bold>
-                     <stylestrategy>NoAntialias</stylestrategy>
-                    </font>
-                   </property>
-                   <property name="cursor">
-                    <cursorShape>PointingHandCursor</cursorShape>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">background-color: rgb(255, 255, 181);
-color: rgb(255, 170, 0);
-border-radius: 5px;</string>
-                   </property>
-                   <property name="text">
-                    <string>Add</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <widget class="Line" name="line_2">
-                 <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(228, 228, 228)</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Orientation::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <layout class="QVBoxLayout" name="verticalLayout_11">
-                 <item>
-                  <widget class="QPushButton" name="hr_view_btn">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                      <horstretch>0</horstretch>
@@ -13715,7 +13590,7 @@ border-radius: 5px;</string>
               </font>
              </property>
              <property name="text">
-              <string>Retention Configuration</string>
+              <string>Archive Configuration</string>
              </property>
             </widget>
            </item>
