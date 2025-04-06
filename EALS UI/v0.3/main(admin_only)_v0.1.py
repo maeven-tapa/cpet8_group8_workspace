@@ -60,7 +60,8 @@ class ChangePassword:
         self.change_pass_ui.change_pass_note.setText("Please enter your current password and set a new one.")
         self.change_pass_ui.change_pass_note.setStyleSheet("color: black")
         self.change_pass_ui.admin_change_pass_btn.clicked.connect(self.validate_and_change_password)
-        self.change_pass_ui.setWindowFlags(self.change_pass_ui.windowFlags() | Qt.WindowStaysOnTopHint)
+        self.change_pass_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+
 
     def validate_and_change_password(self):
         new_password = self.change_pass_ui.change_pass_np_box.text()
@@ -124,17 +125,9 @@ class Admin:
         self.admin_ui.employee_view_btn.clicked.connect(self.goto_employee_view)
         self.admin_ui.employee_view_back.clicked.connect(self.goto_employee_hr)
 
-        self.admin_ui.hr_edit_btn.clicked.connect(self.goto_hr_edit)
-        self.admin_ui.hr_edit_back.clicked.connect(self.goto_employee_hr)
-        self.admin_ui.hr_edit_deactivate.clicked.connect(self.goto_employee_hr)
-        self.admin_ui.hr_edit_save.clicked.connect(self.goto_employee_hr)
+        self.admin_ui.is_hr_yes.toggled.connect(self.toggle_hr_fields)
+        self.admin_ui.is_hr_no.toggled.connect(self.toggle_hr_fields)
 
-        self.admin_ui.hr_add_btn.clicked.connect(self.goto_hr_add)
-        self.admin_ui.hr_add_cancel.clicked.connect(self.goto_employee_hr)
-        self.admin_ui.hr_add_1.clicked.connect(self.goto_employee_enroll_2)
-
-        self.admin_ui.hr_view_btn.clicked.connect(self.goto_hr_view)
-        self.admin_ui.hr_view_back.clicked.connect(self.goto_employee_hr)
         
         self.update_date_today()
 
@@ -174,17 +167,14 @@ class Admin:
         employee_view_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_view_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_view_page)
 
-    def goto_hr_edit(self):
-        hr_edit_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.hr_edit_page)
-        self.admin_ui.admin_employee_sc_pages.setCurrentIndex(hr_edit_page)
-
-    def goto_hr_add(self):
-        hr_add_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.hr_add_page)
-        self.admin_ui.admin_employee_sc_pages.setCurrentIndex(hr_add_page)
-
     def goto_hr_view(self):
         hr_view_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.hr_view_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(hr_view_page)
+
+    def toggle_hr_fields(self):
+        is_hr = self.admin_ui.is_hr_yes.isChecked()
+        self.admin_ui.employee_department_box.setEnabled(not is_hr)
+        self.admin_ui.employee_position_box.setEnabled(not is_hr)
 
 
     def validate_employee_data(self):
@@ -203,8 +193,9 @@ class Admin:
         elif self.admin_ui.employee_female.isChecked():
             gender = "Female"
         
-        department = self.admin_ui.employee_department_box.currentText()
-        position = self.admin_ui.employee_position_box.currentText()
+        department = self.admin_ui.employee_department_box.currentText() if self.admin_ui.is_hr_no.isChecked() else ""
+        position = self.admin_ui.employee_position_box.currentText() if self.admin_ui.is_hr_no.isChecked() else ""
+
         
         schedule = None
         if self.admin_ui.employee_sched_1.isChecked():
@@ -247,7 +238,8 @@ class Admin:
             "birthday": self.admin_ui.employee_birthday_edit.date().toString("yyyy-MM-dd"),
             "department": department,
             "position": position,
-            "schedule": schedule
+            "schedule": schedule,
+            "is_hr": self.admin_ui.is_hr_yes.isChecked()
         }
         
         return True, employee_data
@@ -282,6 +274,27 @@ class Admin:
         self.admin_ui.employee_list_tbl.setItem(row_position, 3, status_item)
         
         self.admin_ui.employee_list_tbl.resizeColumnsToContents()
+
+    def add_hr_to_table(self, employee_data):
+        row_position = self.admin_ui.hr_list_tbl.rowCount()
+        self.admin_ui.hr_list_tbl.insertRow(row_position)
+
+        middle_initial = f" {employee_data['middle_initial']}." if employee_data['middle_initial'] else ""
+        full_name = f"{employee_data['last_name']}, {employee_data['first_name']}{middle_initial}"
+        id_item = employee_data['employee_id']
+        
+        name_item = QTableWidgetItem(full_name)
+        id_item = QTableWidgetItem(id_item)
+        status_item = QTableWidgetItem("Active")
+
+        for item in [name_item, id_item, status_item]:
+            item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+
+        self.admin_ui.hr_list_tbl.setItem(row_position, 0, name_item)
+        self.admin_ui.hr_list_tbl.setItem(row_position, 1, id_item)
+        self.admin_ui.hr_list_tbl.setItem(row_position, 2, status_item)
+
+        self.admin_ui.hr_list_tbl.resizeColumnsToContents()
 
     def save_employee_data(self, employee_data):
         if not hasattr(self, 'employees'):
@@ -322,8 +335,12 @@ class Admin:
                 success_msg.setInformativeText(f"Employee {self.current_employee_data['first_name']} {self.current_employee_data['last_name']} has been enrolled.")
                 success_msg.setWindowTitle("Enrollment Success")
                 success_msg.exec()
-                self.goto_employee_hr()
-                self.load_employee_table()
+                if self.current_employee_data.get("is_hr"):
+                    self.add_hr_to_table(self.current_employee_data)
+                    self.goto_hr_view()
+                else:
+                    self.goto_employee_hr()
+                    self.load_employee_table()
             else:
                 error_msg = QMessageBox()
                 error_msg.setIcon(QMessageBox.Critical)
@@ -338,6 +355,8 @@ class Admin:
             error_msg.setInformativeText("No employee data found. Please restart the enrollment process.")
             error_msg.setWindowTitle("Enrollment Error")
             error_msg.exec()
+
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

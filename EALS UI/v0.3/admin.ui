@@ -714,7 +714,7 @@ border-radius: 5px;</string>
         <item row="0" column="0">
          <widget class="QStackedWidget" name="admin_employee_sc_pages">
           <property name="currentIndex">
-           <number>4</number>
+           <number>6</number>
           </property>
           <widget class="QWidget" name="employee_hr_page">
            <layout class="QGridLayout" name="gridLayout_40" rowstretch="12,1">
@@ -966,7 +966,7 @@ border-radius: none;</string>
                   <item row="1" column="0" colspan="2">
                    <layout class="QVBoxLayout" name="verticalLayout_6">
                     <item>
-                     <widget class="QTableWidget" name="tableWidget_3">
+                     <widget class="QTableWidget" name="hr_list_tbl">
                       <property name="styleSheet">
                        <string notr="true">background-color: rgb(255, 255, 255);
 border: 1px solid rgb(249, 249, 249);
@@ -990,6 +990,11 @@ border-radius: 1px;</string>
                       <column>
                        <property name="text">
                         <string>Name:</string>
+                       </property>
+                      </column>
+                      <column>
+                       <property name="text">
+                        <string>Account ID:</string>
                        </property>
                       </column>
                       <column>
@@ -1268,7 +1273,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QGridLayout" name="gridLayout_16" columnstretch="2,0,2,0,2">
                   <item row="0" column="0">
-                   <widget class="QLineEdit" name="lineEdit_16">
+                   <widget class="QLineEdit" name="edit_employee_id_pref">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -1303,7 +1308,7 @@ border-radius: 10px;</string>
                    </widget>
                   </item>
                   <item row="0" column="2">
-                   <widget class="QComboBox" name="comboBox_4">
+                   <widget class="QComboBox" name="edit_employee_id_year">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -1470,7 +1475,7 @@ border-radius: 10px;</string>
                    </widget>
                   </item>
                   <item row="0" column="4">
-                   <widget class="QComboBox" name="comboBox_9">
+                   <widget class="QComboBox" name="edit_employee_id_no">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -2513,7 +2518,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_28">
                   <item>
-                   <widget class="QLineEdit" name="lineEdit_17">
+                   <widget class="QLineEdit" name="edit_employee_password">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -2564,7 +2569,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_29">
                   <item>
-                   <widget class="QLineEdit" name="lineEdit_18">
+                   <widget class="QLineEdit" name="edit_employee_confirm_password">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                       <horstretch>0</horstretch>
@@ -2623,7 +2628,7 @@ border-radius: 10px;</string>
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_7">
                     <item>
-                     <widget class="QRadioButton" name="radioButton_8">
+                     <widget class="QRadioButton" name="edit_employee_sched_1">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -2639,7 +2644,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_9">
+                     <widget class="QRadioButton" name="edit_employee_sched_2">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -2655,7 +2660,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_10">
+                     <widget class="QRadioButton" name="edit_employee_sched_3">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -2744,7 +2749,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_64">
                      <item>
-                      <widget class="QLineEdit" name="employee_first_name_2">
+                      <widget class="QLineEdit" name="edit_employee_first_name">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                          <horstretch>0</horstretch>
@@ -2782,7 +2787,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_65">
                      <item>
-                      <widget class="QLineEdit" name="employee_last_name_2">
+                      <widget class="QLineEdit" name="edit_employee_last_name">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                          <horstretch>0</horstretch>
@@ -2808,7 +2813,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_66">
                      <item>
-                      <widget class="QLineEdit" name="employee_mi_2">
+                      <widget class="QLineEdit" name="edit_employee_mi">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                          <horstretch>0</horstretch>
@@ -2871,7 +2876,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_44">
                   <item>
-                   <widget class="QDateEdit" name="employee_birthday_edit_2">
+                   <widget class="QDateEdit" name="edit_employee_birthday_edit">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -2937,7 +2942,7 @@ border-radius: 10px;</string>
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_12">
                     <item>
-                     <widget class="QRadioButton" name="employee_male_2">
+                     <widget class="QRadioButton" name="edit_employee_male">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -2953,7 +2958,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="employee_female_2">
+                     <widget class="QRadioButton" name="edit_employee_female">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -2991,7 +2996,7 @@ border-radius: 10px;</string>
                   </font>
                  </property>
                  <property name="text">
-                  <string>Job Details</string>
+                  <string>Job Details:</string>
                  </property>
                 </widget>
                </item>
@@ -3029,7 +3034,7 @@ border-radius: 10px;</string>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_46">
                        <item>
-                        <widget class="QComboBox" name="employee_department_box_2">
+                        <widget class="QComboBox" name="edit_employee_department_box">
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                            <horstretch>0</horstretch>
@@ -3115,7 +3120,7 @@ border-radius: 10px;</string>
                        </font>
                       </property>
                       <property name="text">
-                       <string>Department:</string>
+                       <string>Department</string>
                       </property>
                      </widget>
                     </item>
@@ -3143,7 +3148,7 @@ border-radius: 10px;</string>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_67">
                        <item>
-                        <widget class="QComboBox" name="employee_position_box_2">
+                        <widget class="QComboBox" name="edit_employee_position_box">
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                            <horstretch>0</horstretch>
@@ -3475,7 +3480,7 @@ border-radius: 10px;</string>
                           <number>0</number>
                          </property>
                          <item>
-                          <widget class="QRadioButton" name="is_hr_yes_2">
+                          <widget class="QRadioButton" name="edit_is_hr_yes">
                            <property name="sizePolicy">
                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                              <horstretch>0</horstretch>
@@ -3491,7 +3496,7 @@ border-radius: 10px;</string>
                           </widget>
                          </item>
                          <item>
-                          <widget class="QRadioButton" name="is_hr_no_2">
+                          <widget class="QRadioButton" name="edit_is_hr_no">
                            <property name="sizePolicy">
                             <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                              <horstretch>0</horstretch>
@@ -3563,7 +3568,7 @@ border: none;</string>
 color: rgb(250, 163, 64);</string>
               </property>
               <property name="text">
-               <string>Cancel</string>
+               <string>Back</string>
               </property>
              </widget>
             </item>
@@ -3818,7 +3823,7 @@ color: rgb(250, 163, 64);</string>
            </layout>
           </widget>
           <widget class="QWidget" name="hr_view_page">
-           <layout class="QGridLayout" name="gridLayout_41" rowstretch="5,8,2,1" columnstretch="2,1,1">
+           <layout class="QGridLayout" name="gridLayout_41" rowstretch="5,8,3,1" columnstretch="2,1,1" rowminimumheight="0,0,0,0">
             <item row="0" column="0">
              <widget class="QFrame" name="frame_52">
               <property name="styleSheet">
@@ -3935,1227 +3940,12 @@ border-radius:10px;</string>
                   <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 10px;</string>
                  </property>
-                 <layout class="QGridLayout" name="gridLayout_45" columnstretch="2,0,2,0,2">
+                 <layout class="QGridLayout" name="gridLayout_45" columnstretch="0">
                   <item row="0" column="0">
-                   <widget class="QLineEdit" name="lineEdit_41">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">background-color: rgb(255, 255, 255);</string>
-                    </property>
+                   <widget class="QLabel" name="view_hr_accountid">
                     <property name="text">
-                     <string/>
+                     <string>PREFIX-YEAR-NO</string>
                     </property>
-                    <property name="placeholderText">
-                     <string>Prefix</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="1">
-                   <widget class="QLabel" name="label_127">
-                    <property name="font">
-                     <font>
-                      <pointsize>16</pointsize>
-                      <bold>true</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>-</string>
-                    </property>
-                    <property name="alignment">
-                     <set>Qt::AlignmentFlag::AlignCenter</set>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="2">
-                   <widget class="QComboBox" name="comboBox_24">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">background-color: rgb(255, 255, 255);</string>
-                    </property>
-                    <property name="editable">
-                     <bool>false</bool>
-                    </property>
-                    <item>
-                     <property name="text">
-                      <string>24</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>25</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>26</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>27</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>28</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>29</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>30</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>31</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>32</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>33</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>34</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>35</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>36</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>37</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>38</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>39</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>40</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>41</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>42</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>43</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>44</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>45</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>46</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>47</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>48</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>49</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>50</string>
-                     </property>
-                    </item>
-                   </widget>
-                  </item>
-                  <item row="0" column="3">
-                   <widget class="QLabel" name="label_128">
-                    <property name="font">
-                     <font>
-                      <pointsize>16</pointsize>
-                      <bold>true</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>-</string>
-                    </property>
-                    <property name="alignment">
-                     <set>Qt::AlignmentFlag::AlignCenter</set>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="4">
-                   <widget class="QComboBox" name="comboBox_25">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">background-color: rgb(255, 255, 255);</string>
-                    </property>
-                    <property name="editable">
-                     <bool>false</bool>
-                    </property>
-                    <item>
-                     <property name="text">
-                      <string>0001</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0001</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0002</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0003</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0004</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0005</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0006</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0007</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0008</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0009</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0010</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0011</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0012</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0013</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0014</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0015</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0016</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0017</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0018</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0019</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0020</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0021</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0023</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0024</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0025</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0026</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0027</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0028</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0029</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0030</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0031</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0032</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0033</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0034</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0035</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0036</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0038</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0039</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0040</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0041</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0042</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0043</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0044</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0045</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0046</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0047</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0048</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0049</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0050</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0051</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0052</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0053</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0054</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0055</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0056</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0057</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0058</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0059</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0060</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0061</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0062</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0063</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0064</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0065</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0066</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0067</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0068</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0069</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0070</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0071</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0072</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0073</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0074</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0075</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0076</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0077</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0078</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0079</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0080</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0081</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0082</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0083</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0084</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0085</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0086</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0087</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0088</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0089</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0090</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0091</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0092</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0093</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0094</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0095</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0096</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0097</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0098</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0099</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0100</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0101</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0102</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0103</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0104</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0105</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0106</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0107</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0108</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0109</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0110</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0111</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0112</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0113</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0114</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0115</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0116</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0117</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0118</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0119</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0120</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0121</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0122</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0123</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0124</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0125</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0126</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0127</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0128</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0129</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0130</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0131</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0132</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0133</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0134</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0135</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0136</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0137</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0138</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0139</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0140</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0141</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0142</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0143</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0144</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0145</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0146</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0147</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0148</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0149</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0150</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0151</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0152</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0153</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0154</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0155</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0156</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0157</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0158</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0159</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0160</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0161</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0162</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0163</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0164</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0165</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0166</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0167</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0168</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0169</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0170</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0171</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0172</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0173</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0174</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0175</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0176</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0177</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0178</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0179</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0180</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0181</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0182</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0183</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0184</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0185</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0186</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0187</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0188</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0189</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0190</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0191</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0192</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0193</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0194</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0195</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0196</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0197</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0198</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0199</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>0200</string>
-                     </property>
-                    </item>
                    </widget>
                   </item>
                  </layout>
@@ -5270,7 +4060,7 @@ border-radius: 10px;</string>
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_16">
                     <item>
-                     <widget class="QRadioButton" name="radioButton_31">
+                     <widget class="QRadioButton" name="view_hr_sched_1">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -5286,7 +4076,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_32">
+                     <widget class="QRadioButton" name="view_hr_sched_2">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -5302,7 +4092,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_33">
+                     <widget class="QRadioButton" name="view_hr_sched_3">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -5343,20 +4133,8 @@ border-radius:10px;</string>
               <property name="frameShadow">
                <enum>QFrame::Shadow::Raised</enum>
               </property>
-              <layout class="QVBoxLayout" name="verticalLayout_87" stretch="3,0,1,2,0,1,2">
-               <property name="leftMargin">
-                <number>12</number>
-               </property>
-               <property name="topMargin">
-                <number>16</number>
-               </property>
-               <property name="rightMargin">
-                <number>12</number>
-               </property>
-               <property name="bottomMargin">
-                <number>20</number>
-               </property>
-               <item>
+              <layout class="QGridLayout" name="gridLayout_42" rowstretch="3,0,1,2,0,1,2">
+               <item row="0" column="0" colspan="2">
                 <widget class="QFrame" name="frame_56">
                  <property name="frameShape">
                   <enum>QFrame::Shape::StyledPanel</enum>
@@ -5364,7 +4142,7 @@ border-radius:10px;</string>
                  <property name="frameShadow">
                   <enum>QFrame::Shadow::Raised</enum>
                  </property>
-                 <layout class="QGridLayout" name="gridLayout_44">
+                 <layout class="QGridLayout" name="gridLayout_44" rowstretch="1,2">
                   <property name="leftMargin">
                    <number>0</number>
                   </property>
@@ -5403,7 +4181,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_88">
                      <item>
-                      <widget class="QLineEdit" name="lineEdit_38">
+                      <widget class="QLineEdit" name="view_hr_first_name">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                          <horstretch>0</horstretch>
@@ -5441,7 +4219,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_89">
                      <item>
-                      <widget class="QLineEdit" name="lineEdit_39">
+                      <widget class="QLineEdit" name="view_hr_last_name">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                          <horstretch>0</horstretch>
@@ -5467,7 +4245,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_90">
                      <item>
-                      <widget class="QLineEdit" name="lineEdit_40">
+                      <widget class="QLineEdit" name="view_hr_mi">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                          <horstretch>0</horstretch>
@@ -5500,7 +4278,7 @@ border-radius: 10px;</string>
                  </layout>
                 </widget>
                </item>
-               <item>
+               <item row="1" column="0" colspan="2">
                 <widget class="Line" name="line_39">
                  <property name="styleSheet">
                   <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
@@ -5510,8 +4288,8 @@ border-radius: 10px;</string>
                  </property>
                 </widget>
                </item>
-               <item>
-                <widget class="QLabel" name="label_124">
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_92">
                  <property name="font">
                   <font>
                    <bold>true</bold>
@@ -5522,43 +4300,59 @@ border-radius: 10px;</string>
                  </property>
                 </widget>
                </item>
-               <item>
-                <widget class="QWidget" name="widget_82" native="true">
+               <item row="2" column="1">
+                <widget class="QLabel" name="label_86">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Age</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QWidget" name="widget_65" native="true">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="styleSheet">
                   <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 10px;</string>
                  </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_91">
+                 <layout class="QVBoxLayout" name="verticalLayout_70">
                   <item>
-                   <widget class="QDateEdit" name="dateEdit_10">
-                    <property name="enabled">
-                     <bool>false</bool>
-                    </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">background-color: rgb(255, 255, 255);</string>
-                    </property>
-                    <property name="calendarPopup">
-                     <bool>true</bool>
-                    </property>
-                    <property name="date">
-                     <date>
-                      <year>2025</year>
-                      <month>3</month>
-                      <day>21</day>
-                     </date>
+                   <widget class="QLabel" name="view_hr_birthday">
+                    <property name="text">
+                     <string>XXXX XX, XXXX</string>
                     </property>
                    </widget>
                   </item>
                  </layout>
                 </widget>
                </item>
-               <item>
+               <item row="3" column="1">
+                <widget class="QWidget" name="view_employee_age_2" native="true">
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_69">
+                  <item>
+                   <widget class="QLabel" name="view_hr_age">
+                    <property name="text">
+                     <string>XX</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item row="4" column="0" colspan="2">
                 <widget class="Line" name="line_40">
                  <property name="styleSheet">
                   <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
@@ -5568,7 +4362,7 @@ border-radius: 10px;</string>
                  </property>
                 </widget>
                </item>
-               <item>
+               <item row="5" column="0">
                 <widget class="QLabel" name="label_125">
                  <property name="font">
                   <font>
@@ -5576,11 +4370,11 @@ border-radius: 10px;</string>
                   </font>
                  </property>
                  <property name="text">
-                  <string>Gender</string>
+                  <string>Sex</string>
                  </property>
                 </widget>
                </item>
-               <item>
+               <item row="6" column="0" colspan="2">
                 <widget class="QWidget" name="widget_83" native="true">
                  <property name="enabled">
                   <bool>false</bool>
@@ -5599,7 +4393,7 @@ border-radius: 10px;</string>
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_15">
                     <item>
-                     <widget class="QRadioButton" name="radioButton_29">
+                     <widget class="QRadioButton" name="view_hr_male">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -5615,7 +4409,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_30">
+                     <widget class="QRadioButton" name="view_hr_female">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -8276,7 +7070,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_62">
                   <item>
-                   <widget class="QLabel" name="label_92">
+                   <widget class="QLabel" name="view_employee_accountid">
                     <property name="text">
                      <string>PREFIX-YEAR-NO</string>
                     </property>
@@ -8390,7 +7184,7 @@ border-radius: 10px;</string>
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_10">
                     <item>
-                     <widget class="QRadioButton" name="radioButton_16">
+                     <widget class="QRadioButton" name="view_employee_sched_1">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -8406,7 +7200,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_17">
+                     <widget class="QRadioButton" name="view_employee_sched_2">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -8422,7 +7216,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_18">
+                     <widget class="QRadioButton" name="view_employee_sched_3">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -8520,7 +7314,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_53">
                      <item>
-                      <widget class="QLabel" name="label_79">
+                      <widget class="QLabel" name="view_employee_first_name">
                        <property name="text">
                         <string>First Name</string>
                        </property>
@@ -8549,7 +7343,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_54">
                      <item>
-                      <widget class="QLabel" name="label_81">
+                      <widget class="QLabel" name="view_employee_last_name">
                        <property name="text">
                         <string>Last Name</string>
                        </property>
@@ -8566,9 +7360,9 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_55">
                      <item>
-                      <widget class="QLabel" name="label_82">
+                      <widget class="QLabel" name="view_employee_mi">
                        <property name="text">
-                        <string>Last Name</string>
+                        <string>M.I</string>
                        </property>
                       </widget>
                      </item>
@@ -8628,7 +7422,7 @@ border-radius: 10px;</string>
                    <number>6</number>
                   </property>
                   <item row="1" column="1">
-                   <widget class="QWidget" name="widget_52" native="true">
+                   <widget class="QWidget" name="view_employee_age" native="true">
                     <property name="styleSheet">
                      <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 10px;</string>
@@ -8670,7 +7464,7 @@ border-radius: 10px;</string>
                     </property>
                     <layout class="QVBoxLayout" name="verticalLayout_57">
                      <item>
-                      <widget class="QLabel" name="label_86">
+                      <widget class="QLabel" name="view_employee_birthday">
                        <property name="text">
                         <string>XXXX XX, XXXX</string>
                        </property>
@@ -8712,7 +7506,7 @@ border-radius: 10px;</string>
                   </font>
                  </property>
                  <property name="text">
-                  <string>Gender</string>
+                  <string>Sex</string>
                  </property>
                 </widget>
                </item>
@@ -8735,7 +7529,7 @@ border-radius: 10px;</string>
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_9">
                     <item>
-                     <widget class="QRadioButton" name="radioButton_14">
+                     <widget class="QRadioButton" name="view_employee_male">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -8751,7 +7545,7 @@ border-radius: 10px;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="radioButton_15">
+                     <widget class="QRadioButton" name="view_employee_female">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -8801,7 +7595,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_59">
                   <item>
-                   <widget class="QComboBox" name="comboBox_15">
+                   <widget class="QComboBox" name="view_employee_department_box">
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
@@ -8912,7 +7706,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_60">
                   <item>
-                   <widget class="QComboBox" name="comboBox_16">
+                   <widget class="QComboBox" name="view_employee_position_box">
                     <property name="enabled">
                      <bool>false</bool>
                     </property>
