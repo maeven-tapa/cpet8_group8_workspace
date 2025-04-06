@@ -15,7 +15,7 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QMainWindow {
-    background-image: url(&quot;C:/Users/maeve/Documents/GitHub/cpet8_group8_workspace/EALS UI/v0.2/resources/eals_log_bg.jpg&quot;);
+    background-image: url(&quot;resources/eals_log_bg.jpg&quot;);
     background-position: center;
     background-repeat: no-repeat;
     background-color: #eef1f6
@@ -113,7 +113,7 @@ border-radius: 5px;</string>
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="home_page">
        <layout class="QGridLayout" name="gridLayout_4" rowstretch="2,5,2" columnstretch="3,4,3">
@@ -830,8 +830,6 @@ QProgressBar::chunk {
    </layout>
   </widget>
  </widget>
- <resources>
-  <include location="resources/bg_logo.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

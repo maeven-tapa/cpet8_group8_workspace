@@ -15,7 +15,7 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QMainWindow {
-    background-image: url(&quot;C:/Users/maeve/Documents/GitHub/cpet8_group8_workspace/EALS UI/v0.2/resources/eals_log_bg.jpg&quot;);
+    background-image: url(&quot;resources/eals_log_bg.jpg&quot;);
     background-position: center;
     background-repeat: no-repeat;
     background-color: #eef1f6
@@ -714,7 +714,7 @@ border-radius: 5px;</string>
         <item row="0" column="0">
          <widget class="QStackedWidget" name="admin_employee_sc_pages">
           <property name="currentIndex">
-           <number>6</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="employee_hr_page">
            <layout class="QGridLayout" name="gridLayout_40" rowstretch="12,1">
@@ -798,6 +798,11 @@ border-radius: none;</string>
                     <item>
                      <property name="text">
                       <string>By Name:</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>By Account ID:</string>
                      </property>
                     </item>
                     <item>
@@ -954,6 +959,11 @@ border-radius: none;</string>
                     <item>
                      <property name="text">
                       <string>By Name:</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>By Account ID:</string>
                      </property>
                     </item>
                     <item>
@@ -8059,6 +8069,312 @@ color: rgb(250, 163, 64);</string>
         <string>Settings</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_21">
+        <item row="2" column="0">
+         <widget class="QFrame" name="frame_7">
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(249, 249, 249);
+border-radius:10px;</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Shape::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Shadow::Raised</enum>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_18" stretch="0,7,0,0,2,0,1">
+           <property name="leftMargin">
+            <number>12</number>
+           </property>
+           <property name="rightMargin">
+            <number>12</number>
+           </property>
+           <item>
+            <widget class="QRadioButton" name="radioButton_4">
+             <property name="font">
+              <font>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Manual Backup</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="widget_16" native="true">
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_5" rowstretch="0,0" columnstretch="0">
+              <property name="leftMargin">
+               <number>9</number>
+              </property>
+              <property name="rightMargin">
+               <number>9</number>
+              </property>
+              <item row="1" column="0">
+               <layout class="QVBoxLayout" name="verticalLayout_19">
+                <property name="sizeConstraint">
+                 <enum>QLayout::SizeConstraint::SetMinAndMaxSize</enum>
+                </property>
+                <item>
+                 <widget class="QLabel" name="label_29">
+                  <property name="font">
+                   <font>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>Title:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLineEdit" name="lineEdit">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                  <property name="placeholderText">
+                   <string>Enter the title...</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_30">
+                  <property name="font">
+                   <font>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>From:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QDateEdit" name="dateEdit">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                  <property name="calendarPopup">
+                   <bool>true</bool>
+                  </property>
+                  <property name="date">
+                   <date>
+                    <year>2025</year>
+                    <month>3</month>
+                    <day>20</day>
+                   </date>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="label_31">
+                  <property name="font">
+                   <font>
+                    <bold>true</bold>
+                   </font>
+                  </property>
+                  <property name="text">
+                   <string>To:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QDateEdit" name="dateEdit_2">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  </property>
+                  <property name="calendarPopup">
+                   <bool>true</bool>
+                  </property>
+                  <property name="date">
+                   <date>
+                    <year>2025</year>
+                    <month>4</month>
+                    <day>19</day>
+                   </date>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="Line" name="line_3">
+             <property name="styleSheet">
+              <string notr="true">border: 2px solid rgb(249, 249, 249);</string>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Shadow::Plain</enum>
+             </property>
+             <property name="lineWidth">
+              <number>0</number>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radioButton_5">
+             <property name="font">
+              <font>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Automatic Backup</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="widget_17" native="true">
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_20">
+              <property name="topMargin">
+               <number>5</number>
+              </property>
+              <property name="bottomMargin">
+               <number>11</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="label_33">
+                <property name="font">
+                 <font>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Every:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_4">
+                <property name="leftMargin">
+                 <number>50</number>
+                </property>
+                <item>
+                 <widget class="QRadioButton" name="radioButton">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="layoutDirection">
+                   <enum>Qt::LayoutDirection::LeftToRight</enum>
+                  </property>
+                  <property name="text">
+                   <string>1 month</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="radioButton_2">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="layoutDirection">
+                   <enum>Qt::LayoutDirection::LeftToRight</enum>
+                  </property>
+                  <property name="text">
+                   <string>6 months</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QRadioButton" name="radioButton_3">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="layoutDirection">
+                   <enum>Qt::LayoutDirection::LeftToRight</enum>
+                  </property>
+                  <property name="text">
+                   <string>1 year</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_34">
+             <property name="font">
+              <font>
+               <stylestrategy>NoAntialias</stylestrategy>
+               <kerning>false</kerning>
+              </font>
+             </property>
+             <property name="text">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note:&lt;/span&gt; You have to two configuration backup &amp;amp; automatick backup.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="pushButton_3">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="font">
+              <font>
+               <bold>true</bold>
+               <kerning>false</kerning>
+              </font>
+             </property>
+             <property name="cursor">
+              <cursorShape>PointingHandCursor</cursorShape>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(235, 230, 245);
+color: rgb(166, 152, 216);
+border-radius: 5px;</string>
+             </property>
+             <property name="text">
+              <string>Backup</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
         <item row="0" column="0">
          <widget class="QFrame" name="frame_5">
           <property name="styleSheet">
@@ -8192,7 +8508,7 @@ border-radius: 1px;</string>
               </font>
              </property>
              <property name="text">
-              <string>Note: This is the listed backup logs.</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;This is the listed backup logs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
            </item>
@@ -8225,7 +8541,7 @@ border-radius: 5px;</string>
           </layout>
          </widget>
         </item>
-        <item row="0" column="1" rowspan="2">
+        <item row="0" column="1" rowspan="3">
          <widget class="Line" name="line_15">
           <property name="styleSheet">
            <string notr="true">border: 2px solid rgb(249, 249, 249)</string>
@@ -8235,639 +8551,261 @@ border-radius: 5px;</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="2">
-         <widget class="QFrame" name="frame_6">
-          <property name="styleSheet">
-           <string notr="true">background-color: rgb(249, 249, 249);
+        <item row="0" column="2" rowspan="3">
+         <layout class="QGridLayout" name="gridLayout_19" rowstretch="3,1">
+          <item row="0" column="0">
+           <widget class="QFrame" name="frame_6">
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(249, 249, 249);
 border-radius:10px;</string>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Shape::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Shadow::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_19">
-           <property name="leftMargin">
-            <number>12</number>
-           </property>
-           <property name="rightMargin">
-            <number>12</number>
-           </property>
-           <property name="bottomMargin">
-            <number>10</number>
-           </property>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_26">
-             <property name="font">
-              <font>
-               <bold>true</bold>
-               <stylestrategy>NoAntialias</stylestrategy>
-              </font>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_20">
+             <property name="leftMargin">
+              <number>12</number>
              </property>
-             <property name="text">
-              <string>Database Logs</string>
+             <property name="rightMargin">
+              <number>12</number>
              </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QWidget" name="widget_15" native="true">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(235, 235, 235);
+             <property name="bottomMargin">
+              <number>10</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_26">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                 <stylestrategy>NoAntialias</stylestrategy>
+                </font>
+               </property>
+               <property name="text">
+                <string>Database Logs</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QWidget" name="widget_15" native="true">
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 10px;</string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_20" rowstretch="1,10" columnstretch="3,1">
-              <item row="0" column="0">
-               <widget class="QLineEdit" name="lineEdit_8">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="font">
-                 <font>
-                  <stylestrategy>NoAntialias</stylestrategy>
-                  <fontweight>DemiBold</fontweight>
-                 </font>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(255, 255, 255);
-border-radius: none;</string>
-                </property>
-                <property name="placeholderText">
-                 <string>Search....</string>
-                </property>
-                <property name="clearButtonEnabled">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="comboBox_8">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(255, 255, 255);
-border-radius: none;</string>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>By Name:</string>
-                 </property>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_46" rowstretch="0,10" columnstretch="3,1">
+                <item row="1" column="0" colspan="2">
+                 <layout class="QVBoxLayout" name="verticalLayout_17">
+                  <item>
+                   <widget class="QTextBrowser" name="textBrowser">
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(88, 88, 88);</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
                 </item>
-                <item>
-                 <property name="text">
-                  <string>By Date:</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-              <item row="1" column="0" colspan="2">
-               <layout class="QVBoxLayout" name="verticalLayout_17">
-                <item>
-                 <widget class="QTableWidget" name="tableWidget_8">
+                <item row="0" column="0" colspan="2">
+                 <widget class="QComboBox" name="comboBox_8">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
                   <property name="styleSheet">
                    <string notr="true">background-color: rgb(255, 255, 255);
-border: 1px solid rgb(249, 249, 249);
-border-radius: 1px;</string>
+border-radius: none;</string>
                   </property>
-                  <property name="horizontalScrollBarPolicy">
-                   <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
-                  </property>
-                  <property name="autoScrollMargin">
-                   <number>16</number>
-                  </property>
-                  <attribute name="horizontalHeaderDefaultSectionSize">
-                   <number>146</number>
-                  </attribute>
-                  <attribute name="horizontalHeaderStretchLastSection">
-                   <bool>true</bool>
-                  </attribute>
-                  <attribute name="verticalHeaderStretchLastSection">
-                   <bool>false</bool>
-                  </attribute>
-                  <column>
-                   <property name="text">
-                    <string>Name:</string>
-                   </property>
-                  </column>
-                  <column>
-                   <property name="text">
-                    <string>Date:</string>
-                   </property>
-                  </column>
                  </widget>
                 </item>
                </layout>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_27">
-             <property name="font">
-              <font>
-               <stylestrategy>NoAntialias</stylestrategy>
-               <kerning>false</kerning>
-              </font>
-             </property>
-             <property name="text">
-              <string>Note: This is logs every time data saves files from the database.</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QFrame" name="frame_7">
-          <property name="styleSheet">
-           <string notr="true">background-color: rgb(249, 249, 249);
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_27">
+               <property name="font">
+                <font>
+                 <stylestrategy>NoAntialias</stylestrategy>
+                 <kerning>false</kerning>
+                </font>
+               </property>
+               <property name="text">
+                <string>Note: This is logs every time data saves files from the database.</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QFrame" name="frame_8">
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(249, 249, 249);
 border-radius:10px;</string>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Shape::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Shadow::Raised</enum>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_18" stretch="0,3,1,0,2,0">
-           <property name="leftMargin">
-            <number>12</number>
-           </property>
-           <property name="rightMargin">
-            <number>12</number>
-           </property>
-           <item>
-            <widget class="QLabel" name="label_28">
-             <property name="font">
-              <font>
-               <bold>true</bold>
-               <stylestrategy>NoAntialias</stylestrategy>
-              </font>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_21" stretch="0,3,1,1">
+             <property name="leftMargin">
+              <number>12</number>
              </property>
-             <property name="text">
-              <string>Manual Backup</string>
+             <property name="rightMargin">
+              <number>12</number>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QWidget" name="widget_16" native="true">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(235, 235, 235);
+             <item>
+              <widget class="QLabel" name="label_38">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                 <stylestrategy>NoAntialias</stylestrategy>
+                </font>
+               </property>
+               <property name="text">
+                <string>Archive Configuration</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QWidget" name="widget_19" native="true">
+               <property name="layoutDirection">
+                <enum>Qt::LayoutDirection::LeftToRight</enum>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 10px;</string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_5" rowstretch="0,0" columnstretch="0">
-              <property name="leftMargin">
-               <number>9</number>
-              </property>
-              <property name="rightMargin">
-               <number>9</number>
-              </property>
-              <item row="0" column="0">
-               <layout class="QVBoxLayout" name="verticalLayout_19">
-                <property name="sizeConstraint">
-                 <enum>QLayout::SizeConstraint::SetMinAndMaxSize</enum>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_23" stretch="1,0">
+                <property name="spacing">
+                 <number>11</number>
+                </property>
+                <property name="topMargin">
+                 <number>6</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>12</number>
                 </property>
                 <item>
-                 <widget class="QLabel" name="label_29">
+                 <widget class="QLabel" name="label_39">
                   <property name="font">
                    <font>
                     <bold>true</bold>
                    </font>
                   </property>
                   <property name="text">
-                   <string>Title:</string>
+                   <string>Every:</string>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLineEdit" name="lineEdit">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
+                 <layout class="QHBoxLayout" name="horizontalLayout_6">
+                  <property name="leftMargin">
+                   <number>50</number>
                   </property>
-                  <property name="styleSheet">
-                   <string notr="true">background-color: rgb(255, 255, 255);</string>
-                  </property>
-                  <property name="placeholderText">
-                   <string>Enter the title...</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_30">
-                  <property name="font">
-                   <font>
-                    <bold>true</bold>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>From:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QDateEdit" name="dateEdit">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">background-color: rgb(255, 255, 255);</string>
-                  </property>
-                  <property name="calendarPopup">
-                   <bool>true</bool>
-                  </property>
-                  <property name="date">
-                   <date>
-                    <year>2025</year>
-                    <month>3</month>
-                    <day>20</day>
-                   </date>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_31">
-                  <property name="font">
-                   <font>
-                    <bold>true</bold>
-                   </font>
-                  </property>
-                  <property name="text">
-                   <string>To:</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QDateEdit" name="dateEdit_2">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">background-color: rgb(255, 255, 255);</string>
-                  </property>
-                  <property name="calendarPopup">
-                   <bool>true</bool>
-                  </property>
-                  <property name="date">
-                   <date>
-                    <year>2025</year>
-                    <month>4</month>
-                    <day>19</day>
-                   </date>
-                  </property>
-                 </widget>
+                  <item>
+                   <widget class="QRadioButton" name="radioButton_6">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="layoutDirection">
+                     <enum>Qt::LayoutDirection::LeftToRight</enum>
+                    </property>
+                    <property name="text">
+                     <string>1 month</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QRadioButton" name="radioButton_7">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="layoutDirection">
+                     <enum>Qt::LayoutDirection::LeftToRight</enum>
+                    </property>
+                    <property name="text">
+                     <string>6 months</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QRadioButton" name="radioButton_8">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="layoutDirection">
+                     <enum>Qt::LayoutDirection::LeftToRight</enum>
+                    </property>
+                    <property name="text">
+                     <string>1 year</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
                 </item>
                </layout>
-              </item>
-              <item row="1" column="0">
-               <widget class="QPushButton" name="pushButton_2">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="font">
-                 <font>
-                  <bold>true</bold>
-                  <kerning>false</kerning>
-                 </font>
-                </property>
-                <property name="cursor">
-                 <cursorShape>PointingHandCursor</cursorShape>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(235, 230, 245);
-color: rgb(166, 152, 216);
-border-radius: 5px;</string>
-                </property>
-                <property name="text">
-                 <string>Backup</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item>
-            <widget class="Line" name="line_3">
-             <property name="styleSheet">
-              <string notr="true">border: 2px solid rgb(234, 234, 234);</string>
-             </property>
-             <property name="frameShadow">
-              <enum>QFrame::Shadow::Plain</enum>
-             </property>
-             <property name="lineWidth">
-              <number>0</number>
-             </property>
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_32">
-             <property name="font">
-              <font>
-               <bold>true</bold>
-               <stylestrategy>NoAntialias</stylestrategy>
-              </font>
-             </property>
-             <property name="text">
-              <string>Automatic Backup</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QWidget" name="widget_17" native="true">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_20">
-              <property name="topMargin">
-               <number>5</number>
-              </property>
-              <property name="bottomMargin">
-               <number>11</number>
-              </property>
-              <item>
-               <widget class="QLabel" name="label_33">
-                <property name="font">
-                 <font>
-                  <bold>true</bold>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Every:</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_4">
-                <item>
-                 <widget class="QRadioButton" name="radioButton">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="layoutDirection">
-                   <enum>Qt::LayoutDirection::RightToLeft</enum>
-                  </property>
-                  <property name="text">
-                   <string>1 month</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QRadioButton" name="radioButton_2">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="layoutDirection">
-                   <enum>Qt::LayoutDirection::RightToLeft</enum>
-                  </property>
-                  <property name="text">
-                   <string>6 months</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QRadioButton" name="radioButton_3">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="layoutDirection">
-                   <enum>Qt::LayoutDirection::RightToLeft</enum>
-                  </property>
-                  <property name="text">
-                   <string>1 year</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButton_3">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="font">
-                 <font>
-                  <bold>true</bold>
-                  <kerning>false</kerning>
-                 </font>
-                </property>
-                <property name="cursor">
-                 <cursorShape>PointingHandCursor</cursorShape>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(235, 230, 245);
-color: rgb(166, 152, 216);
-border-radius: 5px;</string>
-                </property>
-                <property name="text">
-                 <string>Backup</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_34">
-             <property name="font">
-              <font>
-               <stylestrategy>NoAntialias</stylestrategy>
-               <kerning>false</kerning>
-              </font>
-             </property>
-             <property name="text">
-              <string>Note: You have to two configuration backup &amp; automatick backup.</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QFrame" name="frame_8">
-          <property name="styleSheet">
-           <string notr="true">background-color: rgb(249, 249, 249);
-border-radius:10px;</string>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Shape::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Shadow::Raised</enum>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_21" stretch="0,1,2,0">
-           <property name="leftMargin">
-            <number>12</number>
-           </property>
-           <property name="rightMargin">
-            <number>12</number>
-           </property>
-           <item>
-            <widget class="QLabel" name="label_38">
-             <property name="font">
-              <font>
-               <bold>true</bold>
-               <stylestrategy>NoAntialias</stylestrategy>
-              </font>
-             </property>
-             <property name="text">
-              <string>Archive Configuration</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QFrame" name="frame_61">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(255, 255, 127);</string>
-             </property>
-             <property name="frameShape">
-              <enum>QFrame::Shape::StyledPanel</enum>
-             </property>
-             <property name="frameShadow">
-              <enum>QFrame::Shadow::Raised</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QWidget" name="widget_19" native="true">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-             </property>
-             <layout class="QVBoxLayout" name="verticalLayout_23" stretch="1,1,1">
-              <property name="spacing">
-               <number>11</number>
-              </property>
-              <property name="topMargin">
-               <number>15</number>
-              </property>
-              <property name="bottomMargin">
-               <number>15</number>
-              </property>
-              <item>
-               <widget class="QLabel" name="label_39">
-                <property name="font">
-                 <font>
-                  <bold>true</bold>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Below:</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QDateEdit" name="dateEdit_5">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(255, 255, 255);</string>
-                </property>
-                <property name="buttonSymbols">
-                 <enum>QAbstractSpinBox::ButtonSymbols::UpDownArrows</enum>
-                </property>
-                <property name="accelerated">
-                 <bool>false</bool>
-                </property>
-                <property name="displayFormat">
-                 <string>MM/dd/yyyy</string>
-                </property>
-                <property name="calendarPopup">
-                 <bool>true</bool>
-                </property>
-                <property name="timeSpec">
-                 <enum>Qt::TimeSpec::UTC</enum>
-                </property>
-                <property name="date">
-                 <date>
-                  <year>2025</year>
-                  <month>3</month>
-                  <day>20</day>
-                 </date>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="pushButton_11">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="font">
-                 <font>
-                  <bold>true</bold>
-                 </font>
-                </property>
-                <property name="cursor">
-                 <cursorShape>PointingHandCursor</cursorShape>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(255, 255, 181);
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_40">
+               <property name="font">
+                <font>
+                 <stylestrategy>NoAntialias</stylestrategy>
+                 <kerning>false</kerning>
+                </font>
+               </property>
+               <property name="text">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note:&lt;/span&gt; The system will archive logs based on your selected schedule. Make sure to regularly check the settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_11">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(255, 255, 181);
 color: rgb(255, 170, 0);
 border-radius: 5px;</string>
-                </property>
-                <property name="text">
-                 <string>Archive</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_40">
-             <property name="font">
-              <font>
-               <stylestrategy>NoAntialias</stylestrategy>
-               <kerning>false</kerning>
-              </font>
-             </property>
-             <property name="text">
-              <string>Note: You have to two configuration backup &amp; automatick backup.</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
+               </property>
+               <property name="text">
+                <string>Archive</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>

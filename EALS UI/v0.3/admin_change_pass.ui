@@ -103,7 +103,7 @@ border-radius: 5px;</string>
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap>../v0.2/resources/keys.png</pixmap>
+            <pixmap>resources/keys.png</pixmap>
            </property>
            <property name="scaledContents">
             <bool>true</bool>
@@ -116,7 +116,7 @@ border-radius: 5px;</string>
             <string>Note: </string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+            <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
            <property name="wordWrap">
             <bool>true</bool>

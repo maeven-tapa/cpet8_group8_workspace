@@ -69,22 +69,22 @@ class ChangePassword:
         current_password = self.change_pass_ui.change_pass_cp_box.text()
         
         if current_password != Home.admin_password:
-            self.change_pass_ui.change_pass_note.setText("Current password is incorrect!")
+            self.change_pass_ui.change_pass_note.setText( "The current password you entered is incorrect. Please double-check and try again. Passwords are case-sensitive, so make sure your Caps Lock is off.")
             self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
             return
             
         if not current_password or not new_password or not confirm_password:
-            self.change_pass_ui.change_pass_note.setText("All password fields are required!")
+            self.change_pass_ui.change_pass_note.setText("All password fields are required. Please make sure to enter your current password, a new password, and confirm the new password before continuing.")
             self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
             return
             
         if new_password != confirm_password:
-            self.change_pass_ui.change_pass_note.setText("New password and confirmation don't match!")
+            self.change_pass_ui.change_pass_note.setText("The new password and the confirmation password do not match. Please ensure that both fields contain exactly the same password.")
             self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
             return
             
         if len(new_password) < 8:
-            self.change_pass_ui.change_pass_note.setText("New password must be at least 8 characters!")
+            self.change_pass_ui.change_pass_note.setText("Your new password must be at least 8 characters long for security reasons. Please choose a stronger password that meets this requirement.")
             self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
             return
             
