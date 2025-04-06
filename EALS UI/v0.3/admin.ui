@@ -714,7 +714,7 @@ border-radius: 5px;</string>
         <item row="0" column="0">
          <widget class="QStackedWidget" name="admin_employee_sc_pages">
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="employee_hr_page">
            <layout class="QGridLayout" name="gridLayout_40" rowstretch="12,1">
@@ -2593,7 +2593,7 @@ border-radius: 10px;</string>
                      <enum>QLineEdit::EchoMode::Password</enum>
                     </property>
                     <property name="placeholderText">
-                     <string>confirm passoword.</string>
+                     <string>Confirm password.</string>
                     </property>
                    </widget>
                   </item>
@@ -5942,7 +5942,7 @@ border-radius: 10px;</string>
                      <enum>QLineEdit::EchoMode::Password</enum>
                     </property>
                     <property name="placeholderText">
-                     <string>confirm passoword.</string>
+                     <string>Confirm password.</string>
                     </property>
                    </widget>
                   </item>
