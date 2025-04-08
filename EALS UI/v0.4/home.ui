@@ -113,7 +113,7 @@ border-radius: 5px;</string>
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="home_page">
        <layout class="QGridLayout" name="gridLayout_4" rowstretch="2,5,2" columnstretch="3,4,3">
@@ -505,7 +505,7 @@ border-radius: 5px;</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_6" rowstretch="7,1,0,1" columnstretch="2,2,1">
            <item row="3" column="2">
-            <widget class="QLabel" name="bio1_employee_shift">
+            <widget class="QLabel" name="label_10">
              <property name="styleSheet">
               <string notr="true">border: 1px solid black;</string>
              </property>
@@ -528,7 +528,7 @@ border-radius: 5px;</string>
             </widget>
            </item>
            <item row="3" column="1">
-            <widget class="QLabel" name="bio1_employee_position">
+            <widget class="QLabel" name="label_9">
              <property name="styleSheet">
               <string notr="true">border: 1px solid black;</string>
              </property>
@@ -538,7 +538,7 @@ border-radius: 5px;</string>
             </widget>
            </item>
            <item row="3" column="0">
-            <widget class="QLabel" name="bio1_employee_department">
+            <widget class="QLabel" name="label_8">
              <property name="styleSheet">
               <string notr="true">border: 1px solid black;</string>
              </property>
@@ -548,7 +548,7 @@ border-radius: 5px;</string>
             </widget>
            </item>
            <item row="1" column="0" colspan="3">
-            <widget class="QLabel" name="bio1_employee_name">
+            <widget class="QLabel" name="label_11">
              <property name="styleSheet">
               <string notr="true">border: 1px solid black;</string>
              </property>
@@ -613,7 +613,7 @@ QProgressBar::chunk {
           </property>
           <layout class="QGridLayout" name="gridLayout_8">
            <item row="0" column="0">
-            <widget class="QLabel" name="bio1_text">
+            <widget class="QLabel" name="label_13">
              <property name="text">
               <string>Place your finger on the fingerprint sensor to confirm your identity.</string>
              </property>
@@ -689,7 +689,7 @@ QProgressBar::chunk {
           </property>
           <layout class="QGridLayout" name="gridLayout_9" rowstretch="7,1,0,1" columnstretch="2,2,1">
            <item row="3" column="2">
-            <widget class="QLabel" name="bio2_employee_shift">
+            <widget class="QLabel" name="label_14">
              <property name="styleSheet">
               <string notr="true">border: 1px solid black;</string>
              </property>
@@ -699,7 +699,7 @@ QProgressBar::chunk {
             </widget>
            </item>
            <item row="0" column="0" colspan="3">
-            <widget class="QLabel" name="bio2_employee_picture">
+            <widget class="QLabel" name="label_15">
              <property name="styleSheet">
               <string notr="true">background-color: rgb(236, 236, 236);</string>
              </property>
@@ -712,7 +712,7 @@ QProgressBar::chunk {
             </widget>
            </item>
            <item row="3" column="1">
-            <widget class="QLabel" name="bio2_employee_position">
+            <widget class="QLabel" name="label_16">
              <property name="styleSheet">
               <string notr="true">border: 1px solid black;</string>
              </property>
@@ -722,7 +722,7 @@ QProgressBar::chunk {
             </widget>
            </item>
            <item row="3" column="0">
-            <widget class="QLabel" name="bio2_employee_department">
+            <widget class="QLabel" name="label_17">
              <property name="styleSheet">
               <string notr="true">border: 1px solid black;</string>
              </property>
@@ -732,7 +732,7 @@ QProgressBar::chunk {
             </widget>
            </item>
            <item row="1" column="0" colspan="3">
-            <widget class="QLabel" name="bio2_employee_name">
+            <widget class="QLabel" name="label_18">
              <property name="styleSheet">
               <string notr="true">border: 1px solid black;</string>
              </property>
@@ -797,7 +797,7 @@ QProgressBar::chunk {
           </property>
           <layout class="QGridLayout" name="gridLayout_11">
            <item row="0" column="0">
-            <widget class="QLabel" name="bio2_text">
+            <widget class="QLabel" name="label_20">
              <property name="text">
               <string>Ensure your face is fully visible in the frame.</string>
              </property>
@@ -824,165 +824,7 @@ QProgressBar::chunk {
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="page">
-       <layout class="QGridLayout" name="gridLayout_13">
-        <property name="leftMargin">
-         <number>150</number>
-        </property>
-        <property name="topMargin">
-         <number>100</number>
-        </property>
-        <property name="rightMargin">
-         <number>150</number>
-        </property>
-        <property name="bottomMargin">
-         <number>100</number>
-        </property>
-        <item row="0" column="0">
-         <widget class="QFrame" name="frame_10">
-          <property name="frameShape">
-           <enum>QFrame::Shape::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Shadow::Raised</enum>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1,1,0,0,4">
-           <property name="topMargin">
-            <number>17</number>
-           </property>
-           <item>
-            <widget class="QLabel" name="label_6">
-             <property name="font">
-              <font>
-               <pointsize>37</pointsize>
-              </font>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">color: rgb(85, 170, 127);</string>
-             </property>
-             <property name="text">
-              <string>&lt;html&gt;
-  &lt;head/&gt;
-  &lt;body&gt;
-    &lt;p&gt;
-      &lt;span style=&quot;font-family: 'Segoe MDL2 Assets';&quot;&gt;&amp;#xEC61;&lt;/span&gt;
-    &lt;/p&gt;
-  &lt;/body&gt;
-&lt;/html&gt;
-</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignCenter</set>
-             </property>
-             <property name="indent">
-              <number>3</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_21">
-             <property name="font">
-              <font>
-               <pointsize>31</pointsize>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>Good Morning!</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_22">
-             <property name="font">
-              <font>
-               <pointsize>22</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>You work 2 hours extra from your schedule hours!</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="Line" name="line">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_24">
-             <property name="font">
-              <font>
-               <bold>true</bold>
-               <stylestrategy>NoAntialias</stylestrategy>
-              </font>
-             </property>
-             <property name="text">
-              <string>Attedance Logs</string>
-             </property>
-             <property name="indent">
-              <number>14</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QFrame" name="frame_11">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-             </property>
-             <property name="frameShape">
-              <enum>QFrame::Shape::StyledPanel</enum>
-             </property>
-             <property name="frameShadow">
-              <enum>QFrame::Shadow::Raised</enum>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_14">
-              <property name="topMargin">
-               <number>9</number>
-              </property>
-              <item row="0" column="0">
-               <widget class="QTableWidget" name="tableWidget">
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(255, 255, 255);</string>
-                </property>
-                <attribute name="horizontalHeaderMinimumSectionSize">
-                 <number>36</number>
-                </attribute>
-                <attribute name="horizontalHeaderDefaultSectionSize">
-                 <number>250</number>
-                </attribute>
-                <attribute name="horizontalHeaderStretchLastSection">
-                 <bool>true</bool>
-                </attribute>
-                <column>
-                 <property name="text">
-                  <string>Date:</string>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string>Time:</string>
-                 </property>
-                </column>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
-      </widget>
+      <widget class="QWidget" name="page"/>
      </widget>
     </item>
    </layout>

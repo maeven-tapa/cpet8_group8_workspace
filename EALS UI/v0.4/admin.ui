@@ -608,6 +608,44 @@ border-radius: none;</string>
           </layout>
          </widget>
         </item>
+        <item row="2" column="7">
+         <widget class="QPushButton" name="admin_logout_btn">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <bold>true</bold>
+            <stylestrategy>NoAntialias</stylestrategy>
+           </font>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::FocusPolicy::WheelFocus</enum>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::LayoutDirection::LeftToRight</enum>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(248, 182, 175);
+color: rgb(37, 19, 16);</string>
+          </property>
+          <property name="text">
+           <string>Log out</string>
+          </property>
+          <property name="autoDefault">
+           <bool>false</bool>
+          </property>
+          <property name="default">
+           <bool>false</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
         <item row="2" column="2" colspan="5">
          <spacer name="horizontalSpacer">
           <property name="orientation">
@@ -642,50 +680,6 @@ border-radius: 5px;</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignmentFlag::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="2" column="7">
-         <widget class="QWidget" name="widget_11" native="true">
-          <layout class="QGridLayout" name="gridLayout_47">
-           <item row="0" column="0">
-            <widget class="QPushButton" name="admin_logout_btn">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-               <horstretch>0</horstretch>
-               <verstretch>1</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="font">
-              <font>
-               <bold>true</bold>
-               <stylestrategy>NoAntialias</stylestrategy>
-              </font>
-             </property>
-             <property name="focusPolicy">
-              <enum>Qt::FocusPolicy::WheelFocus</enum>
-             </property>
-             <property name="layoutDirection">
-              <enum>Qt::LayoutDirection::LeftToRight</enum>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(248, 182, 175);
-color: rgb(37, 19, 16);</string>
-             </property>
-             <property name="text">
-              <string>Log out</string>
-             </property>
-             <property name="autoDefault">
-              <bool>false</bool>
-             </property>
-             <property name="default">
-              <bool>false</bool>
-             </property>
-             <property name="flat">
-              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -1197,7 +1191,7 @@ border-radius: 10px;</string>
                    </widget>
                   </item>
                   <item row="0" column="1" rowspan="2">
-                   <widget class="QLabel" name="edit_emplyee_picture">
+                   <widget class="QLabel" name="label_41">
                     <property name="styleSheet">
                      <string notr="true">background-color: rgb(255, 255, 255);</string>
                     </property>
@@ -1220,7 +1214,7 @@ border-radius: 10px;</string>
                    </widget>
                   </item>
                   <item row="1" column="2">
-                   <widget class="QPushButton" name="change_employee_picture">
+                   <widget class="QPushButton" name="pushButton_8">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -3883,7 +3877,7 @@ border-radius: 10px;</string>
                    </widget>
                   </item>
                   <item row="0" column="1" rowspan="2">
-                   <widget class="QLabel" name="view_hr_picture">
+                   <widget class="QLabel" name="label_120">
                     <property name="styleSheet">
                      <string notr="true">background-color: rgb(255, 255, 255);</string>
                     </property>
@@ -4543,7 +4537,7 @@ border-radius: 10px;</string>
                    </widget>
                   </item>
                   <item row="0" column="1" rowspan="2">
-                   <widget class="QLabel" name="enroll_employee_picture">
+                   <widget class="QLabel" name="label_62">
                     <property name="styleSheet">
                      <string notr="true">background-color: rgb(255, 255, 255);</string>
                     </property>
@@ -4566,7 +4560,7 @@ border-radius: 10px;</string>
                    </widget>
                   </item>
                   <item row="1" column="2">
-                   <widget class="QPushButton" name="employee_picture_btn">
+                   <widget class="QPushButton" name="pushButton_4">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -7013,7 +7007,7 @@ border-radius: 10px;</string>
                    </widget>
                   </item>
                   <item row="0" column="1" rowspan="2">
-                   <widget class="QLabel" name="view_employee_picture">
+                   <widget class="QLabel" name="label_77">
                     <property name="styleSheet">
                      <string notr="true">background-color: rgb(255, 255, 255);</string>
                     </property>
