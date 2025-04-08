@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1011</width>
+    <width>1236</width>
     <height>844</height>
    </rect>
   </property>
@@ -92,7 +92,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="iconSize">
        <size>
@@ -127,12 +127,12 @@ QTabWidget &gt; QWidget {
        <attribute name="title">
         <string>Dashboard</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_2" rowstretch="3,8,1" columnstretch="4,5,8,4,4,9,5,0,0">
+       <layout class="QGridLayout" name="gridLayout_2" rowstretch="3,8,1" columnstretch="4,5,8,4,4,9,5,0,1">
         <item row="2" column="0" colspan="2">
          <widget class="QWidget" name="widget_12" native="true">
           <layout class="QGridLayout" name="gridLayout_11">
            <item row="0" column="0">
-            <widget class="QLabel" name="label_16">
+            <widget class="QLabel" name="date_today">
              <property name="font">
               <font>
                <stylestrategy>NoAntialias</stylestrategy>
@@ -369,7 +369,7 @@ border-radius: 10px;</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_10" rowstretch="1,15" columnstretch="3,1">
               <item row="0" column="1">
-               <widget class="QComboBox" name="comboBox_5">
+               <widget class="QComboBox" name="hr_attedance_logs_sort">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
                   <horstretch>0</horstretch>
@@ -396,7 +396,17 @@ border-radius: none;</string>
                 </item>
                 <item>
                  <property name="text">
-                  <string>By Name:</string>
+                  <string>By Time:</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>By Account ID:</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>By Remarks:</string>
                  </property>
                 </item>
                 <item>
@@ -409,7 +419,7 @@ border-radius: none;</string>
               <item row="1" column="0" colspan="2">
                <layout class="QVBoxLayout" name="verticalLayout_12">
                 <item>
-                 <widget class="QTableWidget" name="tableWidget_5">
+                 <widget class="QTableWidget" name="hr_attedance_logs_tbl">
                   <property name="styleSheet">
                    <string notr="true">background-color: rgb(255, 255, 255);
 border: 1px solid rgb(249, 249, 249);
@@ -420,12 +430,7 @@ border-radius: 1px;</string>
                   </attribute>
                   <column>
                    <property name="text">
-                    <string>Date</string>
-                   </property>
-                  </column>
-                  <column>
-                   <property name="text">
-                    <string>Name:</string>
+                    <string>Account ID:</string>
                    </property>
                   </column>
                   <column>
@@ -433,12 +438,22 @@ border-radius: 1px;</string>
                     <string>Remarks</string>
                    </property>
                   </column>
+                  <column>
+                   <property name="text">
+                    <string>Date:</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Time:</string>
+                   </property>
+                  </column>
                  </widget>
                 </item>
                </layout>
               </item>
               <item row="0" column="0">
-               <widget class="QLineEdit" name="lineEdit_5">
+               <widget class="QLineEdit" name="hr_attedance_logs_search">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
                   <horstretch>0</horstretch>
@@ -487,14 +502,26 @@ border-radius: none;</string>
         </item>
         <item row="2" column="8">
          <widget class="QWidget" name="widget_14" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <layout class="QGridLayout" name="gridLayout_13">
            <item row="0" column="0">
-            <widget class="QPushButton" name="pushButton">
+            <widget class="QPushButton" name="hr_logout_btn">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                <horstretch>0</horstretch>
                <verstretch>1</verstretch>
               </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>150</width>
+               <height>0</height>
+              </size>
              </property>
              <property name="font">
               <font>
@@ -640,217 +667,994 @@ border-radius:10px;</string>
        <attribute name="title">
         <string>Employee</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_8" rowstretch="9,1">
-        <item row="1" column="0">
-         <widget class="QWidget" name="widget_10" native="true">
-          <property name="styleSheet">
-           <string notr="true">background-color: rgb(249, 249, 249);
-border-radius:10px;</string>
+       <layout class="QGridLayout" name="gridLayout_8" rowstretch="0">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item row="0" column="0">
+         <widget class="QStackedWidget" name="hr_employee_sc_pages">
+          <property name="currentIndex">
+           <number>0</number>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_8">
-           <item>
-            <widget class="Line" name="line">
-             <property name="styleSheet">
-              <string notr="true">border: 2px solid rgb(228, 228, 228)</string>
-             </property>
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <layout class="QVBoxLayout" name="verticalLayout_9">
-             <item>
-              <widget class="QPushButton" name="hr_employee_view">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="font">
-                <font>
-                 <bold>true</bold>
-                 <stylestrategy>NoAntialias</stylestrategy>
-                </font>
-               </property>
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="styleSheet">
-                <string notr="true">background-color: rgb(255, 218, 167);
+          <widget class="QWidget" name="hr_employee_dashboard_page">
+           <layout class="QGridLayout" name="gridLayout_3" rowstretch="9,1">
+            <item row="0" column="0">
+             <widget class="QFrame" name="frame_4">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(249, 249, 249);
+border-radius:10px;</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_6">
+               <item row="0" column="0">
+                <widget class="QLabel" name="label_13">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                   <stylestrategy>NoAntialias</stylestrategy>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Employee Accounts</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QWidget" name="widget_8" native="true">
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_7" rowstretch="1,19" columnstretch="2,1">
+                  <item row="0" column="0">
+                   <widget class="QLineEdit" name="hr_employee_search_box">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <stylestrategy>NoAntialias</stylestrategy>
+                      <fontweight>DemiBold</fontweight>
+                     </font>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(255, 255, 255);
+border-radius: none;</string>
+                    </property>
+                    <property name="placeholderText">
+                     <string>Search....</string>
+                    </property>
+                    <property name="clearButtonEnabled">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QComboBox" name="hr_employee_sort_box">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <stylestrategy>NoAntialias</stylestrategy>
+                      <fontweight>DemiBold</fontweight>
+                     </font>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(255, 255, 255);
+border-radius: none;</string>
+                    </property>
+                    <item>
+                     <property name="text">
+                      <string>By Name:</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>By Department:</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>By Position:</string>
+                     </property>
+                    </item>
+                    <item>
+                     <property name="text">
+                      <string>By Status:</string>
+                     </property>
+                    </item>
+                   </widget>
+                  </item>
+                  <item row="1" column="0" colspan="2">
+                   <layout class="QVBoxLayout" name="verticalLayout_7">
+                    <item>
+                     <widget class="QTableWidget" name="hr_employee_tbl">
+                      <property name="font">
+                       <font>
+                        <stylestrategy>PreferDefault</stylestrategy>
+                       </font>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">background-color: rgb(255, 255, 255);
+border: 1px solid rgb(249, 249, 249);
+border-radius: 1px;</string>
+                      </property>
+                      <property name="horizontalScrollBarPolicy">
+                       <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+                      </property>
+                      <property name="autoScrollMargin">
+                       <number>16</number>
+                      </property>
+                      <attribute name="horizontalHeaderDefaultSectionSize">
+                       <number>210</number>
+                      </attribute>
+                      <attribute name="horizontalHeaderStretchLastSection">
+                       <bool>true</bool>
+                      </attribute>
+                      <attribute name="verticalHeaderStretchLastSection">
+                       <bool>false</bool>
+                      </attribute>
+                      <column>
+                       <property name="text">
+                        <string>Name:</string>
+                       </property>
+                      </column>
+                      <column>
+                       <property name="text">
+                        <string>Department / Position:</string>
+                       </property>
+                      </column>
+                      <column>
+                       <property name="text">
+                        <string>Status:</string>
+                       </property>
+                      </column>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_14">
+                 <property name="font">
+                  <font>
+                   <stylestrategy>NoAntialias</stylestrategy>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Note: Select employee then pressed the view button.</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QWidget" name="widget_10" native="true">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(249, 249, 249);
+border-radius:10px;</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_8">
+               <item>
+                <widget class="Line" name="line">
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(228, 228, 228)</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <layout class="QVBoxLayout" name="verticalLayout_9">
+                 <item>
+                  <widget class="QPushButton" name="hr_employee_view_btn">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <bold>true</bold>
+                     <stylestrategy>NoAntialias</stylestrategy>
+                    </font>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">background-color: rgb(255, 218, 167);
 color: rgb(235, 68, 32);
     font-weight: bold;
 </string>
-               </property>
-               <property name="text">
-                <string>View</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QFrame" name="frame_4">
-          <property name="styleSheet">
-           <string notr="true">background-color: rgb(249, 249, 249);
+                   </property>
+                   <property name="text">
+                    <string>View</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="hr_employee_view_page">
+           <layout class="QGridLayout" name="gridLayout_4" rowstretch="6,7,5,1" columnstretch="3,2,0">
+            <item row="0" column="0">
+             <widget class="QFrame" name="frame_29">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(249, 249, 249);
 border-radius:10px;</string>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Shape::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Shadow::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_6">
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_13">
-             <property name="font">
-              <font>
-               <bold>true</bold>
-               <stylestrategy>NoAntialias</stylestrategy>
-              </font>
-             </property>
-             <property name="text">
-              <string>Employee Accounts</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QWidget" name="widget_8" native="true">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(235, 235, 235);
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_51" stretch="0,1">
+               <item>
+                <widget class="QLabel" name="label_76">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Employee Picture</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_41" native="true">
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 10px;</string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_7" rowstretch="1,19" columnstretch="2,1">
-              <item row="0" column="0">
-               <widget class="QLineEdit" name="lineEdit_3">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="font">
-                 <font>
-                  <stylestrategy>NoAntialias</stylestrategy>
-                  <fontweight>DemiBold</fontweight>
-                 </font>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(255, 255, 255);
-border-radius: none;</string>
-                </property>
-                <property name="placeholderText">
-                 <string>Search....</string>
-                </property>
-                <property name="clearButtonEnabled">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="comboBox">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="font">
-                 <font>
-                  <stylestrategy>NoAntialias</stylestrategy>
-                  <fontweight>DemiBold</fontweight>
-                 </font>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgb(255, 255, 255);
-border-radius: none;</string>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>By Name:</string>
                  </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>By Department:</string>
+                 <layout class="QGridLayout" name="gridLayout_31">
+                  <item row="0" column="0" rowspan="2">
+                   <widget class="QFrame" name="frame_30">
+                    <property name="frameShape">
+                     <enum>QFrame::Shape::StyledPanel</enum>
+                    </property>
+                    <property name="frameShadow">
+                     <enum>QFrame::Shadow::Raised</enum>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1" rowspan="2">
+                   <widget class="QLabel" name="hr_view_employee_picture">
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(255, 255, 255);</string>
+                    </property>
+                    <property name="text">
+                     <string>Image</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="2" rowspan="2">
+                   <widget class="QFrame" name="frame_31">
+                    <property name="frameShape">
+                     <enum>QFrame::Shape::StyledPanel</enum>
+                    </property>
+                    <property name="frameShadow">
+                     <enum>QFrame::Shadow::Raised</enum>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="0" column="1" rowspan="2" colspan="2">
+             <widget class="QFrame" name="frame_35">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(249, 249, 249);
+border-radius:10px;</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_61" stretch="1,2,0,1,1,12,2,0,2">
+               <property name="leftMargin">
+                <number>12</number>
+               </property>
+               <property name="topMargin">
+                <number>11</number>
+               </property>
+               <property name="rightMargin">
+                <number>12</number>
+               </property>
+               <property name="bottomMargin">
+                <number>17</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_91">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
                  </property>
-                </item>
-                <item>
                  <property name="text">
-                  <string>By Status:</string>
+                  <string>Account ID</string>
                  </property>
-                </item>
-               </widget>
-              </item>
-              <item row="1" column="0" colspan="2">
-               <layout class="QVBoxLayout" name="verticalLayout_7">
-                <item>
-                 <widget class="QTableWidget" name="tableWidget_2">
-                  <property name="font">
-                   <font>
-                    <stylestrategy>PreferDefault</stylestrategy>
-                   </font>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_57" native="true">
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_62">
+                  <item>
+                   <widget class="QLabel" name="hr_view_employee_accountid">
+                    <property name="text">
+                     <string>PREFIX-YEAR-NO</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_25">
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_93">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Attedance Logs</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="comboBox_17">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(255, 255, 255);</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QTableWidget" name="hr_employee_logs_tbl">
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(255, 255, 255);</string>
+                 </property>
+                 <attribute name="horizontalHeaderDefaultSectionSize">
+                  <number>161</number>
+                 </attribute>
+                 <attribute name="horizontalHeaderStretchLastSection">
+                  <bool>true</bool>
+                 </attribute>
+                 <column>
+                  <property name="text">
+                   <string>Date:</string>
                   </property>
-                  <property name="styleSheet">
-                   <string notr="true">background-color: rgb(255, 255, 255);
-border: 1px solid rgb(249, 249, 249);
-border-radius: 1px;</string>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Time:</string>
                   </property>
-                  <property name="horizontalScrollBarPolicy">
-                   <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Remarks:</string>
                   </property>
-                  <property name="autoScrollMargin">
-                   <number>16</number>
+                 </column>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_26">
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_94">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Schedule</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_58" native="true">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_63">
+                  <property name="topMargin">
+                   <number>4</number>
                   </property>
-                  <attribute name="horizontalHeaderDefaultSectionSize">
-                   <number>210</number>
-                  </attribute>
-                  <attribute name="horizontalHeaderStretchLastSection">
-                   <bool>true</bool>
-                  </attribute>
-                  <attribute name="verticalHeaderStretchLastSection">
-                   <bool>false</bool>
-                  </attribute>
-                  <column>
-                   <property name="text">
-                    <string>Name:</string>
-                   </property>
-                  </column>
-                  <column>
-                   <property name="text">
-                    <string>Department / Position:</string>
-                   </property>
-                  </column>
-                  <column>
-                   <property name="text">
-                    <string>Status:</string>
-                   </property>
-                  </column>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_14">
-             <property name="font">
-              <font>
-               <stylestrategy>NoAntialias</stylestrategy>
-              </font>
-             </property>
-             <property name="text">
-              <string>Note: Select employee then pressed the view button.</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_10">
+                    <item>
+                     <widget class="QRadioButton" name="hr_view_employee_sched_1">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="layoutDirection">
+                       <enum>Qt::LayoutDirection::RightToLeft</enum>
+                      </property>
+                      <property name="text">
+                       <string>6am to 2pm</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QRadioButton" name="hr_view_employee_sched_2">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="layoutDirection">
+                       <enum>Qt::LayoutDirection::RightToLeft</enum>
+                      </property>
+                      <property name="text">
+                       <string>2pm to 10pm</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QRadioButton" name="hr_view_employee_sched_3">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="layoutDirection">
+                       <enum>Qt::LayoutDirection::RightToLeft</enum>
+                      </property>
+                      <property name="text">
+                       <string>10pm to 6am</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="1" column="0" rowspan="3">
+             <widget class="QFrame" name="frame_32">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(249, 249, 249);
+border-radius:10px;</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_52" stretch="3,0,3,2,1,2,2,1,2,2,1,2">
+               <property name="leftMargin">
+                <number>12</number>
+               </property>
+               <property name="rightMargin">
+                <number>12</number>
+               </property>
+               <property name="bottomMargin">
+                <number>20</number>
+               </property>
+               <item>
+                <widget class="QFrame" name="frame_33">
+                 <property name="frameShape">
+                  <enum>QFrame::Shape::StyledPanel</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Shadow::Raised</enum>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_32" rowstretch="1,2">
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="horizontalSpacing">
+                   <number>12</number>
+                  </property>
+                  <property name="verticalSpacing">
+                   <number>6</number>
+                  </property>
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="label_78">
+                    <property name="font">
+                     <font>
+                      <bold>true</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>First Name</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QWidget" name="widget_49" native="true">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_53">
+                     <item>
+                      <widget class="QLabel" name="hr_view_employee_first_name">
+                       <property name="text">
+                        <string>First Name</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QLabel" name="label_80">
+                    <property name="font">
+                     <font>
+                      <bold>true</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Last Name</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QWidget" name="widget_50" native="true">
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_54">
+                     <item>
+                      <widget class="QLabel" name="hr_view_employee_last_name">
+                       <property name="text">
+                        <string>Last Name</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item row="1" column="2">
+                   <widget class="QWidget" name="hr_widget_51" native="true">
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_55">
+                     <item>
+                      <widget class="QLabel" name="hr_view_employee_mi">
+                       <property name="text">
+                        <string>M.I</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item row="0" column="2">
+                   <widget class="QLabel" name="label_83">
+                    <property name="font">
+                     <font>
+                      <bold>true</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>M.I</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_21">
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QFrame" name="frame_34">
+                 <property name="frameShape">
+                  <enum>QFrame::Shape::StyledPanel</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Shadow::Raised</enum>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_33" rowstretch="1,2">
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="horizontalSpacing">
+                   <number>12</number>
+                  </property>
+                  <property name="verticalSpacing">
+                   <number>6</number>
+                  </property>
+                  <item row="1" column="1">
+                   <widget class="QWidget" name="frame_9" native="true">
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_56">
+                     <item>
+                      <widget class="QLabel" name="hr_view_employee_age">
+                       <property name="text">
+                        <string>XX</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QLabel" name="label_85">
+                    <property name="font">
+                     <font>
+                      <bold>true</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Age</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QWidget" name="widget_53" native="true">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_57">
+                     <item>
+                      <widget class="QLabel" name="hr_view_employee_birthday">
+                       <property name="text">
+                        <string>XXXX XX, XXXX</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="label_87">
+                    <property name="font">
+                     <font>
+                      <bold>true</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Birthday</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_22">
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_88">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Sex</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_54" native="true">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_58">
+                  <property name="topMargin">
+                   <number>4</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>4</number>
+                  </property>
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_9">
+                    <item>
+                     <widget class="QRadioButton" name="hr_view_employee_male">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="layoutDirection">
+                       <enum>Qt::LayoutDirection::RightToLeft</enum>
+                      </property>
+                      <property name="text">
+                       <string>Male</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QRadioButton" name="hr_view_employee_female">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="layoutDirection">
+                       <enum>Qt::LayoutDirection::RightToLeft</enum>
+                      </property>
+                      <property name="text">
+                       <string>Female</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_23">
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_89">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Department</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_55" native="true">
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_59">
+                  <item>
+                   <widget class="QLabel" name="hr_view_employee_department_box">
+                    <property name="text">
+                     <string>XXXXXXXXX</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_24">
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_90">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Position</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_56" native="true">
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_60">
+                  <item>
+                   <widget class="QLabel" name="hr_view_employee_position_box">
+                    <property name="text">
+                     <string>XXXXXXXX</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="2" column="1" colspan="2">
+             <widget class="QFrame" name="frame_28">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(255, 255, 255);
+border: none;</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QFrame" name="frame_36">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(255, 255, 255);
+border: none;</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="2">
+             <widget class="QPushButton" name="hr_employee_view_back">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                <horstretch>1</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(255, 239, 221);
+color: rgb(250, 163, 64);</string>
+              </property>
+              <property name="text">
+               <string>Back</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
          </widget>
         </item>
        </layout>

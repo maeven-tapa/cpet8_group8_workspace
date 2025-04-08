@@ -194,6 +194,7 @@ class ChangePassword:
             success_msg.setText("Password Changed Successfully")
             success_msg.setInformativeText("Your password has been updated. Please use the new password for future logins.")
             success_msg.setWindowTitle("Success")
+            success_msg.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
             success_msg.exec()
 
             self.change_pass_ui.close()
