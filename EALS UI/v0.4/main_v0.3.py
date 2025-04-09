@@ -167,6 +167,7 @@ class HR:
         self.load_hr_attendance_logs_table()
         self.update_date_today()
 
+
     def update_hr_dashboard_labels(self):
         try:
             cursor = self.db.execute_query("SELECT COUNT(*) FROM Employee")
@@ -510,19 +511,52 @@ class Home:
                     
                 else:
                     self.employee_data = employee_data
-                    self.system_logs.log_system_action("A user is logged in as an employee")
-                    self.goto_bio1()
+                    if self.validate_attendance():
+                        self.system_logs.log_system_action("A user is logged in as an employee")
+                        self.goto_bio1()
             else:
                 self.show_error("Invalid credentials", "Please enter valid employee ID and password")
                 self.system_logs.log_system_action("An invalid loggin attempt has been made.")
         except sqlite3.Error as e:
             print(f"Database error during login: {e}")
 
+    def validate_attendance(self):
+        """Validate if the attendance log is valid based on schedule and previous logs."""
+        if not self.employee_data:
+            return False
+
+        current_time = datetime.now()
+        current_date = current_time.strftime("%Y-%m-%d")
+        current_hour = current_time.hour
+
+        # Check if the employee is logging in or out
+        cursor = self.db.execute_query("SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?", 
+                                       (self.employee_data["employee_id"], current_date))
+        attendance = cursor.fetchone() if cursor else None
+
+        if attendance:
+            # Check if logging out is valid
+            log_time = datetime.strptime(attendance[0], "%H:%M:%S")
+            if attendance[1] == "in" and (current_time - log_time).total_seconds() < 8 * 3600:
+                self.show_error("Invalid Logout", "You cannot log out less than 8 hours after logging in.")
+                return False
+            self.employee_data["remarks"] = "out"
+        else:
+            # Check if logging in is within schedule
+            schedule_start, schedule_end = self.parse_schedule(self.employee_data["schedule"])
+            if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
+                self.show_error("Invalid Login", "You cannot log in outside your scheduled shift.")
+                return False
+            self.employee_data["remarks"] = "in"
+
+        return True
+
     def goto_hr_ui(self, hr_data):
+
         current_time = datetime.now()
         current_date = current_time.strftime("%Y-%m-%d")
         self.db.execute_query("INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)",
-                              (hr_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), "in"))
+                              (hr_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), hr_data.get("remarks", "in")))
         global_home_ui.close()
         self.hr = HR(self.db, hr_data)
         self.hr.hr_ui.showMaximized()
@@ -554,35 +588,15 @@ class Home:
         self.home_ui.main_page.setCurrentIndex(bio2_page)
 
     def goto_result_prompt(self):
+        """Display the result of user authentication and log the action."""
         if self.employee_data:
             current_time = datetime.now()
             current_date = current_time.strftime("%Y-%m-%d")
-            current_hour = current_time.hour
-
-            # Check if the employee is logging in or out
-            cursor = self.db.execute_query("SELECT time FROM attendance_logs WHERE employee_id = ? AND date = ?", 
-                                           (self.employee_data["employee_id"], current_date))
-            attendance = cursor.fetchone() if cursor else None
-
-            if attendance:
-                # Check if logging out is valid
-                log_time = datetime.strptime(attendance[0], "%H:%M:%S")  # Use the correct column for time
-                if (current_time - log_time).total_seconds() < 8 * 3600:
-                    self.show_error("Invalid Logout", "You cannot log out less than 8 hours after logging in.")
-                    return
-                remarks = "out"
-            else:
-                # Check if logging in is within schedule
-                schedule_start, schedule_end = self.parse_schedule(self.employee_data["schedule"])
-                if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
-                    self.show_error("Invalid Login", "You cannot log in outside your scheduled shift.")
-                    return
-                remarks = "in"
 
             # Log attendance
             self.system_logs.log_system_action("A user logged.")
             self.db.execute_query("INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)", 
-                                  (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), remarks))
+                                  (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), self.employee_data.get("remarks", "in")))
 
         result_prompt = self.home_ui.main_page.indexOf(self.home_ui.result_page)
         self.home_ui.main_page.setCurrentIndex(result_prompt)
@@ -593,22 +607,26 @@ class Home:
     def parse_schedule(self, schedule):
         """Parse schedule string like '10pm to 6am' into start and end hours."""
         try:
-            start, end = schedule.split(" to ")
+            start, end = schedule.lower().split(" to ")
             start_hour = self.convert_to_24_hour(start)
             end_hour = self.convert_to_24_hour(end)
             return start_hour, end_hour
         except Exception as e:
             print(f"Error parsing schedule: {e}")
-            return 0, 24  
+            return 0, 24  # Default to full day if parsing fails
 
     def convert_to_24_hour(self, time_str):
         """Convert time string like '10pm' or '6am' to 24-hour format."""
-        hour = int(time_str[:-2])
-        if "pm" in time_str.lower() and hour != 12:
-            hour += 12
-        elif "am" in time_str.lower() and hour == 12:
-            hour = 0
-        return hour
+        try:
+            hour = int(time_str[:-2])
+            if "pm" in time_str and hour != 12:
+                hour += 12
+            elif "am" in time_str and hour == 12:
+                hour = 0
+            return hour
+        except ValueError as e:
+            print(f"Error converting time to 24-hour format: {e}")
+            return -1  # Return an invalid hour if conversion fails
 
     def is_within_schedule(self, start_hour, end_hour, current_hour):
         """Check if the current hour is within the schedule."""

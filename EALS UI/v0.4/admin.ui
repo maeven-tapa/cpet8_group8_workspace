@@ -92,7 +92,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <property name="iconSize">
        <size>
@@ -741,7 +741,7 @@ color: rgb(37, 19, 16);</string>
         <item row="0" column="0">
          <widget class="QStackedWidget" name="admin_employee_sc_pages">
           <property name="currentIndex">
-           <number>4</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="employee_hr_page">
            <layout class="QGridLayout" name="gridLayout_40" rowstretch="12,1">
@@ -1528,11 +1528,6 @@ border-radius: 10px;</string>
                     <property name="editable">
                      <bool>false</bool>
                     </property>
-                    <item>
-                     <property name="text">
-                      <string>0001</string>
-                     </property>
-                    </item>
                     <item>
                      <property name="text">
                       <string>0001</string>
@@ -4862,11 +4857,6 @@ border-radius: 10px;</string>
                     <property name="editable">
                      <bool>false</bool>
                     </property>
-                    <item>
-                     <property name="text">
-                      <string>0001</string>
-                     </property>
-                    </item>
                     <item>
                      <property name="text">
                       <string>0001</string>
