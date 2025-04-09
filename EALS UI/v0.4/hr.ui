@@ -177,7 +177,7 @@ border-radius:10px;</string>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_8">
+            <widget class="QLabel" name="hr_late_employee_lbl">
              <property name="font">
               <font>
                <pointsize>40</pointsize>
@@ -216,12 +216,12 @@ border-radius:10px;</string>
               </font>
              </property>
              <property name="text">
-              <string>Looged Today:</string>
+              <string>Active:</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_4">
+            <widget class="QLabel" name="hr_active_employee_lbl">
              <property name="font">
               <font>
                <pointsize>40</pointsize>
@@ -260,12 +260,12 @@ border-radius:10px;</string>
               </font>
              </property>
              <property name="text">
-              <string>Present:</string>
+              <string>Logged Today:</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_6">
+            <widget class="QLabel" name="hr_logged_employee_lbl">
              <property name="font">
               <font>
                <pointsize>40</pointsize>
@@ -309,7 +309,7 @@ border-radius:10px;</string>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_2">
+            <widget class="QLabel" name="hr_total_employee_lbl">
              <property name="font">
               <font>
                <pointsize>40</pointsize>
@@ -586,7 +586,7 @@ border-radius:10px;</string>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_10">
+            <widget class="QLabel" name="hr_absent_employee_lbl">
              <property name="font">
               <font>
                <pointsize>40</pointsize>

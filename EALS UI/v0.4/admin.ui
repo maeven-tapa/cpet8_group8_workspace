@@ -92,7 +92,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <property name="iconSize">
        <size>
@@ -192,12 +192,12 @@ border-radius:10px;</string>
               </font>
              </property>
              <property name="text">
-              <string>Logged Today:</string>
+              <string>Active:</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="logged_today_lbl">
+            <widget class="QLabel" name="active_employee_lbl">
              <property name="font">
               <font>
                <pointsize>40</pointsize>
@@ -236,12 +236,12 @@ border-radius:10px;</string>
               </font>
              </property>
              <property name="text">
-              <string>Active:</string>
+              <string>Logged Today:</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="present_lbl">
+            <widget class="QLabel" name="logged_employee_lbl">
              <property name="font">
               <font>
                <pointsize>40</pointsize>
@@ -285,7 +285,7 @@ border-radius:10px;</string>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="late_lbl">
+            <widget class="QLabel" name="late_employee_lbl">
              <property name="font">
               <font>
                <pointsize>40</pointsize>
@@ -334,7 +334,7 @@ border-radius:10px;</string>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="absent_lbl">
+            <widget class="QLabel" name="absent_employee_lbl">
              <property name="font">
               <font>
                <pointsize>40</pointsize>
