@@ -360,7 +360,6 @@ class HR:
         table.resizeColumnsToContents()
 
     def filter_hr_attendance_logs_table(self):
-        """Filter HR attendance logs based on the search bar input."""
         search_text = self.hr_ui.hr_attedance_logs_search.text().lower()
         for row in range(self.hr_ui.hr_attedance_logs_tbl.rowCount()):
             self.hr_ui.hr_attedance_logs_tbl.setRowHidden(row, False)
@@ -378,7 +377,6 @@ class HR:
             self.hr_ui.hr_attedance_logs_tbl.setRowHidden(row, not match_found)
 
     def sort_hr_attendance_logs_table(self):
-        """Sort HR attendance logs based on the selected sort option."""
         sort_option = self.hr_ui.hr_attedance_logs_sort.currentText()
 
         logs = []
@@ -390,13 +388,13 @@ class HR:
             logs.append(log)
 
         if sort_option == "By Date:":
-            logs.sort(key=lambda x: x[2])  # Sort by Date
+            logs.sort(key=lambda x: x[2]) 
         elif sort_option == "By Time:":
-            logs.sort(key=lambda x: x[3])  # Sort by Time
+            logs.sort(key=lambda x: x[3]) 
         elif sort_option == "By Account ID:":
-            logs.sort(key=lambda x: x[0])  # Sort by Account ID
+            logs.sort(key=lambda x: x[0])  
         elif sort_option == "By Remarks:":
-            logs.sort(key=lambda x: x[1])  # Sort by Remarks
+            logs.sort(key=lambda x: x[1])  
 
         self.hr_ui.hr_attedance_logs_tbl.setRowCount(0)
         for log in logs:
@@ -418,7 +416,7 @@ class HR:
             print(f"Database error while loading HR employee attendance logs: {e}")
 
     def add_log_to_table(self, table, log):
-        """Add a single log entry to the specified table."""
+
         row_position = table.rowCount()
         table.insertRow(row_position)
 
@@ -468,16 +466,16 @@ class Home:
         current_date = current_time.strftime("%Y-%m-%d")
         current_hour = current_time.hour
 
-        # Check if the HR is logging in
+        
         cursor = self.db.execute_query("SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?", 
                                        (hr_data["employee_id"], current_date))
         attendance = cursor.fetchone() if cursor else None
 
         if attendance:
-            # If already logged in, no need to validate further
+            
             return True
         else:
-            # Check if logging in is within schedule
+           
             schedule_start, schedule_end = self.parse_schedule(hr_data["schedule"])
             if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
                 self.show_error("Invalid Login", "You cannot log in outside your scheduled shift.")
@@ -490,7 +488,7 @@ class Home:
         password = self.home_ui.home_pass_box.text()
 
         try:
-            # Check if the user is an admin
+            
             cursor = self.db.execute_query("SELECT password, password_changed FROM Admin WHERE admin_id = ?", (user_id,))
             admin_result = cursor.fetchone() if cursor else None
 
@@ -510,7 +508,7 @@ class Home:
                     self.system_logs.log_system_action("An invalid Admin loggin attempt has been made.")
                     return
 
-            # Check if the user is an employee
+            
             cursor = self.db.execute_query("SELECT * FROM Employee WHERE employee_id = ? AND password = ?", (user_id, password))
             employee_result = cursor.fetchone() if cursor else None
 
@@ -544,7 +542,7 @@ class Home:
             print(f"Database error during login: {e}")
 
     def validate_attendance(self):
-        """Validate if the attendance log is valid based on schedule and previous logs."""
+        
         if not self.employee_data:
             return False
 
@@ -552,20 +550,20 @@ class Home:
         current_date = current_time.strftime("%Y-%m-%d")
         current_hour = current_time.hour
 
-        # Check if the employee is logging in or out
+        
         cursor = self.db.execute_query("SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?", 
                                        (self.employee_data["employee_id"], current_date))
         attendance = cursor.fetchone() if cursor else None
 
         if attendance:
-            # Check if logging out is valid
+            
             log_time = datetime.strptime(attendance[0], "%H:%M:%S")
             if attendance[1] == "in" and (current_time - log_time).total_seconds() < 8 * 3600:
                 self.show_error("Invalid Logout", "You cannot log out less than 8 hours after logging in.")
                 return False
             self.employee_data["remarks"] = "out"
         else:
-            # Check if logging in is within schedule
+            
             schedule_start, schedule_end = self.parse_schedule(self.employee_data["schedule"])
             if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
                 self.show_error("Invalid Login", "You cannot log in outside your scheduled shift.")
@@ -611,7 +609,7 @@ class Home:
         self.home_ui.main_page.setCurrentIndex(bio2_page)
 
     def goto_result_prompt(self):
-        """Display the result of user authentication and log the action."""
+        
         if self.employee_data:
             current_time = datetime.now()
             current_date = current_time.strftime("%Y-%m-%d")
@@ -624,11 +622,11 @@ class Home:
         result_prompt = self.home_ui.main_page.indexOf(self.home_ui.result_page)
         self.home_ui.main_page.setCurrentIndex(result_prompt)
 
-        # Return to home page after 5 seconds
+        
         threading.Timer(2.0, lambda: self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)).start()
 
     def parse_schedule(self, schedule):
-        """Parse schedule string like '10pm to 6am' into start and end hours."""
+        
         try:
             start, end = schedule.lower().split(" to ")
             start_hour = self.convert_to_24_hour(start)
@@ -636,10 +634,10 @@ class Home:
             return start_hour, end_hour
         except Exception as e:
             print(f"Error parsing schedule: {e}")
-            return 0, 24  # Default to full day if parsing fails
+            return 0, 24 
 
     def convert_to_24_hour(self, time_str):
-        """Convert time string like '10pm' or '6am' to 24-hour format."""
+        
         try:
             hour = int(time_str[:-2])
             if "pm" in time_str and hour != 12:
@@ -649,13 +647,13 @@ class Home:
             return hour
         except ValueError as e:
             print(f"Error converting time to 24-hour format: {e}")
-            return -1  # Return an invalid hour if conversion fails
+            return -1  
 
     def is_within_schedule(self, start_hour, end_hour, current_hour):
-        """Check if the current hour is within the schedule."""
-        if start_hour < end_hour:  # Normal schedule (e.g., 6am to 2pm)
+
+        if start_hour < end_hour: 
             return start_hour <= current_hour < end_hour
-        else:  # Overnight schedule (e.g., 10pm to 6am)
+        else:  
             return current_hour >= start_hour or current_hour < end_hour
 
     def show_error(self, title, message):
@@ -676,7 +674,7 @@ class Home:
         self.admin.admin_ui.showMaximized()
 
     def toggle_password_visibility(self):
-        """Toggle the visibility of the password in the password input field."""
+       
         if self.password_visible:
             self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
             self.password_visible = False
@@ -1803,7 +1801,7 @@ class Admin:
             error_msg.exec_()
 
     def load_attendance_logs_table(self):
-        """Load all attendance logs into the table."""
+
         try:
             cursor = self.db.execute_query("SELECT employee_id, remarks, date, time FROM attendance_logs")
             logs = cursor.fetchall() if cursor else []
