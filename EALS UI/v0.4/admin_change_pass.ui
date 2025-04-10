@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>531</width>
-    <height>364</height>
+    <height>379</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -155,7 +155,10 @@ background-color: #d8e1e8;</string>
          <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 5px;</string>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0,1,0,1">
+        <layout class="QVBoxLayout" name="verticalLayout" stretch="0,1,0,0,0,0,1,0,0,1">
+         <property name="spacing">
+          <number>6</number>
+         </property>
          <property name="leftMargin">
           <number>10</number>
          </property>
@@ -166,10 +169,67 @@ border-radius: 5px;</string>
           <number>10</number>
          </property>
          <property name="bottomMargin">
-          <number>12</number>
+          <number>14</number>
          </property>
          <item>
           <widget class="QLabel" name="label_2">
+           <property name="font">
+            <font>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Current Password:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="change_pass_cp_box">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(235, 235, 235);
+border: 1px solid #15305b;
+border-radius: 3px;</string>
+           </property>
+           <property name="echoMode">
+            <enum>QLineEdit::EchoMode::Password</enum>
+           </property>
+           <property name="clearButtonEnabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line_2">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line">
+           <property name="styleSheet">
+            <string notr="true">background-color: rgb(217, 217, 217);</string>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line_3">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_3">
            <property name="font">
             <font>
              <bold>true</bold>
@@ -202,35 +262,9 @@ border-radius: 3px;</string>
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="label_3">
-           <property name="font">
-            <font>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Confirm:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="change_pass_confirm_box">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(235, 235, 235);
-border: 1px solid #15305b;
-border-radius: 3px;</string>
-           </property>
-           <property name="echoMode">
-            <enum>QLineEdit::EchoMode::Password</enum>
-           </property>
-           <property name="clearButtonEnabled">
-            <bool>true</bool>
+          <widget class="Line" name="line_4">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
           </widget>
          </item>
@@ -248,12 +282,12 @@ border-radius: 3px;</string>
             </font>
            </property>
            <property name="text">
-            <string>Current Password:</string>
+            <string>Confirm:</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="change_pass_cp_box">
+          <widget class="QLineEdit" name="change_pass_confirm_box">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>

@@ -1,4 +1,5 @@
 import sys
+import random
 from PySide6.QtWidgets import QApplication, QMainWindow, QDialog, QWidget, QStackedWidget, QTabWidget, QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QDate
@@ -437,7 +438,8 @@ class HR:
 class Home:
     admin_password = "defaultpassword"
     password_changed = False
-    
+    failed_attempts = 0  # Counter for failed login attempts
+
     def __init__(self, db):
         self.db = db
         self.system_logs = SystemLogs(db)
@@ -453,7 +455,7 @@ class Home:
         self.system_logs.log_system_action("The home UI has been loaded.")
         self.home_ui.pass_visibility_button.clicked.connect(self.toggle_password_visibility)
         self.password_visible = False
-    
+        
     def update_date_today(self):
         current_date = datetime.now()
         formatted_date = current_date.strftime("%a, %b %d, %Y")
@@ -488,13 +490,13 @@ class Home:
         password = self.home_ui.home_pass_box.text()
 
         try:
-            
             cursor = self.db.execute_query("SELECT password, password_changed FROM Admin WHERE admin_id = ?", (user_id,))
             admin_result = cursor.fetchone() if cursor else None
 
             if admin_result:
                 db_password, password_changed = admin_result
                 if password == db_password:
+                    Home.failed_attempts = 0  
                     Home.password_changed = password_changed
                     if password_changed:
                         self.system_logs.log_system_action("The password is already changed, going to the admin UI.")
@@ -502,13 +504,20 @@ class Home:
                     else:
                         self.system_logs.log_system_action("The password is not changed executing Change Password Prompt")
                         self.goto_change_pass()
+                    self.home_ui.home_id_box.clear() 
+                    self.home_ui.home_pass_box.clear() 
                     return
                 else:
-                    self.show_error("Invalid credentials", "Please enter valid admin ID and password")
-                    self.system_logs.log_system_action("An invalid Admin loggin attempt has been made.")
+                    Home.failed_attempts += 1
+                    self.system_logs.log_system_action("An invalid Admin login attempt has been made.")
+                    if Home.failed_attempts >= 3:
+                        self.prompt_password_change()
+                    else:
+                        self.show_error("Invalid credentials", "Please enter valid admin ID and password")
+                    self.home_ui.home_id_box.clear() 
+                    self.home_ui.home_pass_box.clear()
                     return
 
-            
             cursor = self.db.execute_query("SELECT * FROM Employee WHERE employee_id = ? AND password = ?", (user_id, password))
             employee_result = cursor.fetchone() if cursor else None
 
@@ -537,34 +546,61 @@ class Home:
                         self.goto_bio1()
             else:
                 self.show_error("Invalid credentials", "Please enter valid employee ID and password")
-                self.system_logs.log_system_action("An invalid loggin attempt has been made.")
+                self.system_logs.log_system_action("An invalid login attempt has been made.")
         except sqlite3.Error as e:
             print(f"Database error during login: {e}")
 
-    def validate_attendance(self):
+        self.home_ui.home_id_box.clear()
+        self.home_ui.home_pass_box.clear()
         
+    def prompt_password_change(self):
+        dialog = QMessageBox()
+        dialog.setIcon(QMessageBox.Warning)
+        dialog.setText("Too Many Failed Attempts")
+        dialog.setInformativeText("You have entered the wrong password 3 times. Would you like to change your password?")
+        dialog.setWindowTitle("Change Password")
+        dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        dialog.setDefaultButton(QMessageBox.Yes)
+
+        response = dialog.exec()
+        if response == QMessageBox.Yes:
+            self.goto_change_pass()
+        else:
+            Home.failed_attempts = 0
+
+    def validate_attendance(self):
         if not self.employee_data:
             return False
 
         current_time = datetime.now()
         current_date = current_time.strftime("%Y-%m-%d")
-        current_hour = current_time.hour
 
-        
-        cursor = self.db.execute_query("SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?", 
-                                       (self.employee_data["employee_id"], current_date))
+        cursor = self.db.execute_query(
+            "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?", 
+            (self.employee_data["employee_id"], current_date)
+        )
         attendance = cursor.fetchone() if cursor else None
 
         if attendance:
-            
-            log_time = datetime.strptime(attendance[0], "%H:%M:%S")
+            log_time_str = attendance[0]  # Time as a string
+            log_time = datetime.strptime(f"{current_date} {log_time_str}", "%Y-%m-%d %H:%M:%S")
+
             if attendance[1] == "Clock In" and (current_time - log_time).total_seconds() < 8 * 3600:
-                self.show_error("Invalid Logout", "You cannot log out less than 8 hours after logging in.")
-                return False
+                dialog = QMessageBox()
+                dialog.setIcon(QMessageBox.Warning)
+                dialog.setText("Clock Out Warning")
+                dialog.setInformativeText("You have logged in less than 8 hours ago. Are you sure you want to clock out?")
+                dialog.setWindowTitle("Warning")
+                dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+                dialog.setDefaultButton(QMessageBox.No)
+
+                response = dialog.exec()
+                if response == QMessageBox.No:
+                    return False  
             self.employee_data["remarks"] = "Clock Out"
         else:
-            
             schedule_start, schedule_end = self.parse_schedule(self.employee_data["schedule"])
+            current_hour = current_time.hour
             if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
                 self.show_error("Invalid Login", "You cannot log in outside your scheduled shift.")
                 return False
@@ -609,20 +645,70 @@ class Home:
         self.home_ui.main_page.setCurrentIndex(bio2_page)
 
     def goto_result_prompt(self):
-        
         if self.employee_data:
             current_time = datetime.now()
             current_date = current_time.strftime("%Y-%m-%d")
 
             # Log attendance
             self.system_logs.log_system_action("A user logged.")
-            self.db.execute_query("INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)", 
-                                  (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), self.employee_data.get("remarks", "Clock In")))
+            self.db.execute_query(
+                "INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)", 
+                (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), self.employee_data.get("remarks", "Clock In"))
+            )
 
+            hour = current_time.hour
+            if 5 <= hour < 12:
+                greeting = "Good Morning"
+            elif 12 <= hour < 18:
+                greeting = "Good Afternoon"
+            else:
+                greeting = "Good Evening"
+            self.home_ui.result_greetings_lbl.setText(f"{greeting}, {self.employee_data['first_name']}!")
+
+            # Set a random motivational or system message
+            messages = [
+                "You worked 2 hours extra from your scheduled hours! Great job!",
+                "Keep up the excellent work!",
+                "Your dedication is appreciated!",
+                "You are making a difference every day!",
+                "Thank you for your hard work and commitment!"
+            ]
+            random_message = random.choice(messages)
+            self.home_ui.result_message_lbl.setText(random_message)
+
+            try:
+                cursor = self.db.execute_query(
+                    "SELECT remarks, date, time FROM attendance_logs WHERE employee_id = ?", 
+                    (self.employee_data["employee_id"],)
+                )
+                logs = cursor.fetchall() if cursor else []
+
+                self.home_ui.result_employee_attendance_tbl.setRowCount(0)
+                for log in logs:
+                    row_position = self.home_ui.result_employee_attendance_tbl.rowCount()
+                    self.home_ui.result_employee_attendance_tbl.insertRow(row_position)
+
+                    remarks_item = QTableWidgetItem(log[0])
+                    date_item = QTableWidgetItem(log[1])
+                    time_item = QTableWidgetItem(log[2])
+
+                    remarks_item.setFlags(remarks_item.flags() & ~Qt.ItemIsEditable)
+                    date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
+                    time_item.setFlags(time_item.flags() & ~Qt.ItemIsEditable)
+
+                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 0, remarks_item)
+                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 1, date_item)
+                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 2, time_item)
+
+                self.home_ui.result_employee_attendance_tbl.resizeColumnsToContents()
+            except sqlite3.Error as e:
+                print(f"Database error while loading attendance logs: {e}")
+
+        # Navigate to the result page
         result_prompt = self.home_ui.main_page.indexOf(self.home_ui.result_page)
         self.home_ui.main_page.setCurrentIndex(result_prompt)
 
-        
+        # Automatically return to the home page after 5 seconds
         threading.Timer(5.0, lambda: self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)).start()
 
     def parse_schedule(self, schedule):

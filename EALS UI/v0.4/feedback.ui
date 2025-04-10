@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>669</width>
-    <height>381</height>
+    <width>454</width>
+    <height>628</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -70,7 +70,7 @@ border-radius: 5px;</string>
          <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 5px;</string>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,1">
+        <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0">
          <property name="leftMargin">
           <number>10</number>
          </property>
@@ -96,10 +96,9 @@ border-radius: 5px;</string>
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox">
+          <widget class="QLineEdit" name="lineEdit">
            <property name="styleSheet">
-            <string notr="true">border: 1px solid #15305b;
-border-radius: 3px;</string>
+            <string notr="true">background-color: rgb(255, 255, 255);</string>
            </property>
           </widget>
          </item>
@@ -116,23 +115,12 @@ border-radius: 3px;</string>
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="feedback_details_box">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
+          <widget class="QPlainTextEdit" name="plainTextEdit">
            <property name="styleSheet">
-            <string notr="true">background-color: rgb(235, 235, 235);
-border: 1px solid #15305b;
-border-radius: 3px;</string>
+            <string notr="true">background-color: rgb(255, 255, 255);</string>
            </property>
-           <property name="echoMode">
-            <enum>QLineEdit::EchoMode::Password</enum>
-           </property>
-           <property name="clearButtonEnabled">
-            <bool>true</bool>
+           <property name="frameShape">
+            <enum>QFrame::Shape::StyledPanel</enum>
            </property>
           </widget>
          </item>

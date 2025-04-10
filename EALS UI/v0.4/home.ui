@@ -113,7 +113,7 @@ border-radius: 5px;</string>
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="home_page">
        <layout class="QGridLayout" name="gridLayout_4" rowstretch="3,5,3" columnstretch="4,3,4">
@@ -1145,7 +1145,7 @@ background-color: #d8e1e8;</string>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_21">
+            <widget class="QLabel" name="result_greetings_lbl">
              <property name="font">
               <font>
                <pointsize>31</pointsize>
@@ -1161,7 +1161,7 @@ background-color: #d8e1e8;</string>
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_22">
+            <widget class="QLabel" name="result_message_lbl">
              <property name="font">
               <font>
                <pointsize>22</pointsize>
@@ -1215,7 +1215,7 @@ border-radius: 10px;</string>
                <number>9</number>
               </property>
               <item row="0" column="0">
-               <widget class="QTableWidget" name="tableWidget">
+               <widget class="QTableWidget" name="result_employee_attendance_tbl">
                 <property name="styleSheet">
                  <string notr="true">background-color: rgb(255, 255, 255);</string>
                 </property>
@@ -1230,7 +1230,7 @@ border-radius: 10px;</string>
                 </attribute>
                 <column>
                  <property name="text">
-                  <string>In / Out:</string>
+                  <string>Remarks:</string>
                  </property>
                 </column>
                 <column>
