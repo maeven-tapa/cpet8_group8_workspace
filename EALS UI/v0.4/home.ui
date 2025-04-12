@@ -113,7 +113,7 @@ border-radius: 5px;</string>
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="home_page">
        <layout class="QGridLayout" name="gridLayout_4" rowstretch="3,5,3" columnstretch="4,3,4">

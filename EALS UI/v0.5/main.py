@@ -59,12 +59,6 @@ class DatabaseConnection:
                     FOREIGN KEY (employee_id) REFERENCES Employee(employee_id)
                 );
 
-                CREATE TABLE IF NOT EXISTS system_setting (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    backup_config INTEGER DEFAULT 2,
-                    automatic_backup_config INTEGER DEFAULT 1,
-                    archive_config INTEGER DEFAULT 1
-                );
 
                 CREATE TABLE IF NOT EXISTS system_logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,7 +66,6 @@ class DatabaseConnection:
                     time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
 
-                INSERT OR IGNORE INTO system_setting (id) VALUES (1);
                 INSERT OR IGNORE INTO Admin (admin_id, password, password_changed) 
                 VALUES ('admin-01-0001', 'defaultpassword', FALSE);
                 ''')
@@ -886,11 +879,6 @@ class Admin:
         self.admin_ui.employee_picture_btn.clicked.connect(self.handle_enroll_picture)
         self.admin_ui.change_employee_picture.clicked.connect(self.handle_edit_picture)
 
-        self.admin_ui.backup_btn.clicked.connect(self.save_backup_config)
-        self.admin_ui.archive_btn.clicked.connect(self.save_archive_config)
-
-        self.load_backup_and_archive_settings()
-
         self.admin_ui.admin_attedance_logs_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.admin_ui.admin_attedance_logs_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
 
@@ -932,35 +920,6 @@ class Admin:
                 self.admin_ui.system_log_browser.setText("Error loading log file.")
         else:
             self.admin_ui.system_log_browser.setText("No log file selected or file does not exist.")
-
-    def load_backup_and_archive_settings(self):
-        try:
-            cursor = self.db.execute_query("SELECT backup_config, automatic_backup_config, archive_config FROM system_setting WHERE id = 1")
-            settings = cursor.fetchone() if cursor else None
-
-            if settings:
-                backup_config, auto_backup_config, archive_config = settings
-
-                # Set backup configuration
-                self.admin_ui.automatic_backup_btn.setChecked(backup_config == 1)
-
-                # Set automatic backup configuration
-                if auto_backup_config == 1:
-                    self.admin_ui.auto_back_choice_1.setChecked(True)
-                elif auto_backup_config == 2:
-                    self.admin_ui.auto_back_choice_2.setChecked(True)
-                elif auto_backup_config == 3:
-                    self.admin_ui.auto_back_choice_3.setChecked(True)
-
-                # Set archive configuration
-                if archive_config == 1:
-                    self.admin_ui.archive_choice_1.setChecked(True)
-                elif archive_config == 2:
-                    self.admin_ui.archive_choice_2.setChecked(True)
-                elif archive_config == 3:
-                    self.admin_ui.archive_choice_3.setChecked(True)
-        except sqlite3.Error as e:
-            print(f"Error loading backup and archive settings: {e}")
 
     def update_date_today(self):
         current_date = datetime.now()
@@ -1853,62 +1812,6 @@ class Admin:
         self.admin_ui.employee_sched_2.setChecked(False)
         self.admin_ui.employee_sched_3.setChecked(False)
 
-    def save_backup_config(self):
-        try:
-            backup_config = 1 if self.admin_ui.automatic_backup_btn.isChecked() else 2
-            auto_backup_config = 1 if self.admin_ui.auto_back_choice_1.isChecked() else \
-                                2 if self.admin_ui.auto_back_choice_2.isChecked() else 3
-
-            self.db.execute_query('''
-                UPDATE system_setting
-                SET backup_config = ?, automatic_backup_config = ?
-                WHERE id = 1
-            ''', (backup_config, auto_backup_config))
-
-            self.system_logs.log_system_action("Backup configuration saved.")
-            
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("Backup configuration saved successfully.")
-            msg.setWindowTitle("Configuration Saved")
-            msg.exec_()
-            
-        except sqlite3.Error as e:
-            print(f"Error saving backup configuration: {e}")
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText(f"Failed to save backup configuration.")
-            error_msg.setDetailedText(f"Database error: {e}")
-            error_msg.setWindowTitle("Configuration Error")
-            error_msg.exec_()
-
-    def save_archive_config(self):
-        try:
-            archive_config = 1 if self.admin_ui.archive_choice_1.isChecked() else \
-                            2 if self.admin_ui.archive_choice_2.isChecked() else 3
-
-            self.db.execute_query('''
-                UPDATE system_setting
-                SET archive_config = ?
-                WHERE id = 1
-            ''', (archive_config,))
-
-            self.system_logs.log_system_action("Archive configuration saved.")
-            
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("Archive configuration saved successfully.")
-            msg.setWindowTitle("Configuration Saved")
-            msg.exec_()
-            
-        except sqlite3.Error as e:
-            print(f"Error saving archive configuration: {e}")
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText(f"Failed to save archive configuration.")
-            error_msg.setDetailedText(f"Database error: {e}")
-            error_msg.setWindowTitle("Configuration Error")
-            error_msg.exec_()
 
     def load_attendance_logs_table(self):
 

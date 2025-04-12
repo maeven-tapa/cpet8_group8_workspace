@@ -2,9 +2,9 @@ import sys
 import random
 from PySide6.QtWidgets import QApplication, QMainWindow, QDialog, QWidget, QStackedWidget, QTabWidget, QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import Qt, QDate, QCoreApplication, QProcess, QTimer
 from PySide6.QtGui import QPixmap
-from datetime import datetime
+from datetime import datetime, timedelta
 import sqlite3
 import threading
 import os
@@ -58,12 +58,15 @@ class DatabaseConnection:
                     remarks VARCHAR(10) NOT NULL,
                     FOREIGN KEY (employee_id) REFERENCES Employee(employee_id)
                 );
-
-                CREATE TABLE IF NOT EXISTS system_setting (
+                
+                CREATE TABLE IF NOT EXISTS system_settings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    backup_config INTEGER DEFAULT 2,
-                    automatic_backup_config INTEGER DEFAULT 1,
-                    archive_config INTEGER DEFAULT 1
+                    backup_type VARCHAR(10),
+                    backup_frequency INTEGER,
+                    backup_unit VARCHAR(10),
+                    retention_enabled BOOLEAN,
+                    retention_frequency INTEGER,
+                    retention_unit VARCHAR(10)
                 );
 
                 CREATE TABLE IF NOT EXISTS system_logs (
@@ -72,12 +75,11 @@ class DatabaseConnection:
                     time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
 
-                INSERT OR IGNORE INTO system_setting (id) VALUES (1);
+
                 INSERT OR IGNORE INTO Admin (admin_id, password, password_changed) 
                 VALUES ('admin-01-0001', 'defaultpassword', FALSE);
                 ''')
                 self.connection.commit()
-                
         except sqlite3.Error as e:
             print(f"Error creating tables: {e}")
 
@@ -144,7 +146,7 @@ class HR:
         self.system_logs = SystemLogs(db)
         self.hr_data = hr_data
         self.loader = QUiLoader()
-        self.hr_ui = self.loader.load("hr.ui")
+        self.hr_ui = self.loader.load("ui/hr.ui")
         self.hr_ui.hr_employee_sc_pages.setCurrentWidget(self.hr_ui.hr_employee_dashboard_page)
         self.hr_ui.hr_employee_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.hr_ui.hr_employee_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -444,7 +446,7 @@ class Home:
         self.db = db
         self.system_logs = SystemLogs(db)
         self.loader = QUiLoader()
-        self.home_ui = self.loader.load("home.ui")
+        self.home_ui = self.loader.load("ui/home.ui")
         self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
         self.admin_id = "admin-01-0001"
         self.update_date_today()
@@ -772,7 +774,7 @@ class ChangePassword:
         self.system_logs = SystemLogs(db)
         self.admin_id = admin_id
         self.loader = QUiLoader()
-        self.change_pass_ui = self.loader.load("admin_change_pass.ui")
+        self.change_pass_ui = self.loader.load("ui/admin_change_pass.ui")
         self.change_pass_ui.change_pass_note.setText("For security purposes, please enter your current password below, then choose a new password and confirm it. Make sure your new password is at least 8 characters long.")
         self.change_pass_ui.change_pass_note.setStyleSheet("color: black")
         self.change_pass_ui.admin_change_pass_btn.clicked.connect(self.validate_and_change_password)
@@ -832,7 +834,7 @@ class Admin:
         self.db = db
         self.system_logs = SystemLogs(db)
         self.loader = QUiLoader()
-        self.admin_ui = self.loader.load("admin.ui")
+        self.admin_ui = self.loader.load("ui/admin.ui")
         self.admin_ui.home_tabs.setCurrentWidget(self.admin_ui.admin_dashboard)
         self.admin_ui.admin_employee_sc_pages.setCurrentWidget(self.admin_ui.employee_hr_page)
         self.employees = []
@@ -886,11 +888,6 @@ class Admin:
         self.admin_ui.employee_picture_btn.clicked.connect(self.handle_enroll_picture)
         self.admin_ui.change_employee_picture.clicked.connect(self.handle_edit_picture)
 
-        self.admin_ui.backup_btn.clicked.connect(self.save_backup_config)
-        self.admin_ui.archive_btn.clicked.connect(self.save_archive_config)
-
-        self.load_backup_and_archive_settings()
-
         self.admin_ui.admin_attedance_logs_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.admin_ui.admin_attedance_logs_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
 
@@ -904,6 +901,14 @@ class Admin:
 
         self.admin_ui.view_hr_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.admin_ui.view_hr_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
+    
+        self.admin_ui.backup_btn.clicked.connect(self.handle_backup)
+        self.admin_ui.restore_btn.clicked.connect(self.restore_backup)
+
+        # Load backup table on initialization
+        self.start_backup_scheduler()
+        self.load_backup_table()
+        self.load_backup_configuration()
 
     def load_system_logs(self):
         """Load all log files into the system_log_list QComboBox."""
@@ -932,35 +937,6 @@ class Admin:
                 self.admin_ui.system_log_browser.setText("Error loading log file.")
         else:
             self.admin_ui.system_log_browser.setText("No log file selected or file does not exist.")
-
-    def load_backup_and_archive_settings(self):
-        try:
-            cursor = self.db.execute_query("SELECT backup_config, automatic_backup_config, archive_config FROM system_setting WHERE id = 1")
-            settings = cursor.fetchone() if cursor else None
-
-            if settings:
-                backup_config, auto_backup_config, archive_config = settings
-
-                # Set backup configuration
-                self.admin_ui.automatic_backup_btn.setChecked(backup_config == 1)
-
-                # Set automatic backup configuration
-                if auto_backup_config == 1:
-                    self.admin_ui.auto_back_choice_1.setChecked(True)
-                elif auto_backup_config == 2:
-                    self.admin_ui.auto_back_choice_2.setChecked(True)
-                elif auto_backup_config == 3:
-                    self.admin_ui.auto_back_choice_3.setChecked(True)
-
-                # Set archive configuration
-                if archive_config == 1:
-                    self.admin_ui.archive_choice_1.setChecked(True)
-                elif archive_config == 2:
-                    self.admin_ui.archive_choice_2.setChecked(True)
-                elif archive_config == 3:
-                    self.admin_ui.archive_choice_3.setChecked(True)
-        except sqlite3.Error as e:
-            print(f"Error loading backup and archive settings: {e}")
 
     def update_date_today(self):
         current_date = datetime.now()
@@ -1311,21 +1287,21 @@ class Admin:
         id_no = self.admin_ui.edit_employee_id_no.currentText()
         password = self.admin_ui.edit_employee_password.text()
         confirm_password = self.admin_ui.edit_employee_confirm_password.text()
-        
+
         gender = None
         if self.admin_ui.edit_employee_male.isChecked():
             gender = "Male"
         elif self.admin_ui.edit_employee_female.isChecked():
             gender = "Female"
-        
+
         is_hr = self.admin_ui.edit_is_hr_yes.isChecked()
-        
+
         department = self.admin_ui.edit_employee_department_box.currentText()
         position = self.admin_ui.edit_employee_position_box.currentText()
         if is_hr:
             department = "Human Resources"
             position = "HR Staff"
-        
+
         schedule = None
         if self.admin_ui.edit_employee_sched_1.isChecked():
             schedule = "6am to 2pm"
@@ -1333,13 +1309,15 @@ class Admin:
             schedule = "2pm to 10pm"
         elif self.admin_ui.edit_employee_sched_3.isChecked():
             schedule = "10pm to 6am"
-        
+
         missing_fields = []
-        
-        if not first_name:
-            missing_fields.append("First Name")
-        if not last_name:
-            missing_fields.append("Last Name")
+
+        # Validate first name and last name
+        if not first_name or not all(part.isalpha() for part in first_name.split()):
+            missing_fields.append("Valid First Name (letters only, multiple names allowed)")
+        if not last_name or not last_name.isalpha():
+            missing_fields.append("Valid Last Name (letters only)")
+
         if not id_pref:
             missing_fields.append("ID Prefix")
         if not password:
@@ -1350,13 +1328,49 @@ class Admin:
             missing_fields.append("Gender")
         if not schedule:
             missing_fields.append("Schedule")
-        
-        if password and confirm_password and password != confirm_password:
-            return False, "Password and Confirm Password do not match"
-        
+
+        # Validate birthday (must be at least 18 years old)
+        birthday = self.admin_ui.edit_employee_birthday_edit.date().toString("yyyy-MM-dd")
+        try:
+            birthday_date = datetime.strptime(birthday, "%Y-%m-%d")
+            today = datetime.now()
+            age = today.year - birthday_date.year - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
+            if age < 18:
+                return False, "Employee must be at least 18 years old."
+        except ValueError:
+            return False, "Invalid Birthday format."
+
+        # Validate password
+        if password and confirm_password:
+            if password != confirm_password:
+                return False, "Password and Confirm Password do not match"
+            if len(password) < 8 or len(password) > 16:
+                return False, "Password must be between 8 and 16 characters long"
+
+        # Check if the employee ID already exists (excluding the current employee)
+        employee_id = f"{id_pref}-{id_year}-{id_no}"
+        try:
+            cursor = self.db.execute_query(
+                "SELECT employee_id FROM Employee WHERE employee_id = ? AND employee_id != ?",
+                (employee_id, self.current_employee_data["employee_id"])
+            )
+            if cursor.fetchone():
+                return False, f"Employee ID {employee_id} already exists in the database."
+
+            # Check if the name already exists (excluding the current employee)
+            cursor = self.db.execute_query(
+                "SELECT first_name, last_name FROM Employee WHERE first_name = ? AND last_name = ? AND employee_id != ?",
+                (first_name, last_name, self.current_employee_data["employee_id"])
+            )
+            if cursor.fetchone():
+                return False, f"An employee with the name {first_name} {last_name} already exists in the database."
+        except sqlite3.Error as e:
+            print(f"Database error during validation: {e}")
+            return False, "An error occurred while validating the data. Please try again."
+
         if missing_fields:
             return False, f"Please fill in the following required fields: {', '.join(missing_fields)}"
-        
+
         status = "Active"
         if self.selected_employee_type == "employee" and self.selected_employee_index is not None:
             status_item = self.admin_ui.employee_list_tbl.item(self.selected_employee_index, 3)
@@ -1366,15 +1380,15 @@ class Admin:
             status_item = self.admin_ui.hr_list_tbl.item(self.selected_employee_index, 2)
             if status_item:
                 status = status_item.text()
-        
+
         employee_data = {
             "first_name": first_name,
             "last_name": last_name,
             "middle_initial": mi,
-            "employee_id": f"{id_pref}-{id_year}-{id_no}",
+            "employee_id": employee_id,
             "password": password,
             "gender": gender,
-            "birthday": self.admin_ui.edit_employee_birthday_edit.date().toString("yyyy-MM-dd"),
+            "birthday": birthday,
             "department": department,
             "position": position,
             "schedule": schedule,
@@ -1382,7 +1396,7 @@ class Admin:
             "status": status,
             "profile_picture": self.current_employee_data.get('profile_picture', '')
         }
-        
+
         return True, employee_data
 
     def save_edited_employee(self):
@@ -1481,22 +1495,23 @@ class Admin:
         id_no = self.admin_ui.employee_id_no.currentText()
         password = self.admin_ui.employee_password.text()
         confirm_password = self.admin_ui.employee_confirm_password.text()
-        
+        profile_picture = self.current_employee_data.get('profile_picture', '')
+
         gender = None
         if self.admin_ui.employee_male.isChecked():
             gender = "Male"
         elif self.admin_ui.employee_female.isChecked():
             gender = "Female"
-        
+
         is_hr = self.admin_ui.is_hr_yes.isChecked()
-        
+
         department = self.admin_ui.employee_department_box.currentText()
         position = self.admin_ui.employee_position_box.currentText()
-        
+
         if is_hr:
             department = "Human Resources"
             position = "HR Staff"
-        
+
         schedule = None
         if self.admin_ui.employee_sched_1.isChecked():
             schedule = "6am to 2pm"
@@ -1504,13 +1519,15 @@ class Admin:
             schedule = "2pm to 10pm"
         elif self.admin_ui.employee_sched_3.isChecked():
             schedule = "10pm to 6am"
-        
+
         missing_fields = []
-        
-        if not first_name:
-            missing_fields.append("First Name")
-        if not last_name:
-            missing_fields.append("Last Name")
+
+        # Validate first name and last name
+        if not first_name or not all(part.isalpha() for part in first_name.split()):
+            missing_fields.append("Valid First Name (letters only, multiple names allowed)")
+        if not last_name or not last_name.isalpha():
+            missing_fields.append("Valid Last Name (letters only)")
+
         if not id_pref:
             missing_fields.append("ID Prefix")
         if not password:
@@ -1521,29 +1538,64 @@ class Admin:
             missing_fields.append("Gender")
         if not schedule:
             missing_fields.append("Schedule")
-        
-        if password and confirm_password and password != confirm_password:
-            return False, "Password and Confirm Password do not match"
-        
+        if not profile_picture:
+            missing_fields.append("Profile Picture")
+
+        # Validate birthday (must be at least 18 years old)
+        birthday = self.admin_ui.employee_birthday_edit.date().toString("yyyy-MM-dd")
+        try:
+            birthday_date = datetime.strptime(birthday, "%Y-%m-%d")
+            today = datetime.now()
+            age = today.year - birthday_date.year - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
+            if age < 18:
+                return False, "Employee must be at least 18 years old."
+        except ValueError:
+            return False, "Invalid Birthday format."
+
+        # Validate password
+        if password and confirm_password:
+            if password != confirm_password:
+                return False, "Password and Confirm Password do not match"
+            if len(password) < 8 or len(password) > 16:
+                return False, "Password must be between 8 and 16 characters long"
+
+        # Check if the employee ID already exists
+        employee_id = f"{id_pref}-{id_year}-{id_no}"
+        try:
+            cursor = self.db.execute_query("SELECT employee_id FROM Employee WHERE employee_id = ?", (employee_id,))
+            if cursor.fetchone():
+                return False, f"Employee ID {employee_id} already exists in the database."
+
+            # Check if the name already exists
+            cursor = self.db.execute_query(
+                "SELECT first_name, last_name FROM Employee WHERE first_name = ? AND last_name = ?",
+                (first_name, last_name)
+            )
+            if cursor.fetchone():
+                return False, f"An employee with the name {first_name} {last_name} already exists in the database."
+        except sqlite3.Error as e:
+            print(f"Database error during validation: {e}")
+            return False, "An error occurred while validating the data. Please try again."
+
         if missing_fields:
             return False, f"Please fill in the following required fields: {', '.join(missing_fields)}"
-        
+
         employee_data = {
             "first_name": first_name,
             "last_name": last_name,
             "middle_initial": mi,
-            "employee_id": f"{id_pref}-{id_year}-{id_no}",
+            "employee_id": employee_id,
             "password": password,
             "gender": gender,
-            "birthday": self.admin_ui.employee_birthday_edit.date().toString("yyyy-MM-dd"),
+            "birthday": birthday,
             "department": department,
             "position": position,
             "schedule": schedule,
             "is_hr": is_hr,
             "status": "Active",
-            "profile_picture": self.current_employee_data.get('profile_picture', '')
+            "profile_picture": profile_picture
         }
-        
+
         return True, employee_data
 
     def load_employee_table(self):
@@ -1853,62 +1905,6 @@ class Admin:
         self.admin_ui.employee_sched_2.setChecked(False)
         self.admin_ui.employee_sched_3.setChecked(False)
 
-    def save_backup_config(self):
-        try:
-            backup_config = 1 if self.admin_ui.automatic_backup_btn.isChecked() else 2
-            auto_backup_config = 1 if self.admin_ui.auto_back_choice_1.isChecked() else \
-                                2 if self.admin_ui.auto_back_choice_2.isChecked() else 3
-
-            self.db.execute_query('''
-                UPDATE system_setting
-                SET backup_config = ?, automatic_backup_config = ?
-                WHERE id = 1
-            ''', (backup_config, auto_backup_config))
-
-            self.system_logs.log_system_action("Backup configuration saved.")
-            
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("Backup configuration saved successfully.")
-            msg.setWindowTitle("Configuration Saved")
-            msg.exec_()
-            
-        except sqlite3.Error as e:
-            print(f"Error saving backup configuration: {e}")
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText(f"Failed to save backup configuration.")
-            error_msg.setDetailedText(f"Database error: {e}")
-            error_msg.setWindowTitle("Configuration Error")
-            error_msg.exec_()
-
-    def save_archive_config(self):
-        try:
-            archive_config = 1 if self.admin_ui.archive_choice_1.isChecked() else \
-                            2 if self.admin_ui.archive_choice_2.isChecked() else 3
-
-            self.db.execute_query('''
-                UPDATE system_setting
-                SET archive_config = ?
-                WHERE id = 1
-            ''', (archive_config,))
-
-            self.system_logs.log_system_action("Archive configuration saved.")
-            
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("Archive configuration saved successfully.")
-            msg.setWindowTitle("Configuration Saved")
-            msg.exec_()
-            
-        except sqlite3.Error as e:
-            print(f"Error saving archive configuration: {e}")
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText(f"Failed to save archive configuration.")
-            error_msg.setDetailedText(f"Database error: {e}")
-            error_msg.setWindowTitle("Configuration Error")
-            error_msg.exec_()
 
     def load_attendance_logs_table(self):
 
@@ -2027,6 +2023,232 @@ class Admin:
         table.setItem(row_position, 2, remarks_item)
 
         table.resizeColumnsToContents()
+        
+    def handle_backup(self):
+        """Handle backup configuration and perform backup."""
+        try:
+            # Validate input fields
+            if self.admin_ui.backup_basic_btn.isChecked():
+                backup_type = "Basic"
+                backup_frequency = 1
+                backup_unit = self.admin_ui.backup_basic_box.currentText()
+            elif self.admin_ui.backup_custom_btn.isChecked():
+                backup_type = "Custom"
+                backup_frequency = self.admin_ui.backup_custom_number.text().strip()
+                backup_unit = self.admin_ui.backup_custom_box.currentText()
+                if not backup_frequency.isdigit() or int(backup_frequency) <= 0:
+                    QMessageBox.warning(None, "Invalid Input", "Please enter a valid frequency for custom backup.")
+                    return
+                backup_frequency = int(backup_frequency)
+            else:
+                QMessageBox.warning(None, "Invalid Input", "Please select a backup type.")
+                return
+
+            retention_enabled = self.admin_ui.backup_retention_btn.isChecked()
+            if retention_enabled:
+                retention_frequency = self.admin_ui.backup_retention_numbers.text().strip()
+                retention_unit = self.admin_ui.backup_retention_box.currentText()
+                if not retention_frequency.isdigit() or int(retention_frequency) <= 0:
+                    QMessageBox.warning(None, "Invalid Input", "Please enter a valid retention frequency.")
+                    return
+                retention_frequency = int(retention_frequency)
+            else:
+                retention_frequency = None
+                retention_unit = None
+
+            # Save configuration to the database
+            self.db.execute_query("DELETE FROM system_settings")
+            self.db.execute_query('''
+                INSERT INTO system_settings (backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit))
+
+            QMessageBox.information(None, "Backup Configuration", "Backup configuration saved successfully.")
+
+            # Perform the backup
+            backup_dir = "resources/backups"
+            if not os.path.exists(backup_dir):
+                os.makedirs(backup_dir)
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_file = os.path.join(backup_dir, f"backup_{timestamp}.db")
+
+            shutil.copy(self.db.db_name, backup_file)
+            QMessageBox.information(None, "Backup", f"Backup created successfully: {backup_file}")
+
+            # Reload the backup table to reflect the new backup
+            self.load_backup_table()
+
+        except sqlite3.Error as e:
+            print(f"Database error while saving backup configuration: {e}")
+        except Exception as e:
+            print(f"Error during backup process: {e}")
+            
+    def load_backup_table(self):
+        """Load all backup files into the backup table with File Name and Date columns."""
+        backup_dir = "resources/backups"
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir)
+
+        backup_files = [f for f in os.listdir(backup_dir) if os.path.isfile(os.path.join(backup_dir, f))]
+        self.admin_ui.backup_tbl.setRowCount(0)
+
+        for backup_file in backup_files:
+            row_position = self.admin_ui.backup_tbl.rowCount()
+            self.admin_ui.backup_tbl.insertRow(row_position)
+
+            # File Name
+            file_name_item = QTableWidgetItem(backup_file)
+            file_name_item.setFlags(file_name_item.flags() & ~Qt.ItemIsEditable)
+            self.admin_ui.backup_tbl.setItem(row_position, 0, file_name_item)
+
+            # Date (Extracted from file name)
+            try:
+                # Ensure the file name matches the expected format: backup_YYYYMMDD_HHMMSS.db
+                if backup_file.startswith("backup_") and backup_file.endswith(".db"):
+                    # Extract the full timestamp part between "backup_" and ".db"
+                    timestamp_part = backup_file[len("backup_"):].split(".")[0]
+                    backup_date = datetime.strptime(timestamp_part, "%Y%m%d_%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
+                else:
+                    raise ValueError("Invalid file name format")
+            except (IndexError, ValueError):
+                backup_date = "Invalid format"
+
+            date_item = QTableWidgetItem(backup_date)
+            date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
+            self.admin_ui.backup_tbl.setItem(row_position, 1, date_item)
+
+    def restore_backup(self):
+        """Restore the selected backup and restart the application."""
+        selected_rows = self.admin_ui.backup_tbl.selectedIndexes()
+        if not selected_rows:
+            QMessageBox.warning(None, "Restore Error", "Please select a backup to restore.")
+            return
+
+        row = selected_rows[0].row()
+        backup_file = self.admin_ui.backup_tbl.item(row, 0).text()
+        backup_path = os.path.join("resources/backups", backup_file)
+
+        try:
+            # Copy the selected backup file to overwrite the current database
+            shutil.copy(backup_path, self.db.db_name)
+            QMessageBox.information(None, "Restore", "Database restored successfully. The application will now restart.")
+
+            # Restart the application
+            QProcess.startDetached(sys.executable, sys.argv)
+            QCoreApplication.quit()
+        except Exception as e:
+            print(f"Error restoring backup: {e}")
+            
+    def scheduled_backup(self):
+        """Perform a backup based on the configuration saved in the database."""
+        try:
+            # Retrieve backup configuration from the database
+            cursor = self.db.execute_query("SELECT backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit FROM system_settings")
+            config = cursor.fetchone()
+
+            if not config:
+                QMessageBox.warning(None, "Backup Error", "No backup configuration found. Please configure the backup settings first.")
+                return
+
+            backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit = config
+
+            # Perform the backup
+            backup_dir = "resources/backups"
+            if not os.path.exists(backup_dir):
+                os.makedirs(backup_dir)
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_file = os.path.join(backup_dir, f"backup_{timestamp}.db")
+
+            shutil.copy(self.db.db_name, backup_file)
+            QMessageBox.information(None, "Backup", f"Backup created successfully: {backup_file}")
+
+            # Handle retention if enabled
+            if retention_enabled:
+                self.handle_retention(backup_dir, retention_frequency, retention_unit)
+
+        except sqlite3.Error as e:
+            print(f"Database error while performing scheduled backup: {e}")
+        except Exception as e:
+            print(f"Error during scheduled backup: {e}")
+            
+    def handle_retention(self, backup_dir, retention_frequency, retention_unit):
+        """Delete old backups based on the retention policy."""
+        try:
+            # Calculate the retention threshold
+            now = datetime.now()
+            if retention_unit == "Hours":
+                threshold = now - timedelta(hours=retention_frequency)
+            elif retention_unit == "Days":
+                threshold = now - timedelta(days=retention_frequency)
+            elif retention_unit == "Weeks":
+                threshold = now - timedelta(weeks=retention_frequency)
+            elif retention_unit == "Months":
+                threshold = now - timedelta(days=retention_frequency * 30)  # Approximate months as 30 days
+            else:
+                return
+
+            # Delete backups older than the threshold
+            for backup_file in os.listdir(backup_dir):
+                if backup_file.startswith("backup_") and backup_file.endswith(".db"):
+                    timestamp_part = backup_file[len("backup_"):].split(".")[0]
+                    try:
+                        backup_date = datetime.strptime(timestamp_part, "%Y%m%d_%H%M%S")
+                        if backup_date < threshold:
+                            os.remove(os.path.join(backup_dir, backup_file))
+                            print(f"Deleted old backup: {backup_file}")
+                    except ValueError:
+                        continue
+
+        except Exception as e:
+            print(f"Error during retention handling: {e}")
+            
+            
+    def start_backup_scheduler(self):
+        """Start a timer to perform backups based on the configuration."""
+        self.backup_timer = QTimer()
+        self.backup_timer.timeout.connect(self.scheduled_backup)
+
+        # Set the timer interval (e.g., check every hour)
+        self.backup_timer.start(3600000)  # 1 hour in milliseconds
+
+    def load_backup_configuration(self):
+        """Load backup configuration from the database and set it to the UI elements."""
+        try:
+            cursor = self.db.execute_query("SELECT backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit FROM system_settings")
+            config = cursor.fetchone()
+
+            if not config:
+                # No configuration found, set default values
+                self.admin_ui.backup_basic_btn.setChecked(True)
+                self.admin_ui.backup_basic_box.setCurrentIndex(0)
+                self.admin_ui.backup_custom_number.clear()
+                self.admin_ui.backup_custom_box.setCurrentIndex(0)
+                self.admin_ui.backup_retention_btn.setChecked(False)
+                self.admin_ui.backup_retention_numbers.clear()
+                self.admin_ui.backup_retention_box.setCurrentIndex(0)
+                return
+
+            backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit = config
+
+            # Set backup type
+            if backup_type == "Basic":
+                self.admin_ui.backup_basic_btn.setChecked(True)
+                self.admin_ui.backup_basic_box.setCurrentText(backup_unit)
+            elif backup_type == "Custom":
+                self.admin_ui.backup_custom_btn.setChecked(True)
+                self.admin_ui.backup_custom_number.setText(str(backup_frequency))
+                self.admin_ui.backup_custom_box.setCurrentText(backup_unit)
+
+            # Set retention settings
+            self.admin_ui.backup_retention_btn.setChecked(bool(retention_enabled))
+            if retention_enabled:
+                self.admin_ui.backup_retention_numbers.setText(str(retention_frequency))
+                self.admin_ui.backup_retention_box.setCurrentText(retention_unit)
+
+        except sqlite3.Error as e:
+            print(f"Database error while loading backup configuration: {e}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
