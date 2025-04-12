@@ -32,6 +32,8 @@ MANIFEST
 # Logs folder
 logs/
 
+backups/
+
 # Profile pictures folder
 profile_pictures/
 # PyInstaller
