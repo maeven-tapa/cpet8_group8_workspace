@@ -101,7 +101,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <property name="iconSize">
        <size>
@@ -742,6 +742,12 @@ QLineEdit:focus {
            </item>
            <item row="2" column="0">
             <widget class="QLabel" name="label_18">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="font">
               <font>
                <stylestrategy>NoAntialias</stylestrategy>
@@ -752,7 +758,13 @@ QLineEdit:focus {
               <string notr="true">border: none;</string>
              </property>
              <property name="text">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note:&lt;/span&gt; This the live feed of the attedance logs&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;This is the live feed of attendance logs. Search by date or account ID to filter records.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+             <property name="indent">
+              <number>6</number>
              </property>
             </widget>
            </item>
@@ -912,6 +924,12 @@ QComboBox QAbstractItemView {
            </item>
            <item row="2" column="0">
             <widget class="QLabel" name="label_22">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="font">
               <font>
                <bold>false</bold>
@@ -922,7 +940,13 @@ QComboBox QAbstractItemView {
               <string notr="true">border: none;</string>
              </property>
              <property name="text">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;This HR generated feedbacks.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;This section displays HR-generated feedback. Select a title from the dropdown above to view or change entries.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+             <property name="indent">
+              <number>6</number>
              </property>
             </widget>
            </item>
@@ -1087,7 +1111,7 @@ QToolTip {
            <string notr="true"/>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>6</number>
           </property>
           <widget class="QWidget" name="employee_hr_page">
            <layout class="QGridLayout" name="gridLayout_40" rowstretch="12,1">
@@ -1713,11 +1737,23 @@ border-radius:6px;</string>
               <layout class="QGridLayout" name="gridLayout_12">
                <item row="0" column="0">
                 <widget class="QLabel" name="label_16">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="styleSheet">
                   <string notr="true">border: none;</string>
                  </property>
                  <property name="text">
-                  <string>Note: Select employee then pressed the buttons on the left side to edit, view.</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;Select an employee and use the buttons on the left sidebar to manage accounts. Search by name or filter by criteria to locate specific employees.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="wordWrap">
+                  <bool>true</bool>
+                 </property>
+                 <property name="indent">
+                  <number>10</number>
                  </property>
                 </widget>
                </item>
@@ -4997,7 +5033,7 @@ QScrollBar::sub-page:vertical {
                        <string notr="true">border: none;</string>
                       </property>
                       <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Is the the employee HR?&lt;/span&gt;&lt;br/&gt;(If you selected &amp;quot;YES&amp;quot; the department &lt;br/&gt;and position above will be disregards)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Is the employee an HR?&lt;/span&gt;&lt;br/&gt;(If you select &quot;YES&quot;, the department &lt;br/&gt;and position above will be disregarded)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                       <property name="indent">
                        <number>25</number>
@@ -9651,7 +9687,7 @@ QScrollBar::sub-page:vertical {
                        <string notr="true">border: none;</string>
                       </property>
                       <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Is the the employee HR?&lt;/span&gt;&lt;br/&gt;(If you selected &amp;quot;YES&amp;quot; the department &lt;br/&gt;and position above will be disregards)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Is the employee an HR?&lt;/span&gt;&lt;br/&gt;(If you select &quot;YES&quot;, the department &lt;br/&gt;and position above will be disregarded)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                       <property name="indent">
                        <number>25</number>
@@ -10869,6 +10905,546 @@ QToolTip {
         <property name="spacing">
          <number>9</number>
         </property>
+        <item row="0" column="0">
+         <widget class="QFrame" name="frame_5">
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(251, 251, 251);
+border: 1px solid rgb(239, 239, 239);
+border-radius:6px;</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Shape::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Shadow::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_17" rowstretch="0,10,1,1">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_24">
+             <property name="font">
+              <font>
+               <bold>true</bold>
+               <stylestrategy>NoAntialias</stylestrategy>
+              </font>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">border: none;</string>
+             </property>
+             <property name="text">
+              <string>Backup Logs</string>
+             </property>
+             <property name="indent">
+              <number>10</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QWidget" name="widget_14" native="true">
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(239, 239, 239);
+border-radius:6px;
+color: #2C2C2C;</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_18" rowstretch="1,10" columnstretch="0,0">
+              <property name="topMargin">
+               <number>11</number>
+              </property>
+              <property name="horizontalSpacing">
+               <number>6</number>
+              </property>
+              <property name="verticalSpacing">
+               <number>10</number>
+              </property>
+              <item row="1" column="0" colspan="2">
+               <layout class="QVBoxLayout" name="verticalLayout_16">
+                <item>
+                 <widget class="QTableWidget" name="backup_tbl">
+                  <property name="toolTip">
+                   <string>View the list of backup files along with the date and time they were created.</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QTableWidget {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    gridline-color: #e0e0e0;
+    font: 12px 'Segoe UI', sans-serif;
+    alternate-background-color: #f9f9f9;
+    selection-background-color: #e6f0ff;
+    selection-color: #000000;
+}
+
+QHeaderView::section {
+    background-color: #f2f2f2;
+    color: #333333;
+    padding: 8px;
+    border: none;
+    border-bottom: 1px solid #dcdcdc;
+    font-weight: bold;
+}
+
+QTableWidget::item {
+    padding: 8px;
+    border: none;
+}
+
+QTableWidget::item:selected {
+    background-color: #e6f0ff;
+    color: #000000;
+}
+
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: #f2f2f2;
+    width: 8px;
+    height: 8px;
+    margin: 0px;
+    border: none;
+}
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #c4c4c4;
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    height: 0px;
+    width: 0px;
+}
+</string>
+                  </property>
+                  <property name="horizontalScrollBarPolicy">
+                   <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+                  </property>
+                  <property name="autoScrollMargin">
+                   <number>16</number>
+                  </property>
+                  <attribute name="horizontalHeaderDefaultSectionSize">
+                   <number>400</number>
+                  </attribute>
+                  <attribute name="horizontalHeaderStretchLastSection">
+                   <bool>true</bool>
+                  </attribute>
+                  <attribute name="verticalHeaderVisible">
+                   <bool>false</bool>
+                  </attribute>
+                  <attribute name="verticalHeaderStretchLastSection">
+                   <bool>false</bool>
+                  </attribute>
+                  <column>
+                   <property name="text">
+                    <string>File Name:</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Date / Time:</string>
+                   </property>
+                  </column>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="backup_filter_tbl">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="toolTip">
+                 <string>Filter the backup logs.</string>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QComboBox {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font: 12px 'Segoe UI', sans-serif;
+    color: #333333;
+    combobox-popup: 0;
+}
+
+QComboBox:hover {
+    border: 1px solid #b0b0b0;
+}
+
+QComboBox:focus {
+    border: 1px solid #4a90e2;
+    outline: none;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 25px;
+    border-left: 1px solid #dcdcdc;
+    background-color: transparent;
+}
+
+QComboBox::down-arrow {
+    image: url(&quot;resources/arrow_down.png&quot;);
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    selection-background-color: #e6f0ff;
+    selection-color: #000000;
+    padding: 4px;
+    font: 12px 'Segoe UI', sans-serif;
+}
+
+QComboBox QAbstractItemView QScrollBar:vertical {
+    background: #f2f2f2;
+    width: 8px;
+    margin: 0px;
+    border: none;
+}
+
+QComboBox QAbstractItemView QScrollBar::handle:vertical {
+    background: #c4c4c4;
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+QComboBox QAbstractItemView QScrollBar::add-line,
+QComboBox QAbstractItemView QScrollBar::sub-line {
+    height: 0px;
+    width: 0px;
+}</string>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>By File Name:</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>By Date:</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLineEdit" name="backup_search_box">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>Segoe UI</family>
+                  <pointsize>-1</pointsize>
+                  <italic>false</italic>
+                  <bold>false</bold>
+                  <stylestrategy>NoAntialias</stylestrategy>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">QLineEdit {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding-left: 10px; /* space for icon */
+    padding-right: 10px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    font: 12px 'Segoe UI', sans-serif;
+    color: #333333;
+}
+
+QLineEdit:focus {
+    border: 1px solid #4a90e2;
+    outline: none;
+}
+</string>
+                </property>
+                <property name="placeholderText">
+                 <string>Search....</string>
+                </property>
+                <property name="clearButtonEnabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_25">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="font">
+              <font>
+               <stylestrategy>NoAntialias</stylestrategy>
+               <kerning>false</kerning>
+              </font>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">border: none;</string>
+             </property>
+             <property name="text">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;This displays all listed backup logs. Select a file and click Restore to recover data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
+             </property>
+             <property name="indent">
+              <number>6</number>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QPushButton" name="restore_btn">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="font">
+              <font>
+               <fontweight>DemiBold</fontweight>
+              </font>
+             </property>
+             <property name="cursor">
+              <cursorShape>PointingHandCursor</cursorShape>
+             </property>
+             <property name="toolTip">
+              <string>Restore selected backup to revert data to a previous state.</string>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">    QPushButton {
+ 
+	background-color: rgb(228, 252, 100);
+	color: rgb(0, 0, 0);
+        border: none;
+        border-radius: 6px;
+        padding: 8px 18px;
+        font-weight: 600;
+    }
+    QPushButton:hover {
+	background-color: rgb(233, 238, 234);
+	color: rgb(0, 0, 0);
+    }
+    QPushButton:pressed {
+	background-color: rgb(133, 145, 132);
+	color: rgb(255, 255, 255);
+    }
+
+QToolTip {
+	background-color: rgb(228, 252, 100);
+	color: rgb(22, 22, 22);
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: &quot;Arial&quot;, sans-serif;
+}</string>
+             </property>
+             <property name="text">
+              <string>Restore</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="0" column="1" rowspan="2">
+         <layout class="QGridLayout" name="gridLayout_19" rowstretch="3">
+          <item row="0" column="0">
+           <widget class="QFrame" name="frame_6">
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(251, 251, 251);
+border: 1px solid rgb(239, 239, 239);
+border-radius:6px;</string>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::Shape::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Shadow::Raised</enum>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_20">
+             <property name="leftMargin">
+              <number>12</number>
+             </property>
+             <property name="rightMargin">
+              <number>12</number>
+             </property>
+             <property name="bottomMargin">
+              <number>10</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_26">
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                 <stylestrategy>NoAntialias</stylestrategy>
+                </font>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">border: none;</string>
+               </property>
+               <property name="text">
+                <string>Database Logs</string>
+               </property>
+               <property name="indent">
+                <number>10</number>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QWidget" name="widget_15" native="true">
+               <property name="styleSheet">
+                <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_46" rowstretch="0,10" columnstretch="3,1">
+                <property name="topMargin">
+                 <number>11</number>
+                </property>
+                <property name="verticalSpacing">
+                 <number>10</number>
+                </property>
+                <item row="1" column="0" colspan="2">
+                 <layout class="QVBoxLayout" name="verticalLayout_17">
+                  <item>
+                   <widget class="QTextBrowser" name="system_log_browser">
+                    <property name="toolTip">
+                     <string>Displays saved  logs of system operations and activities.</string>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(88, 88, 88);
+color: rgb(255, 255, 255);</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item row="0" column="0" colspan="2">
+                 <widget class="QComboBox" name="system_log_list">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="toolTip">
+                   <string>Select a log file.</string>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QComboBox {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font: 12px 'Segoe UI', sans-serif;
+    color: #333333;
+    combobox-popup: 0;
+}
+
+QComboBox:hover {
+    border: 1px solid #b0b0b0;
+}
+
+QComboBox:focus {
+    border: 1px solid #4a90e2;
+    outline: none;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 25px;
+    border-left: 1px solid #dcdcdc;
+    background-color: transparent;
+}
+
+QComboBox::down-arrow {
+    image: url(&quot;resources/arrow_down.png&quot;);
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    selection-background-color: #e6f0ff;
+    selection-color: #000000;
+    padding: 4px;
+    font: 12px 'Segoe UI', sans-serif;
+}
+
+/* Proper scrollbar styling */
+QScrollBar:vertical {
+    background: #f2f2f2;
+    width: 8px;
+    margin: 0px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background: #c4c4c4;
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::add-line:vertical, 
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar::add-page:vertical, 
+QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+QToolTip {
+	background-color: rgb(251, 251, 251);
+	color: rgb(0, 0, 0);
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: &quot;Arial&quot;, sans-serif;
+}</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_27">
+               <property name="font">
+                <font>
+                 <stylestrategy>NoAntialias</stylestrategy>
+                 <kerning>false</kerning>
+                </font>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">border: none;</string>
+               </property>
+               <property name="text">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;This logs system activity every time data is saved to the database.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="indent">
+                <number>6</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </item>
         <item row="1" column="0">
          <widget class="QFrame" name="frame_7">
           <property name="styleSheet">
@@ -11271,6 +11847,9 @@ QScrollBar::sub-page:vertical {
              <property name="toolTip">
               <string>Enable to configure how long backup files are retained.</string>
              </property>
+             <property name="toolTipDuration">
+              <number>-7</number>
+             </property>
              <property name="styleSheet">
               <string notr="true">
 QRadioButton {
@@ -11497,6 +12076,12 @@ QScrollBar::sub-page:vertical {
            </item>
            <item>
             <widget class="QLabel" name="label_34">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="font">
               <font>
                <stylestrategy>NoAntialias</stylestrategy>
@@ -11507,7 +12092,10 @@ QScrollBar::sub-page:vertical {
               <string notr="true">border: none;</string>
              </property>
              <property name="text">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note:&lt;/span&gt; You have to two configuration backup &amp;amp; automatick backup.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note:&lt;/span&gt; Select either Basic or Custom backup configuration, with an optional retention policy setting.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="indent">
+              <number>6</number>
              </property>
             </widget>
            </item>
@@ -11564,531 +12152,6 @@ QToolTip {
            </item>
           </layout>
          </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QFrame" name="frame_5">
-          <property name="styleSheet">
-           <string notr="true">background-color: rgb(251, 251, 251);
-border: 1px solid rgb(239, 239, 239);
-border-radius:6px;</string>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Shape::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Shadow::Raised</enum>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_17" rowstretch="0,10,1,1">
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_24">
-             <property name="font">
-              <font>
-               <bold>true</bold>
-               <stylestrategy>NoAntialias</stylestrategy>
-              </font>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">border: none;</string>
-             </property>
-             <property name="text">
-              <string>Backup Logs</string>
-             </property>
-             <property name="indent">
-              <number>10</number>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QWidget" name="widget_14" native="true">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(239, 239, 239);
-border-radius:6px;
-color: #2C2C2C;</string>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_18" rowstretch="1,10" columnstretch="3,1">
-              <property name="topMargin">
-               <number>11</number>
-              </property>
-              <property name="horizontalSpacing">
-               <number>6</number>
-              </property>
-              <property name="verticalSpacing">
-               <number>10</number>
-              </property>
-              <item row="0" column="0">
-               <widget class="QLineEdit" name="backup_search_box">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="font">
-                 <font>
-                  <family>Segoe UI</family>
-                  <pointsize>-1</pointsize>
-                  <italic>false</italic>
-                  <bold>false</bold>
-                  <stylestrategy>NoAntialias</stylestrategy>
-                 </font>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">QLineEdit {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    padding-left: 10px; /* space for icon */
-    padding-right: 10px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    font: 12px 'Segoe UI', sans-serif;
-    color: #333333;
-}
-
-QLineEdit:focus {
-    border: 1px solid #4a90e2;
-    outline: none;
-}
-</string>
-                </property>
-                <property name="placeholderText">
-                 <string>Search....</string>
-                </property>
-                <property name="clearButtonEnabled">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QComboBox" name="backup_filter_tbl">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="toolTip">
-                 <string>Filter the backup logs.</string>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">QComboBox {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    padding: 6px 10px;
-    font: 12px 'Segoe UI', sans-serif;
-    color: #333333;
-    combobox-popup: 0;
-}
-
-QComboBox:hover {
-    border: 1px solid #b0b0b0;
-}
-
-QComboBox:focus {
-    border: 1px solid #4a90e2;
-    outline: none;
-}
-
-QComboBox::drop-down {
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 25px;
-    border-left: 1px solid #dcdcdc;
-    background-color: transparent;
-}
-
-QComboBox::down-arrow {
-    image: url(&quot;resources/arrow_down.png&quot;);
-    width: 12px;
-    height: 12px;
-}
-
-QComboBox QAbstractItemView {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    selection-background-color: #e6f0ff;
-    selection-color: #000000;
-    padding: 4px;
-    font: 12px 'Segoe UI', sans-serif;
-}
-
-QComboBox QAbstractItemView QScrollBar:vertical {
-    background: #f2f2f2;
-    width: 8px;
-    margin: 0px;
-    border: none;
-}
-
-QComboBox QAbstractItemView QScrollBar::handle:vertical {
-    background: #c4c4c4;
-    min-height: 20px;
-    border-radius: 4px;
-}
-
-QComboBox QAbstractItemView QScrollBar::add-line,
-QComboBox QAbstractItemView QScrollBar::sub-line {
-    height: 0px;
-    width: 0px;
-}</string>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>By File Name:</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>By Date:</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-              <item row="1" column="0" colspan="2">
-               <layout class="QVBoxLayout" name="verticalLayout_16">
-                <item>
-                 <widget class="QTableWidget" name="backup_tbl">
-                  <property name="toolTip">
-                   <string>View the list of backup files along with the date and time they were created.</string>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">QTableWidget {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    gridline-color: #e0e0e0;
-    font: 12px 'Segoe UI', sans-serif;
-    alternate-background-color: #f9f9f9;
-    selection-background-color: #e6f0ff;
-    selection-color: #000000;
-}
-
-QHeaderView::section {
-    background-color: #f2f2f2;
-    color: #333333;
-    padding: 8px;
-    border: none;
-    border-bottom: 1px solid #dcdcdc;
-    font-weight: bold;
-}
-
-QTableWidget::item {
-    padding: 8px;
-    border: none;
-}
-
-QTableWidget::item:selected {
-    background-color: #e6f0ff;
-    color: #000000;
-}
-
-QScrollBar:vertical, QScrollBar:horizontal {
-    background: #f2f2f2;
-    width: 8px;
-    height: 8px;
-    margin: 0px;
-    border: none;
-}
-
-QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-    background: #c4c4c4;
-    min-height: 20px;
-    border-radius: 4px;
-}
-
-QScrollBar::add-line, QScrollBar::sub-line {
-    height: 0px;
-    width: 0px;
-}
-</string>
-                  </property>
-                  <property name="horizontalScrollBarPolicy">
-                   <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
-                  </property>
-                  <property name="autoScrollMargin">
-                   <number>16</number>
-                  </property>
-                  <attribute name="horizontalHeaderDefaultSectionSize">
-                   <number>400</number>
-                  </attribute>
-                  <attribute name="horizontalHeaderStretchLastSection">
-                   <bool>true</bool>
-                  </attribute>
-                  <attribute name="verticalHeaderVisible">
-                   <bool>false</bool>
-                  </attribute>
-                  <attribute name="verticalHeaderStretchLastSection">
-                   <bool>false</bool>
-                  </attribute>
-                  <column>
-                   <property name="text">
-                    <string>File Name:</string>
-                   </property>
-                  </column>
-                  <column>
-                   <property name="text">
-                    <string>Date / Time:</string>
-                   </property>
-                  </column>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_25">
-             <property name="font">
-              <font>
-               <stylestrategy>NoAntialias</stylestrategy>
-               <kerning>false</kerning>
-              </font>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">border: none;</string>
-             </property>
-             <property name="text">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;This is the listed backup logs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QPushButton" name="restore_btn">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="font">
-              <font>
-               <fontweight>DemiBold</fontweight>
-              </font>
-             </property>
-             <property name="cursor">
-              <cursorShape>PointingHandCursor</cursorShape>
-             </property>
-             <property name="toolTip">
-              <string>Restore selected backup to revert data to a previous state.</string>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">    QPushButton {
- 
-	background-color: rgb(228, 252, 100);
-	color: rgb(0, 0, 0);
-        border: none;
-        border-radius: 6px;
-        padding: 8px 18px;
-        font-weight: 600;
-    }
-    QPushButton:hover {
-	background-color: rgb(233, 238, 234);
-	color: rgb(0, 0, 0);
-    }
-    QPushButton:pressed {
-	background-color: rgb(133, 145, 132);
-	color: rgb(255, 255, 255);
-    }
-
-QToolTip {
-	background-color: rgb(228, 252, 100);
-	color: rgb(22, 22, 22);
-    padding: 6px 10px;
-    font-size: 13px;
-    font-family: &quot;Arial&quot;, sans-serif;
-}</string>
-             </property>
-             <property name="text">
-              <string>Restore</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="0" column="1" rowspan="2">
-         <layout class="QGridLayout" name="gridLayout_19" rowstretch="3">
-          <item row="0" column="0">
-           <widget class="QFrame" name="frame_6">
-            <property name="styleSheet">
-             <string notr="true">background-color: rgb(251, 251, 251);
-border: 1px solid rgb(239, 239, 239);
-border-radius:6px;</string>
-            </property>
-            <property name="frameShape">
-             <enum>QFrame::Shape::StyledPanel</enum>
-            </property>
-            <property name="frameShadow">
-             <enum>QFrame::Shadow::Raised</enum>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_20">
-             <property name="leftMargin">
-              <number>12</number>
-             </property>
-             <property name="rightMargin">
-              <number>12</number>
-             </property>
-             <property name="bottomMargin">
-              <number>10</number>
-             </property>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_26">
-               <property name="font">
-                <font>
-                 <bold>true</bold>
-                 <stylestrategy>NoAntialias</stylestrategy>
-                </font>
-               </property>
-               <property name="styleSheet">
-                <string notr="true">border: none;</string>
-               </property>
-               <property name="text">
-                <string>Database Logs</string>
-               </property>
-               <property name="indent">
-                <number>10</number>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QWidget" name="widget_15" native="true">
-               <property name="styleSheet">
-                <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-               </property>
-               <layout class="QGridLayout" name="gridLayout_46" rowstretch="0,10" columnstretch="3,1">
-                <property name="topMargin">
-                 <number>11</number>
-                </property>
-                <property name="verticalSpacing">
-                 <number>10</number>
-                </property>
-                <item row="1" column="0" colspan="2">
-                 <layout class="QVBoxLayout" name="verticalLayout_17">
-                  <item>
-                   <widget class="QTextBrowser" name="system_log_browser">
-                    <property name="toolTip">
-                     <string>Displays saved  logs of system operations and activities.</string>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">background-color: rgb(88, 88, 88);
-color: rgb(255, 255, 255);</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-                <item row="0" column="0" colspan="2">
-                 <widget class="QComboBox" name="system_log_list">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="toolTip">
-                   <string>Select a log file.</string>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">QComboBox {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    padding: 6px 10px;
-    font: 12px 'Segoe UI', sans-serif;
-    color: #333333;
-    combobox-popup: 0;
-}
-
-QComboBox:hover {
-    border: 1px solid #b0b0b0;
-}
-
-QComboBox:focus {
-    border: 1px solid #4a90e2;
-    outline: none;
-}
-
-QComboBox::drop-down {
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 25px;
-    border-left: 1px solid #dcdcdc;
-    background-color: transparent;
-}
-
-QComboBox::down-arrow {
-    image: url(&quot;resources/arrow_down.png&quot;);
-    width: 12px;
-    height: 12px;
-}
-
-QComboBox QAbstractItemView {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    selection-background-color: #e6f0ff;
-    selection-color: #000000;
-    padding: 4px;
-    font: 12px 'Segoe UI', sans-serif;
-}
-
-/* Proper scrollbar styling */
-QScrollBar:vertical {
-    background: #f2f2f2;
-    width: 8px;
-    margin: 0px;
-    border: none;
-}
-
-QScrollBar::handle:vertical {
-    background: #c4c4c4;
-    min-height: 20px;
-    border-radius: 4px;
-}
-
-QScrollBar::add-line:vertical, 
-QScrollBar::sub-line:vertical {
-    height: 0px;
-}
-
-QScrollBar::add-page:vertical, 
-QScrollBar::sub-page:vertical {
-    background: none;
-}
-
-QToolTip {
-	background-color: rgb(251, 251, 251);
-	color: rgb(0, 0, 0);
-    padding: 6px 10px;
-    font-size: 13px;
-    font-family: &quot;Arial&quot;, sans-serif;
-}</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_27">
-               <property name="font">
-                <font>
-                 <stylestrategy>NoAntialias</stylestrategy>
-                 <kerning>false</kerning>
-                </font>
-               </property>
-               <property name="styleSheet">
-                <string notr="true">border: none;</string>
-               </property>
-               <property name="text">
-                <string>Note: This is logs every time data saves files from the database.</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-         </layout>
         </item>
        </layout>
       </widget>

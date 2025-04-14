@@ -101,7 +101,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="iconSize">
        <size>
@@ -642,12 +642,16 @@ QLineEdit:focus {
             <widget class="QLabel" name="label_18">
              <property name="font">
               <font>
+               <pointsize>9</pointsize>
                <stylestrategy>NoAntialias</stylestrategy>
                <kerning>false</kerning>
               </font>
              </property>
              <property name="text">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note:&lt;/span&gt; This the live feed of the system logs&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;This is the live feed of attendance logs. Search by date or account ID to filter records.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="indent">
+              <number>6</number>
              </property>
             </widget>
            </item>
@@ -1172,7 +1176,10 @@ QScrollBar::add-line, QScrollBar::sub-line {
                   </font>
                  </property>
                  <property name="text">
-                  <string>Note: Select employee then pressed the view button.</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;Select an employee from the list above, then click the 'View' button to see detailed information.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="indent">
+                  <number>6</number>
                  </property>
                 </widget>
                </item>
@@ -1386,8 +1393,14 @@ border-radius: 10px;</string>
                </item>
                <item>
                 <widget class="Line" name="line_25">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
                  <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
                  </property>
                  <property name="orientation">
                   <enum>Qt::Orientation::Horizontal</enum>
@@ -1415,14 +1428,133 @@ border-radius: 10px;</string>
                   </sizepolicy>
                  </property>
                  <property name="styleSheet">
-                  <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  <string notr="true">QComboBox {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font: 12px 'Segoe UI', sans-serif;
+    color: #333333;
+    combobox-popup: 0;
+}
+
+QComboBox:hover {
+    border: 1px solid #b0b0b0;
+}
+
+QComboBox:focus {
+    border: 1px solid #4a90e2;
+    outline: none;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 25px;
+    border-left: 1px solid #dcdcdc;
+    background-color: transparent;
+}
+
+QComboBox::down-arrow {
+    image: url(&quot;resources/arrow_down.png&quot;);
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    selection-background-color: #e6f0ff;
+    selection-color: #000000;
+    padding: 4px;
+    font: 12px 'Segoe UI', sans-serif;
+}
+
+/* Proper scrollbar styling */
+QScrollBar:vertical {
+    background: #f2f2f2;
+    width: 8px;
+    margin: 0px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background: #c4c4c4;
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::add-line:vertical, 
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar::add-page:vertical, 
+QScrollBar::sub-page:vertical {
+    background: none;
+}</string>
                  </property>
                 </widget>
                </item>
                <item>
                 <widget class="QTableWidget" name="hr_employee_logs_tbl">
                  <property name="styleSheet">
-                  <string notr="true">background-color: rgb(255, 255, 255);</string>
+                  <string notr="true">QTableWidget {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    gridline-color: #e0e0e0;
+    font: 12px 'Segoe UI', sans-serif;
+    alternate-background-color: #f9f9f9;
+    selection-background-color: #e6f0ff;
+    selection-color: #000000;
+}
+
+QHeaderView::section {
+    background-color: #f2f2f2;
+    color: #333333;
+    padding: 8px;
+    border: none;
+    border-bottom: 1px solid #dcdcdc;
+    font-weight: bold;
+}
+
+QTableWidget::item {
+    padding: 8px;
+    border: none;
+}
+
+QTableWidget::item:selected {
+    background-color: #e6f0ff;
+    color: #000000;
+}
+
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: #f2f2f2;
+    width: 8px;
+    height: 8px;
+    margin: 0px;
+    border: none;
+}
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #c4c4c4;
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    height: 0px;
+    width: 0px;
+}
+
+QToolTip {
+	background-color: rgb(251, 251, 251);
+	color: rgb(21, 21, 21);
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: &quot;Arial&quot;, sans-serif;
+}
+</string>
                  </property>
                  <attribute name="horizontalHeaderDefaultSectionSize">
                   <number>161</number>
@@ -1449,8 +1581,14 @@ border-radius: 10px;</string>
                </item>
                <item>
                 <widget class="Line" name="line_26">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
                  <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
                  </property>
                  <property name="orientation">
                   <enum>Qt::Orientation::Horizontal</enum>
@@ -1696,8 +1834,14 @@ border-radius: 10px;</string>
                </item>
                <item>
                 <widget class="Line" name="line_21">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
                  <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
                  </property>
                  <property name="orientation">
                   <enum>Qt::Orientation::Horizontal</enum>
@@ -1800,8 +1944,14 @@ border-radius: 10px;</string>
                </item>
                <item>
                 <widget class="Line" name="line_22">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
                  <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
                  </property>
                  <property name="orientation">
                   <enum>Qt::Orientation::Horizontal</enum>
@@ -1877,8 +2027,14 @@ border-radius: 10px;</string>
                </item>
                <item>
                 <widget class="Line" name="line_23">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
                  <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
                  </property>
                  <property name="orientation">
                   <enum>Qt::Orientation::Horizontal</enum>
@@ -1916,8 +2072,14 @@ border-radius: 10px;</string>
                </item>
                <item>
                 <widget class="Line" name="line_24">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
                  <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(235, 235, 235);</string>
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
                  </property>
                  <property name="orientation">
                   <enum>Qt::Orientation::Horizontal</enum>
