@@ -101,7 +101,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="iconSize">
        <size>
@@ -1735,59 +1735,6 @@ border-radius:6px;</string>
                <item>
                 <layout class="QHBoxLayout" name="horizontalLayout_2">
                  <item>
-                  <widget class="QPushButton" name="employee_edit_btn">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <italic>false</italic>
-                     <stylestrategy>PreferDefault</stylestrategy>
-                     <fontweight>DemiBold</fontweight>
-                    </font>
-                   </property>
-                   <property name="cursor">
-                    <cursorShape>PointingHandCursor</cursorShape>
-                   </property>
-                   <property name="toolTip">
-                    <string>Modify selected employee or HR account details</string>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">    QPushButton {
-  
-	background-color: rgb(235, 235, 235);
-	color: rgb(0, 0, 0);
-        border: none;
-        border-radius: 6px;
-        padding: 8px 18px;
-        font-weight: 600;
-    }
-    QPushButton:hover {
-		background-color: rgb(0, 122, 255);
-		color: rgb(255, 255, 255);
-    }
-    QPushButton:pressed {
-        background-color: #2C4CDA;
-    }
-
-QToolTip {
-	background-color: rgb(251, 251, 251);
-	color: rgb(21, 21, 21);
-    padding: 6px 10px;
-    font-size: 13px;
-    font-family: &quot;Arial&quot;, sans-serif;
-}
-</string>
-                   </property>
-                   <property name="text">
-                    <string>Edit</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
                   <widget class="QPushButton" name="employee_enroll_btn">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -1797,8 +1744,9 @@ QToolTip {
                    </property>
                    <property name="font">
                     <font>
+                     <pointsize>-1</pointsize>
+                     <bold>true</bold>
                      <stylestrategy>PreferDefault</stylestrategy>
-                     <fontweight>DemiBold</fontweight>
                     </font>
                    </property>
                    <property name="cursor">
@@ -1808,28 +1756,24 @@ QToolTip {
                     <string>Add new employee or HR personnel to the system</string>
                    </property>
                    <property name="styleSheet">
-                    <string notr="true">    QPushButton {
-	background-color: rgb(235, 235, 235);
-	color: rgb(0, 0, 0);
-        border: none;
-        border-radius: 6px;
-        padding: 8px 18px;
-        font-weight: 600;
-    }
-    QPushButton:hover {
-		background-color: rgb(0, 122, 255);
-		color: rgb(255, 255, 255);
-    }
-    QPushButton:pressed {
-        background-color: #2C4CDA;
-    }
+                    <string notr="true">QPushButton {
+    background-color: rgb(0, 122, 255);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: bold;
+    font-size: 14px;
+}
 
-QToolTip {
-	background-color: rgb(251, 251, 251);
-	color: rgb(21, 21, 21);
-    padding: 6px 10px;
-    font-size: 13px;
-    font-family: &quot;Arial&quot;, sans-serif;
+QPushButton:hover {
+    background-color: rgb(0, 105, 220); /* Slightly darker on hover */
+    text-decoration: underline;
+}
+
+QPushButton:pressed {
+    background-color: rgb(0, 90, 190); /* Even deeper blue on press */
+    text-decoration: underline;
 }
 </string>
                    </property>
@@ -1851,8 +1795,8 @@ QToolTip {
                    </property>
                    <property name="font">
                     <font>
+                     <bold>true</bold>
                      <stylestrategy>PreferDefault</stylestrategy>
-                     <fontweight>DemiBold</fontweight>
                     </font>
                    </property>
                    <property name="cursor">
@@ -1862,34 +1806,128 @@ QToolTip {
                     <string>Display detailed information for the selected account</string>
                    </property>
                    <property name="styleSheet">
-                    <string notr="true">    QPushButton {
-  
-	background-color: rgb(235, 235, 235);
-	color: rgb(0, 0, 0);
-        border: none;
-        border-radius: 6px;
-        padding: 8px 18px;
-        font-weight: 600;
-    }
-    QPushButton:hover {
-		background-color: rgb(0, 122, 255);
-		color: rgb(255, 255, 255);
-    }
-    QPushButton:pressed {
-        background-color: #2C4CDA;
-    }
+                    <string notr="true">QPushButton {
+    background-color: #6F42C1;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: bold;
+}
 
-QToolTip {
-	background-color: rgb(251, 251, 251);
-	color: rgb(21, 21, 21);
-    padding: 6px 10px;
-    font-size: 13px;
-    font-family: &quot;Arial&quot;, sans-serif;
+QPushButton:hover {
+    background-color: #5A36A3;
+    text-decoration: underline;
+}
+
+QPushButton:pressed {
+    background-color: #4E2F8F;
+    text-decoration: underline;
 }
 </string>
                    </property>
                    <property name="text">
                     <string>View</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="employee_edit_btn">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <italic>false</italic>
+                     <bold>true</bold>
+                     <stylestrategy>PreferDefault</stylestrategy>
+                    </font>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="toolTip">
+                    <string>Modify selected employee or HR account details</string>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">QPushButton {
+    background-color: #28A745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #218838;
+    text-decoration: underline;
+}
+
+QPushButton:pressed {
+    background-color: #1E7E34;
+    text-decoration: underline;
+}
+</string>
+                   </property>
+                   <property name="text">
+                    <string>Edit</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="employee_delete_btn">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="font">
+                    <font>
+                     <italic>false</italic>
+                     <bold>true</bold>
+                     <stylestrategy>PreferDefault</stylestrategy>
+                    </font>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="toolTip">
+                    <string>Modify selected employee or HR account details</string>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">    QPushButton {
+        background-color: #FF4C4C;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-weight: bold;
+    }
+    QPushButton:hover {
+        background-color: #E04343;
+		text-decoration: underline;
+    }
+    QPushButton:pressed {
+        background-color: #C0392B;
+		text-decoration: underline;
+    }
+
+
+QToolTip {
+	background-color: rgb(0, 0, 0);
+	color: rgb(253, 253, 253);
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: &quot;Arial&quot;, sans-serif;
+}</string>
+                   </property>
+                   <property name="text">
+                    <string>Delete</string>
                    </property>
                   </widget>
                  </item>

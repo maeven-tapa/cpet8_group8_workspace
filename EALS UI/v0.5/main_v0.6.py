@@ -274,6 +274,7 @@ class HR:
         self.hr_data = hr_data
         self.loader = QUiLoader()
         self.hr_ui = self.loader.load("ui/hr.ui")
+        self.hr_ui.setWindowTitle("EALS - HR")
         self.hr_ui.hr_employee_sc_pages.setCurrentWidget(self.hr_ui.hr_employee_dashboard_page)
         self.hr_ui.hr_employee_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.hr_ui.hr_employee_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -578,6 +579,7 @@ class Home:
         self.system_logs = SystemLogs(db)
         self.loader = QUiLoader()
         self.home_ui = self.loader.load("ui/home.ui")
+        self.home_ui.setWindowTitle("EALS")
         self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
         self.admin_id = "admin-01-0001"
         self.update_date_today()
@@ -964,6 +966,7 @@ class Admin:
         self.system_logs = SystemLogs(db)
         self.loader = QUiLoader()
         self.admin_ui = self.loader.load("ui/admin.ui")
+        self.admin_ui.setWindowTitle("EALS - Admin")
         self.admin_ui.home_tabs.setCurrentWidget(self.admin_ui.admin_dashboard)
         self.admin_ui.admin_employee_sc_pages.setCurrentWidget(self.admin_ui.employee_hr_page)
         self.employees = []

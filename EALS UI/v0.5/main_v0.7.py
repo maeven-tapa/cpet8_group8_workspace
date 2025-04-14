@@ -1,13 +1,6 @@
 import sys
 import random
-from PySide6.QtWidgets import (
-    QApplication,
-    QMessageBox,
-    QTableWidgetItem,
-    QAbstractItemView,
-    QFileDialog,
-    QLineEdit,
-)
+from PySide6.QtWidgets import QApplication, QMainWindow, QDialog, QWidget, QStackedWidget, QTabWidget, QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QDate, QCoreApplication, QProcess, QTimer
 from PySide6.QtGui import QPixmap
@@ -16,7 +9,6 @@ import sqlite3
 import threading
 import os
 import shutil
-
 
 class DatabaseConnection:
     def __init__(self, db_name="eals_database.db"):
@@ -35,8 +27,7 @@ class DatabaseConnection:
         try:
             with self.lock:
                 cursor = self.connection.cursor()
-                cursor.executescript(
-                    """
+                cursor.executescript('''
                 CREATE TABLE IF NOT EXISTS Admin (
                     admin_id VARCHAR(20) PRIMARY KEY,
                     password VARCHAR(255) NOT NULL,
@@ -120,8 +111,7 @@ class DatabaseConnection:
 
                 INSERT OR IGNORE INTO Admin (admin_id, password, password_changed) 
                 VALUES ('admin-01-0001', 'defaultpassword', FALSE);
-                """
-                )
+                ''')
                 self.connection.commit()
         except sqlite3.Error as e:
             print(f"Error creating tables: {e}")
@@ -157,7 +147,7 @@ class SystemLogs:
                 os.makedirs(log_dir)
 
             log_file = os.path.join(log_dir, f"{datetime.now().strftime('%Y%m%d')}.txt")
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             with open(log_file, "a") as file:
                 file.write(f"{current_time} - {action}\n")
@@ -168,55 +158,49 @@ class SystemLogs:
             elif entity_type == "Admin" and hasattr(self, "admin_id"):
                 entity_id = self.admin_id
             elif entity_type == "Feedback":
-                cursor = self.db.execute_query(
-                    "SELECT id FROM feedback ORDER BY created_at DESC LIMIT 1"
-                )
+                cursor = self.db.execute_query("SELECT id FROM feedback ORDER BY created_at DESC LIMIT 1")
                 result = cursor.fetchone()
                 entity_id = result[0] if result else None
             elif entity_type == "AttendanceLog":
-                cursor = self.db.execute_query(
-                    "SELECT log_id FROM attendance_logs ORDER BY date DESC, time DESC LIMIT 1"
-                )
+                cursor = self.db.execute_query("SELECT log_id FROM attendance_logs ORDER BY date DESC, time DESC LIMIT 1")
                 result = cursor.fetchone()
                 entity_id = result[0] if result else None
             elif entity_type == "SystemSettings":
-                cursor = self.db.execute_query(
-                    "SELECT id FROM system_settings ORDER BY last_modified_at DESC LIMIT 1"
-                )
+                cursor = self.db.execute_query("SELECT id FROM system_settings ORDER BY last_modified_at DESC LIMIT 1")
                 result = cursor.fetchone()
                 entity_id = result[0] if result else None
 
             if entity_id is None:
                 entity_id = entity_type
 
-            today = datetime.now().strftime("%Y-%m-%d")
+            today = datetime.now().strftime('%Y-%m-%d')
             cursor = self.db.execute_query(
-                "SELECT id FROM system_logs WHERE DATE(created_at) = ?", (today,)
+                "SELECT id FROM system_logs WHERE DATE(created_at) = ?",
+                (today,)
             )
             existing_log = cursor.fetchone()
 
             if existing_log:
                 self.db.execute_query(
-                    """
+                    '''
                     UPDATE system_logs
                     SET last_modified_at = ?, 
                         stopped_to_the_entity = ?
                     WHERE id = ?
-                    """,
-                    (current_time, entity_id, existing_log[0]),
+                    ''',
+                    (current_time, entity_id, existing_log[0])
                 )
             else:
                 self.db.execute_query(
-                    """
+                    '''
                     INSERT INTO system_logs (path, created_at, last_modified_at, entity_started, stopped_to_the_entity)
                     VALUES (?, ?, ?, ?, ?)
-                    """,
-                    (log_file, current_time, current_time, entity_id, entity_id),
+                    ''',
+                    (log_file, current_time, current_time, entity_id, entity_id)
                 )
 
         except Exception as e:
             print(f"Error logging system action: {e}")
-
 
 class EALS:
     def __init__(self):
@@ -235,7 +219,6 @@ class EALS:
         self.admin = Admin(self.db)
         self.admin.admin_ui.showMaximized()
 
-
 class Feedback:
     def __init__(self, db, hr_data):
         self.db = db
@@ -244,17 +227,13 @@ class Feedback:
         self.loader = QUiLoader()
         self.feedback_ui = self.loader.load("ui/feedback.ui")
         self.feedback_ui.setWindowTitle("Change Admin Password")
-        self.feedback_ui.setWindowFlags(
-            Qt.Window
-            | Qt.WindowTitleHint
-            | Qt.CustomizeWindowHint
-            | Qt.WindowStaysOnTopHint
-        )
-
+        self.feedback_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+        
         # Connect save button
         self.feedback_ui.save_feedback_btn.clicked.connect(self.save_feedback)
         self.feedback_ui.discard_feedback_btn.clicked.connect(self.discard_feedback)
-
+        
+        
     def discard_feedback(self):
         self.system_logs.log_system_action(f"HR discarded feedback draft", "Employee")
 
@@ -262,41 +241,31 @@ class Feedback:
         self.feedback_ui.feedback_box.clear()
 
         self.feedback_ui.close()
-
+        
     def save_feedback(self):
         title = self.feedback_ui.feedback_title_box.text().strip()
         message = self.feedback_ui.feedback_box.toPlainText().strip()
-
+        
         if not title or not message:
-            QMessageBox.warning(
-                None, "Invalid Input", "Please enter both title and message."
-            )
+            QMessageBox.warning(None, "Invalid Input", "Please enter both title and message.")
             return
-
+            
         try:
-            self.db.execute_query(
-                """
+            self.db.execute_query('''
                 INSERT INTO feedback (title, message, created_by)
                 VALUES (?, ?, ?)
-            """,
-                (title, message, self.hr_data["employee_id"]),
-            )
-
-            self.system_logs.log_system_action(
-                f"HR submitted feedback: {title}", "Employee"
-            )
+            ''', (title, message, self.hr_data["employee_id"]))
+            
+            self.system_logs.log_system_action(f"HR submitted feedback: {title}", "Employee")
             QMessageBox.information(None, "Success", "Feedback submitted successfully.")
-
+            
             self.feedback_ui.feedback_title_box.clear()
             self.feedback_ui.feedback_box.clear()
             self.feedback_ui.close()
-
+            
         except sqlite3.Error as e:
             print(f"Database error while saving feedback: {e}")
-            QMessageBox.critical(
-                None, "Error", "Failed to save feedback. Please try again."
-            )
-
+            QMessageBox.critical(None, "Error", "Failed to save feedback. Please try again.")
 
 class HR:
     def __init__(self, db, hr_data):
@@ -306,42 +275,24 @@ class HR:
         self.loader = QUiLoader()
         self.hr_ui = self.loader.load("ui/hr.ui")
         self.hr_ui.setWindowTitle("EALS - HR")
-        self.hr_ui.hr_employee_sc_pages.setCurrentWidget(
-            self.hr_ui.hr_employee_dashboard_page
-        )
+        self.hr_ui.hr_employee_sc_pages.setCurrentWidget(self.hr_ui.hr_employee_dashboard_page)
         self.hr_ui.hr_employee_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.hr_ui.hr_employee_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.hr_ui.hr_employee_search_box.textChanged.connect(
-            self.filter_hr_employee_table
-        )
-        self.hr_ui.hr_employee_sort_box.currentIndexChanged.connect(
-            self.sort_hr_employee_table
-        )
+        self.hr_ui.hr_employee_search_box.textChanged.connect(self.filter_hr_employee_table)
+        self.hr_ui.hr_employee_sort_box.currentIndexChanged.connect(self.sort_hr_employee_table)
         self.hr_ui.hr_employee_view_back.clicked.connect(self.goto_hr_dashboard)
         self.hr_ui.hr_logout_btn.clicked.connect(self.handle_logout)
         self.hr_ui.hr_employee_view_btn.clicked.connect(self.goto_hr_employee_view)
         self.hr_ui.send_feedback_btn.clicked.connect(self.show_feedback_form)
 
-        self.hr_ui.hr_attedance_logs_tbl.setSelectionBehavior(
-            QAbstractItemView.SelectRows
-        )
-        self.hr_ui.hr_attedance_logs_tbl.setSelectionMode(
-            QAbstractItemView.SingleSelection
-        )
+        self.hr_ui.hr_attedance_logs_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.hr_ui.hr_attedance_logs_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
 
-        self.hr_ui.hr_attedance_logs_search.textChanged.connect(
-            self.filter_hr_attendance_logs_table
-        )
-        self.hr_ui.hr_attedance_logs_sort.currentIndexChanged.connect(
-            self.sort_hr_attendance_logs_table
-        )
+        self.hr_ui.hr_attedance_logs_search.textChanged.connect(self.filter_hr_attendance_logs_table)
+        self.hr_ui.hr_attedance_logs_sort.currentIndexChanged.connect(self.sort_hr_attendance_logs_table)
 
-        self.hr_ui.hr_employee_logs_tbl.setSelectionBehavior(
-            QAbstractItemView.SelectRows
-        )
-        self.hr_ui.hr_employee_logs_tbl.setSelectionMode(
-            QAbstractItemView.SingleSelection
-        )
+        self.hr_ui.hr_employee_logs_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.hr_ui.hr_employee_logs_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
 
         self.hr_employees = []
         self.load_hr_employee_table()
@@ -352,42 +303,38 @@ class HR:
         self.system_logs.log_system_action("HR opened feedback form", "Employee")
         self.feedback = Feedback(self.db, self.hr_data)
         self.feedback.feedback_ui.show()
-
+        
     def update_hr_dashboard_labels(self):
         try:
             cursor = self.db.execute_query("SELECT COUNT(*) FROM Employee")
             total_employees = cursor.fetchone()[0] if cursor else 0
 
-            cursor = self.db.execute_query(
-                "SELECT COUNT(*) FROM Employee WHERE status = 'Active'"
-            )
+            cursor = self.db.execute_query("SELECT COUNT(*) FROM Employee WHERE status = 'Active'")
             active_employees = cursor.fetchone()[0] if cursor else 0
 
             today_date = datetime.now().strftime("%Y-%m-%d")
             cursor = self.db.execute_query(
                 "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs "
-                "WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
-                (today_date,),
+                "WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
+                (today_date,)
             )
             logged_employees = cursor.fetchone()[0] if cursor else 0
 
             cursor = self.db.execute_query(
                 "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs "
-                "WHERE date = ? AND remarks = 'late' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
-                (today_date,),
+                "WHERE date = ? AND remarks = 'late' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
+                (today_date,)
             )
             late_employees = cursor.fetchone()[0] if cursor else 0
 
             cursor = self.db.execute_query(
                 "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND employee_id NOT IN ("
-                "SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)",
-                (today_date,),
+                "SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)", 
+                (today_date,)
             )
             absent_employees = cursor.fetchone()[0] if cursor else 0
 
-            self.hr_ui.hr_total_employee_lbl.setText(
-                f"{total_employees}/{total_employees}"
-            )
+            self.hr_ui.hr_total_employee_lbl.setText(f"{total_employees}/{total_employees}")
             self.hr_ui.hr_active_employee_lbl.setText(str(active_employees))
             self.hr_ui.hr_logged_employee_lbl.setText(str(logged_employees))
             self.hr_ui.hr_late_employee_lbl.setText(str(late_employees))
@@ -402,9 +349,7 @@ class HR:
         self.hr_ui.date_today.setText(formatted_date)
 
     def load_hr_employee_table(self):
-        self.system_logs.log_system_action(
-            "Load employees into the HR employee table.", "Employee"
-        )
+        self.system_logs.log_system_action("Load employees into the HR employee table.", "Employee")
         try:
             cursor = self.db.execute_query("SELECT * FROM Employee WHERE is_hr = 0")
             employees = cursor.fetchall() if cursor else []
@@ -419,30 +364,24 @@ class HR:
                     "middle_initial": employee[3],
                     "department": employee[6],
                     "position": employee[7],
-                    "status": employee[10],
+                    "status": employee[10]
                 }
                 self.hr_employees.append(employee_data)
                 self.add_hr_employee_to_table(employee_data)
                 self.update_hr_dashboard_labels()
         except sqlite3.Error as e:
-            self.system_logs.log_system_action(
-                f"Database error while loading HR employees: {e}", "Employee"
-            )
+            self.system_logs.log_system_action(f"Database error while loading HR employees: {e}", "Employee")
 
     def add_hr_employee_to_table(self, employee_data):
         row_position = self.hr_ui.hr_employee_tbl.rowCount()
         self.hr_ui.hr_employee_tbl.insertRow(row_position)
-        middle_initial = (
-            f" {employee_data['middle_initial']}."
-            if employee_data["middle_initial"]
-            else ""
-        )
+        middle_initial = f" {employee_data['middle_initial']}." if employee_data['middle_initial'] else ""
         full_name = f"{employee_data['last_name']}, {employee_data['first_name']}{middle_initial}"
         dept_pos = f"{employee_data['department']} / {employee_data['position']}"
 
         name_item = QTableWidgetItem(full_name)
         dept_pos_item = QTableWidgetItem(dept_pos)
-        status_item = QTableWidgetItem(employee_data.get("status", "Active"))
+        status_item = QTableWidgetItem(employee_data.get('status', 'Active'))
 
         name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
         dept_pos_item.setFlags(dept_pos_item.flags() & ~Qt.ItemIsEditable)
@@ -474,26 +413,20 @@ class HR:
     def sort_hr_employee_table(self):
         sort_option = self.hr_ui.hr_employee_sort_box.currentText()
         if sort_option == "By Name:":
-            self.hr_employees.sort(
-                key=lambda x: (x["last_name"].lower(), x["first_name"].lower())
-            )
+            self.hr_employees.sort(key=lambda x: (x["last_name"].lower(), x["first_name"].lower()))
         elif sort_option == "By Department:":
             self.hr_employees.sort(key=lambda x: x["department"].lower())
         elif sort_option == "By Position:":
             self.hr_employees.sort(key=lambda x: x["department"].lower())
         elif sort_option == "By Status:":
-            self.hr_employees.sort(
-                key=lambda x: 0 if x["status"].lower() == "active" else 1
-            )
+            self.hr_employees.sort(key=lambda x: 0 if x["status"].lower() == "active" else 1)
 
         self.hr_ui.hr_employee_tbl.setRowCount(0)
         for employee_data in self.hr_employees:
             self.add_hr_employee_to_table(employee_data)
 
     def goto_hr_employee_view(self):
-        self.system_logs.log_system_action(
-            "The HR, has selected an employee to view.", "Employee"
-        )
+        self.system_logs.log_system_action("The HR, has selected an employee to view.", "Employee")
         if selected := self.hr_ui.hr_employee_tbl.selectedIndexes():
             row = selected[0].row()
             employee_data = self.hr_employees[row]
@@ -512,35 +445,21 @@ class HR:
         self.load_hr_employee_attendance_logs(employee_data["employee_id"])
 
     def goto_hr_dashboard(self):
-        self.system_logs.log_system_action(
-            "Going back to the HR Employee dashboard.", "Employee"
-        )
-        dashboard_page = self.hr_ui.hr_employee_sc_pages.indexOf(
-            self.hr_ui.hr_employee_dashboard_page
-        )
+        self.system_logs.log_system_action("Going back to the HR Employee dashboard.", "Employee")
+        dashboard_page = self.hr_ui.hr_employee_sc_pages.indexOf(self.hr_ui.hr_employee_dashboard_page)
         self.hr_ui.hr_employee_sc_pages.setCurrentIndex(dashboard_page)
 
     def handle_logout(self):
         current_time = datetime.now()
         current_date = current_time.strftime("%Y-%m-%d")
-        self.db.execute_query(
-            "INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)",
-            (
-                self.hr_data["employee_id"],
-                current_date,
-                current_time.strftime("%H:%M:%S"),
-                "Clock Out",
-            ),
-        )
+        self.db.execute_query("INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)",
+                              (self.hr_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), "Clock Out"))
         self.hr_ui.close()
         global_home_ui.showMaximized()
         self.system_logs.log_system_action("The HR logged out.", "Employee")
 
     def load_hr_attendance_logs_table(self):
-        self.system_logs.log_system_action(
-            "Load all attendance logs for employees only into the table.",
-            "AttendanceLog",
-        )
+        self.system_logs.log_system_action("Load all attendance logs for employees only into the table.", "AttendanceLog")
         try:
             cursor = self.db.execute_query(
                 "SELECT employee_id, remarks, date, time FROM attendance_logs WHERE employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)"
@@ -551,9 +470,7 @@ class HR:
             for log in logs:
                 self.add_attendance_log_to_table(self.hr_ui.hr_attedance_logs_tbl, log)
         except sqlite3.Error as e:
-            self.system_logs.log_system_action(
-                f"Database error while loading HR attendance logs: {e}", "AttendanceLog"
-            )
+            self.system_logs.log_system_action(f"Database error while loading HR attendance logs: {e}", "AttendanceLog")
             print(f"Database error while loading HR attendance logs: {e}")
 
     def add_attendance_log_to_table(self, table, log):
@@ -606,26 +523,23 @@ class HR:
             logs.append(log)
 
         if sort_option == "By Date:":
-            logs.sort(key=lambda x: x[2])
+            logs.sort(key=lambda x: x[2]) 
         elif sort_option == "By Time:":
-            logs.sort(key=lambda x: x[3])
+            logs.sort(key=lambda x: x[3]) 
         elif sort_option == "By Account ID:":
-            logs.sort(key=lambda x: x[0])
+            logs.sort(key=lambda x: x[0])  
         elif sort_option == "By Remarks:":
-            logs.sort(key=lambda x: x[1])
+            logs.sort(key=lambda x: x[1])  
 
         self.hr_ui.hr_attedance_logs_tbl.setRowCount(0)
         for log in logs:
             self.add_attendance_log_to_table(self.hr_ui.hr_attedance_logs_tbl, log)
 
     def load_hr_employee_attendance_logs(self, employee_id):
-        self.system_logs.log_system_action(
-            "Load attendance logs for the selected employee.", "AttendanceLog"
-        )
+        self.system_logs.log_system_action("Load attendance logs for the selected employee.", "AttendanceLog")
         try:
             cursor = self.db.execute_query(
-                "SELECT date, time, remarks FROM attendance_logs WHERE employee_id = ?",
-                (employee_id,),
+                "SELECT date, time, remarks FROM attendance_logs WHERE employee_id = ?", (employee_id,)
             )
             logs = cursor.fetchall() if cursor else []
 
@@ -633,10 +547,7 @@ class HR:
             for log in logs:
                 self.add_log_to_table(self.hr_ui.hr_employee_logs_tbl, log)
         except sqlite3.Error as e:
-            self.system_logs.log_system_action(
-                f"Database error while loading HR employee attendance logs: {e}",
-                "AttendanceLog",
-            )
+            self.system_logs.log_system_action(f"Database error while loading HR employee attendance logs: {e}", "AttendanceLog")
             print(f"Database error while loading HR employee attendance logs: {e}")
 
     def add_log_to_table(self, table, log):
@@ -658,11 +569,10 @@ class HR:
 
         table.resizeColumnsToContents()
 
-
 class Home:
     admin_password = "defaultpassword"
     password_changed = False
-    failed_attempts = 0
+    failed_attempts = 0 
 
     def __init__(self, db):
         self.db = db
@@ -677,43 +587,34 @@ class Home:
         self.home_ui.bio1_next.clicked.connect(self.goto_bio2)
         self.home_ui.bio2_next.clicked.connect(self.goto_result_prompt)
         self.employee_data = None  # Store logged-in employee data
-        self.system_logs.log_system_action(
-            "The home UI has been loaded.", "SystemSettings"
-        )
-        self.home_ui.pass_visibility_button.clicked.connect(
-            self.toggle_password_visibility
-        )
+        self.system_logs.log_system_action("The home UI has been loaded.", "SystemSettings")
+        self.home_ui.pass_visibility_button.clicked.connect(self.toggle_password_visibility)
         self.password_visible = False
-
+        
     def update_date_today(self):
         current_date = datetime.now()
         formatted_date = current_date.strftime("%a, %b %d, %Y")
         self.home_ui.date_today.setText(formatted_date)
-        self.system_logs.log_system_action(
-            "Setting current date to the home UI.", "SystemSettings"
-        )
+        self.system_logs.log_system_action("Setting current date to the home UI.", "SystemSettings")
 
     def validate_hr_attendance(self, hr_data):
         current_time = datetime.now()
         current_date = current_time.strftime("%Y-%m-%d")
         current_hour = current_time.hour
 
-        cursor = self.db.execute_query(
-            "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?",
-            (hr_data["employee_id"], current_date),
-        )
+        
+        cursor = self.db.execute_query("SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?", 
+                                       (hr_data["employee_id"], current_date))
         attendance = cursor.fetchone() if cursor else None
 
         if attendance:
-
+            
             return True
         else:
-
+           
             schedule_start, schedule_end = self.parse_schedule(hr_data["schedule"])
             if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
-                self.show_error(
-                    "Invalid Login", "You cannot log in outside your scheduled shift."
-                )
+                self.show_error("Invalid Login", "You cannot log in outside your scheduled shift.")
                 return False
 
         return True
@@ -723,50 +624,33 @@ class Home:
         password = self.home_ui.home_pass_box.text()
 
         try:
-            cursor = self.db.execute_query(
-                "SELECT password, password_changed FROM Admin WHERE admin_id = ?",
-                (user_id,),
-            )
+            cursor = self.db.execute_query("SELECT password, password_changed FROM Admin WHERE admin_id = ?", (user_id,))
             admin_result = cursor.fetchone() if cursor else None
 
             if admin_result:
                 db_password, password_changed = admin_result
                 if password == db_password:
-                    Home.failed_attempts = 0
+                    Home.failed_attempts = 0  
                     Home.password_changed = password_changed
                     if password_changed:
-                        self.system_logs.log_system_action(
-                            "The password is already changed, going to the admin UI.",
-                            "Admin",
-                        )
+                        self.system_logs.log_system_action("The password is already changed, going to the admin UI.", "Admin")
                         self.goto_admin_ui()
                     else:
-                        self.system_logs.log_system_action(
-                            "The password is not changed executing Change Password Prompt",
-                            "Admin",
-                        )
+                        self.system_logs.log_system_action("The password is not changed executing Change Password Prompt", "Admin")
                         self.goto_change_pass()
-                    self.home_ui.home_id_box.clear()
-                    self.home_ui.home_pass_box.clear()
+                    self.home_ui.home_id_box.clear() 
+                    self.home_ui.home_pass_box.clear() 
                     return
                 else:
                     Home.failed_attempts += 1
-                    self.system_logs.log_system_action(
-                        "An invalid Admin login attempt has been made.", "Admin"
-                    )
+                    self.system_logs.log_system_action("An invalid Admin login attempt has been made.", "Admin")
                     if Home.failed_attempts >= 3:
                         self.prompt_password_change()
                     else:
-                        self.show_error(
-                            "Invalid credentials",
-                            "Please enter valid admin ID and password",
-                        )
+                        self.show_error("Invalid credentials", "Please enter valid admin ID and password")
                     return
 
-            cursor = self.db.execute_query(
-                "SELECT * FROM Employee WHERE employee_id = ? AND password = ?",
-                (user_id, password),
-            )
+            cursor = self.db.execute_query("SELECT * FROM Employee WHERE employee_id = ? AND password = ?", (user_id, password))
             employee_result = cursor.fetchone() if cursor else None
 
             if employee_result:
@@ -781,41 +665,31 @@ class Home:
                     "position": employee_result[7],
                     "schedule": employee_result[8],
                     "is_hr": employee_result[9],
-                    "profile_picture": employee_result[12],
+                    "profile_picture": employee_result[12]
                 }
                 if employee_data["is_hr"]:
                     if self.validate_hr_attendance(employee_data):
                         self.goto_hr_ui(employee_data)
-                        self.system_logs.log_system_action(
-                            "A user is logged in as HR", "Employee"
-                        )
+                        self.system_logs.log_system_action("A user is logged in as HR", "Employee")
                 else:
                     self.employee_data = employee_data
                     if self.validate_attendance():
-                        self.system_logs.log_system_action(
-                            "A user is logged in as an employee", "Employee"
-                        )
+                        self.system_logs.log_system_action("A user is logged in as an employee", "Employee")
                         self.goto_bio1()
             else:
-                self.show_error(
-                    "Invalid credentials", "Please enter valid employee ID and password"
-                )
-                self.system_logs.log_system_action(
-                    "An invalid login attempt has been made.", "Employee"
-                )
+                self.show_error("Invalid credentials", "Please enter valid employee ID and password")
+                self.system_logs.log_system_action("An invalid login attempt has been made.", "Employee")
         except sqlite3.Error as e:
             print(f"Database error during login: {e}")
 
         self.home_ui.home_id_box.clear()
         self.home_ui.home_pass_box.clear()
-
+        
     def prompt_password_change(self):
         dialog = QMessageBox()
         dialog.setIcon(QMessageBox.Warning)
         dialog.setText("Too Many Failed Attempts")
-        dialog.setInformativeText(
-            "You have entered the wrong password 3 times. Would you like to change your password?"
-        )
+        dialog.setInformativeText("You have entered the wrong password 3 times. Would you like to change your password?")
         dialog.setWindowTitle("Change Password")
         dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         dialog.setDefaultButton(QMessageBox.Yes)
@@ -834,44 +708,33 @@ class Home:
         current_date = current_time.strftime("%Y-%m-%d")
 
         cursor = self.db.execute_query(
-            "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?",
-            (self.employee_data["employee_id"], current_date),
+            "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?", 
+            (self.employee_data["employee_id"], current_date)
         )
         attendance = cursor.fetchone() if cursor else None
 
         if attendance:
             log_time_str = attendance[0]  # Time as a string
-            log_time = datetime.strptime(
-                f"{current_date} {log_time_str}", "%Y-%m-%d %H:%M:%S"
-            )
+            log_time = datetime.strptime(f"{current_date} {log_time_str}", "%Y-%m-%d %H:%M:%S")
 
-            if (
-                attendance[1] == "Clock In"
-                and (current_time - log_time).total_seconds() < 8 * 3600
-            ):
+            if attendance[1] == "Clock In" and (current_time - log_time).total_seconds() < 8 * 3600:
                 dialog = QMessageBox()
                 dialog.setIcon(QMessageBox.Warning)
                 dialog.setText("Clock Out Warning")
-                dialog.setInformativeText(
-                    "You have logged in less than 8 hours ago. Are you sure you want to clock out?"
-                )
+                dialog.setInformativeText("You have logged in less than 8 hours ago. Are you sure you want to clock out?")
                 dialog.setWindowTitle("Warning")
                 dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
                 dialog.setDefaultButton(QMessageBox.No)
 
                 response = dialog.exec()
                 if response == QMessageBox.No:
-                    return False
+                    return False  
             self.employee_data["remarks"] = "Clock Out"
         else:
-            schedule_start, schedule_end = self.parse_schedule(
-                self.employee_data["schedule"]
-            )
+            schedule_start, schedule_end = self.parse_schedule(self.employee_data["schedule"])
             current_hour = current_time.hour
             if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
-                self.show_error(
-                    "Invalid Login", "You cannot log in outside your scheduled shift."
-                )
+                self.show_error("Invalid Login", "You cannot log in outside your scheduled shift.")
                 return False
             self.employee_data["remarks"] = "Clock In"
 
@@ -881,15 +744,8 @@ class Home:
 
         current_time = datetime.now()
         current_date = current_time.strftime("%Y-%m-%d")
-        self.db.execute_query(
-            "INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)",
-            (
-                hr_data["employee_id"],
-                current_date,
-                current_time.strftime("%H:%M:%S"),
-                hr_data.get("remarks", "Clock In"),
-            ),
-        )
+        self.db.execute_query("INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)",
+                              (hr_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), hr_data.get("remarks", "Clock In")))
         global_home_ui.close()
         self.hr = HR(self.db, hr_data)
         self.hr.hr_ui.showMaximized()
@@ -897,25 +753,12 @@ class Home:
     def goto_bio1(self):
         if self.employee_data:
             self.home_ui.bio1_employee_pic.setFixedSize(900, 600)
-            self.home_ui.bio1_employee_pic.setPixmap(
-                QPixmap(self.employee_data["profile_picture"]).scaled(
-                    self.home_ui.bio1_employee_pic.size(),
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation,
-                )
-            )
-            self.home_ui.bio1_employee_name.setText(
-                f"<b>Name:</b> {self.employee_data['first_name']} {self.employee_data['last_name']}"
-            )
-            self.home_ui.bio1_employee_department.setText(
-                f"<b>Department:</b> {self.employee_data['department']}"
-            )
-            self.home_ui.bio1_employee_position.setText(
-                f"<b>Position:</b> {self.employee_data['position']}"
-            )
-            self.home_ui.bio1_employee_shift.setText(
-                f"<b>Shift:</b> {self.employee_data['schedule']}"
-            )
+            self.home_ui.bio1_employee_pic.setPixmap(QPixmap(self.employee_data["profile_picture"]).scaled(
+                self.home_ui.bio1_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.home_ui.bio1_employee_name.setText(f"<b>Name:</b> {self.employee_data['first_name']} {self.employee_data['last_name']}")
+            self.home_ui.bio1_employee_department.setText(f"<b>Department:</b> {self.employee_data['department']}")
+            self.home_ui.bio1_employee_position.setText(f"<b>Position:</b> {self.employee_data['position']}")
+            self.home_ui.bio1_employee_shift.setText(f"<b>Shift:</b> {self.employee_data['schedule']}")
 
         bio1_page = self.home_ui.main_page.indexOf(self.home_ui.bio1_page)
         self.home_ui.main_page.setCurrentIndex(bio1_page)
@@ -923,25 +766,12 @@ class Home:
     def goto_bio2(self):
         if self.employee_data:
             self.home_ui.bio2_employee_pic.setFixedSize(900, 600)
-            self.home_ui.bio2_employee_pic.setPixmap(
-                QPixmap(self.employee_data["profile_picture"]).scaled(
-                    self.home_ui.bio2_employee_pic.size(),
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation,
-                )
-            )
-            self.home_ui.bio2_employee_name.setText(
-                f"<b>Name:</b> {self.employee_data['first_name']} {self.employee_data['last_name']}"
-            )
-            self.home_ui.bio2_employee_department.setText(
-                f"<b>Department:</b> {self.employee_data['department']}"
-            )
-            self.home_ui.bio2_employee_position.setText(
-                f"<b>Position:</b> {self.employee_data['position']}"
-            )
-            self.home_ui.bio2_employee_shift.setText(
-                f"<b>Shift:</b> {self.employee_data['schedule']}"
-            )
+            self.home_ui.bio2_employee_pic.setPixmap(QPixmap(self.employee_data["profile_picture"]).scaled(
+                self.home_ui.bio2_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.home_ui.bio2_employee_name.setText(f"<b>Name:</b> {self.employee_data['first_name']} {self.employee_data['last_name']}")
+            self.home_ui.bio2_employee_department.setText(f"<b>Department:</b> {self.employee_data['department']}")
+            self.home_ui.bio2_employee_position.setText(f"<b>Position:</b> {self.employee_data['position']}")
+            self.home_ui.bio2_employee_shift.setText(f"<b>Shift:</b> {self.employee_data['schedule']}")
 
         bio2_page = self.home_ui.main_page.indexOf(self.home_ui.bio2_page)
         self.home_ui.main_page.setCurrentIndex(bio2_page)
@@ -954,13 +784,8 @@ class Home:
             # Log attendance
             self.system_logs.log_system_action("A user logged.", "AttendanceLog")
             self.db.execute_query(
-                "INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)",
-                (
-                    self.employee_data["employee_id"],
-                    current_date,
-                    current_time.strftime("%H:%M:%S"),
-                    self.employee_data.get("remarks", "Clock In"),
-                ),
+                "INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)", 
+                (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), self.employee_data.get("remarks", "Clock In"))
             )
 
             hour = current_time.hour
@@ -970,9 +795,7 @@ class Home:
                 greeting = "Good Afternoon"
             else:
                 greeting = "Good Evening"
-            self.home_ui.result_greetings_lbl.setText(
-                f"{greeting}, {self.employee_data['first_name']}!"
-            )
+            self.home_ui.result_greetings_lbl.setText(f"{greeting}, {self.employee_data['first_name']}!")
 
             # Set a random motivational or system message
             messages = [
@@ -980,23 +803,21 @@ class Home:
                 "Keep up the excellent work!",
                 "Your dedication is appreciated!",
                 "You are making a difference every day!",
-                "Thank you for your hard work and commitment!",
+                "Thank you for your hard work and commitment!"
             ]
             random_message = random.choice(messages)
             self.home_ui.result_message_lbl.setText(random_message)
 
             try:
                 cursor = self.db.execute_query(
-                    "SELECT remarks, date, time FROM attendance_logs WHERE employee_id = ?",
-                    (self.employee_data["employee_id"],),
+                    "SELECT remarks, date, time FROM attendance_logs WHERE employee_id = ?", 
+                    (self.employee_data["employee_id"],)
                 )
                 logs = cursor.fetchall() if cursor else []
 
                 self.home_ui.result_employee_attendance_tbl.setRowCount(0)
                 for log in logs:
-                    row_position = (
-                        self.home_ui.result_employee_attendance_tbl.rowCount()
-                    )
+                    row_position = self.home_ui.result_employee_attendance_tbl.rowCount()
                     self.home_ui.result_employee_attendance_tbl.insertRow(row_position)
 
                     remarks_item = QTableWidgetItem(log[0])
@@ -1007,15 +828,9 @@ class Home:
                     date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
                     time_item.setFlags(time_item.flags() & ~Qt.ItemIsEditable)
 
-                    self.home_ui.result_employee_attendance_tbl.setItem(
-                        row_position, 0, remarks_item
-                    )
-                    self.home_ui.result_employee_attendance_tbl.setItem(
-                        row_position, 1, date_item
-                    )
-                    self.home_ui.result_employee_attendance_tbl.setItem(
-                        row_position, 2, time_item
-                    )
+                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 0, remarks_item)
+                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 1, date_item)
+                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 2, time_item)
 
                 self.home_ui.result_employee_attendance_tbl.resizeColumnsToContents()
             except sqlite3.Error as e:
@@ -1025,12 +840,10 @@ class Home:
         self.home_ui.main_page.setCurrentIndex(result_prompt)
 
         # Automatically return to the home page after 5 seconds
-        threading.Timer(
-            5.0, lambda: self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
-        ).start()
+        threading.Timer(5.0, lambda: self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)).start()
 
     def parse_schedule(self, schedule):
-
+        
         try:
             start, end = schedule.lower().split(" to ")
             start_hour = self.convert_to_24_hour(start)
@@ -1038,10 +851,10 @@ class Home:
             return start_hour, end_hour
         except Exception as e:
             print(f"Error parsing schedule: {e}")
-            return 0, 24
+            return 0, 24 
 
     def convert_to_24_hour(self, time_str):
-
+        
         try:
             hour = int(time_str[:-2])
             if "pm" in time_str and hour != 12:
@@ -1051,13 +864,13 @@ class Home:
             return hour
         except ValueError as e:
             print(f"Error converting time to 24-hour format: {e}")
-            return -1
+            return -1  
 
     def is_within_schedule(self, start_hour, end_hour, current_hour):
 
-        if start_hour < end_hour:
+        if start_hour < end_hour: 
             return start_hour <= current_hour < end_hour
-        else:
+        else:  
             return current_hour >= start_hour or current_hour < end_hour
 
     def show_error(self, title, message):
@@ -1067,25 +880,24 @@ class Home:
         error_msg.setInformativeText(message)
         error_msg.setWindowTitle("Error")
         error_msg.exec()
-
+    
     def goto_change_pass(self):
         self.changepass = ChangePassword(self.db, self.admin_id)
         self.changepass.change_pass_ui.show()
-
+    
     def goto_admin_ui(self):
         global_home_ui.close()
         self.admin = Admin(self.db)
         self.admin.admin_ui.showMaximized()
 
     def toggle_password_visibility(self):
-
+       
         if self.password_visible:
             self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
             self.password_visible = False
         else:
             self.home_ui.home_pass_box.setEchoMode(QLineEdit.Normal)
             self.password_visible = True
-
 
 class ChangePassword:
     def __init__(self, db, admin_id):
@@ -1094,23 +906,12 @@ class ChangePassword:
         self.admin_id = admin_id
         self.loader = QUiLoader()
         self.change_pass_ui = self.loader.load("ui/admin_change_pass.ui")
-        self.change_pass_ui.change_pass_note.setText(
-            "For security purposes, please enter your current password below, then choose a new password and confirm it. Make sure your new password is at least 8 characters long."
-        )
+        self.change_pass_ui.change_pass_note.setText("For security purposes, please enter your current password below, then choose a new password and confirm it. Make sure your new password is at least 8 characters long.")
         self.change_pass_ui.change_pass_note.setStyleSheet("color: black")
-        self.change_pass_ui.admin_change_pass_btn.clicked.connect(
-            self.validate_and_change_password
-        )
+        self.change_pass_ui.admin_change_pass_btn.clicked.connect(self.validate_and_change_password)
         self.change_pass_ui.setWindowTitle("Change Admin Password")
-        self.change_pass_ui.setWindowFlags(
-            Qt.Window
-            | Qt.WindowTitleHint
-            | Qt.CustomizeWindowHint
-            | Qt.WindowStaysOnTopHint
-        )
-        self.system_logs.log_system_action(
-            "The change password prompt has been loaded.", "Admin"
-        )
+        self.change_pass_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+        self.system_logs.log_system_action("The change password prompt has been loaded.", "Admin")
 
     def validate_and_change_password(self):
         new_password = self.change_pass_ui.change_pass_np_box.text()
@@ -1118,70 +919,46 @@ class ChangePassword:
         current_password = self.change_pass_ui.change_pass_cp_box.text()
 
         try:
-            cursor = self.db.execute_query(
-                "SELECT password FROM Admin WHERE admin_id = ?", (self.admin_id,)
-            )
+            cursor = self.db.execute_query("SELECT password FROM Admin WHERE admin_id = ?", (self.admin_id,))
             result = cursor.fetchone() if cursor else None
 
             if not result or current_password != result[0]:
-                self.change_pass_ui.change_pass_note.setText(
-                    "The current password you entered is incorrect. Please double-check and try again. Passwords are case-sensitive, so make sure your Caps Lock is off."
-                )
+                self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect. Please double-check and try again. Passwords are case-sensitive, so make sure your Caps Lock is off.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
                 return
 
             if not current_password or not new_password or not confirm_password:
-                self.change_pass_ui.change_pass_note.setText(
-                    "All password fields are required. Please make sure to enter your current password, a new password, and confirm the new password before continuing."
-                )
+                self.change_pass_ui.change_pass_note.setText("All password fields are required. Please make sure to enter your current password, a new password, and confirm the new password before continuing.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
                 return
 
             if new_password != confirm_password:
-                self.change_pass_ui.change_pass_note.setText(
-                    "The new password and the confirmation password do not match. Please ensure that both fields contain exactly the same password."
-                )
+                self.change_pass_ui.change_pass_note.setText("The new password and the confirmation password do not match. Please ensure that both fields contain exactly the same password.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
                 return
 
             if len(new_password) < 8:
-                self.change_pass_ui.change_pass_note.setText(
-                    "Your new password must be at least 8 characters long for security reasons. Please choose a stronger password that meets this requirement."
-                )
+                self.change_pass_ui.change_pass_note.setText("Your new password must be at least 8 characters long for security reasons. Please choose a stronger password that meets this requirement.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
                 return
 
-            self.db.execute_query(
-                "UPDATE Admin SET password = ?, password_changed = TRUE WHERE admin_id = ?",
-                (new_password, self.admin_id),
-            )
+            self.db.execute_query("UPDATE Admin SET password = ?, password_changed = TRUE WHERE admin_id = ?", (new_password, self.admin_id))
 
             success_msg = QMessageBox()
             success_msg.setIcon(QMessageBox.Information)
-            self.system_logs.log_system_action(
-                "The admin password has been changed.", "Admin"
-            )
+            self.system_logs.log_system_action("The admin password has been changed.", "Admin")
             success_msg.setText("Password Changed Successfully")
-            success_msg.setInformativeText(
-                "Your password has been updated. Please use the new password for future logins."
-            )
+            success_msg.setInformativeText("Your password has been updated. Please use the new password for future logins.")
             success_msg.setWindowTitle("Success")
-            success_msg.setWindowFlags(
-                Qt.Dialog
-                | Qt.WindowTitleHint
-                | Qt.CustomizeWindowHint
-                | Qt.WindowStaysOnTopHint
-            )
+            success_msg.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
             success_msg.exec()
 
             self.change_pass_ui.close()
 
         except sqlite3.Error as e:
-            self.system_logs.log_system_action(
-                "There was an Database error during password change", "Admin"
-            )
+            self.system_logs.log_system_action("There was an Database error during password change", "Admin")
             print(f"Database error during password change: {e}")
-
+            
 
 class Admin:
     def __init__(self, db):
@@ -1191,16 +968,12 @@ class Admin:
         self.admin_ui = self.loader.load("ui/admin.ui")
         self.admin_ui.setWindowTitle("EALS - Admin")
         self.admin_ui.home_tabs.setCurrentWidget(self.admin_ui.admin_dashboard)
-        self.admin_ui.admin_employee_sc_pages.setCurrentWidget(
-            self.admin_ui.employee_hr_page
-        )
+        self.admin_ui.admin_employee_sc_pages.setCurrentWidget(self.admin_ui.employee_hr_page)
         self.employees = []
         self.hr_employees = []
         self.current_employee_data = {}
-
-        self.admin_ui.system_log_list.currentIndexChanged.connect(
-            self.display_selected_log
-        )
+        
+        self.admin_ui.system_log_list.currentIndexChanged.connect(self.display_selected_log)
         self.load_system_logs()
 
         self.load_employee_table()
@@ -1208,101 +981,74 @@ class Admin:
 
         self.admin_ui.admin_logout_btn.clicked.connect(self.goto_home)
 
-        self.admin_ui.employee_list_tbl.setSelectionBehavior(
-            QAbstractItemView.SelectRows
-        )
-        self.admin_ui.employee_list_tbl.setSelectionMode(
-            QAbstractItemView.SingleSelection
-        )
+        self.admin_ui.employee_list_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.admin_ui.employee_list_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
         self.admin_ui.hr_list_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.admin_ui.hr_list_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
 
         self.admin_ui.employee_edit_btn.clicked.connect(self.handle_edit_button)
         self.admin_ui.employee_edit_save.clicked.connect(self.save_edited_employee)
-        self.admin_ui.employee_edit_deactivate.clicked.connect(
-            self.toggle_employee_status
-        )
+        self.admin_ui.employee_edit_deactivate.clicked.connect(self.toggle_employee_status)
         self.admin_ui.employee_edit_back.clicked.connect(self.goto_employee_hr)
 
         self.admin_ui.employee_enroll_btn.clicked.connect(self.goto_employee_enroll)
         self.admin_ui.employee_enroll_cancel.clicked.connect(self.goto_employee_hr)
-        self.admin_ui.employee_enroll_1.clicked.connect(
-            self.goto_employee_enroll_2_with_validation
-        )
+        self.admin_ui.employee_enroll_1.clicked.connect(self.goto_employee_enroll_2_with_validation)
         self.admin_ui.employee_enroll_back1.clicked.connect(self.goto_employee_enroll)
         self.admin_ui.employee_enroll_2.clicked.connect(self.goto_employee_enroll_3)
         self.admin_ui.employee_enroll_back2.clicked.connect(self.goto_employee_enroll_2)
-        self.admin_ui.employee_enroll_3.clicked.connect(
-            self.finalize_employee_enrollment
-        )
+        self.admin_ui.employee_enroll_3.clicked.connect(self.finalize_employee_enrollment)
 
         self.admin_ui.employee_view_btn.clicked.connect(self.goto_employee_view)
         self.admin_ui.employee_view_back.clicked.connect(self.goto_employee_hr)
         self.admin_ui.hr_view_back.clicked.connect(self.goto_employee_hr)
-
+        
         self.admin_ui.is_hr_yes.toggled.connect(self.toggle_hr_fields)
         self.admin_ui.is_hr_no.toggled.connect(self.toggle_hr_fields)
 
-        self.admin_ui.employee_search_box.textChanged.connect(
-            self.filter_employee_table
-        )
+        self.admin_ui.employee_search_box.textChanged.connect(self.filter_employee_table)
         self.admin_ui.hr_search_box.textChanged.connect(self.filter_hr_table)
-
-        self.admin_ui.employee_sort_box.currentIndexChanged.connect(
-            self.sort_employee_table
-        )
+        
+        self.admin_ui.employee_sort_box.currentIndexChanged.connect(self.sort_employee_table)
         self.admin_ui.hr_sort_box.currentIndexChanged.connect(self.sort_hr_table)
-
+        
         self.selected_employee_index = None
         self.selected_employee_type = None
-
+        
         self.update_date_today()
-
+        
         self.admin_ui.employee_delete_btn.clicked.connect(self.handle_delete_employee)
 
         self.admin_ui.employee_picture_btn.clicked.connect(self.handle_enroll_picture)
         self.admin_ui.change_employee_picture.clicked.connect(self.handle_edit_picture)
 
-        self.admin_ui.admin_attedance_logs_tbl.setSelectionBehavior(
-            QAbstractItemView.SelectRows
-        )
-        self.admin_ui.admin_attedance_logs_tbl.setSelectionMode(
-            QAbstractItemView.SingleSelection
-        )
+        self.admin_ui.admin_attedance_logs_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.admin_ui.admin_attedance_logs_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
 
-        self.admin_ui.admin_attedance_logs_search.textChanged.connect(
-            self.filter_attendance_logs_table
-        )
-        self.admin_ui.admin_attedance_logs_sort.currentIndexChanged.connect(
-            self.sort_attendance_logs_table
-        )
+        self.admin_ui.admin_attedance_logs_search.textChanged.connect(self.filter_attendance_logs_table)
+        self.admin_ui.admin_attedance_logs_sort.currentIndexChanged.connect(self.sort_attendance_logs_table)
 
         self.load_attendance_logs_table()
-
-        self.admin_ui.feedbacks_box.currentIndexChanged.connect(
-            self.display_selected_feedback
-        )
+        
+        self.admin_ui.feedbacks_box.currentIndexChanged.connect(self.display_selected_feedback)
         self.load_feedback_titles()
 
-        self.admin_ui.view_employee_tbl.setSelectionBehavior(
-            QAbstractItemView.SelectRows
-        )
-        self.admin_ui.view_employee_tbl.setSelectionMode(
-            QAbstractItemView.SingleSelection
-        )
+        self.admin_ui.view_employee_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.admin_ui.view_employee_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
 
         self.admin_ui.view_hr_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.admin_ui.view_hr_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
-
+    
         self.admin_ui.backup_btn.clicked.connect(self.handle_backup)
         self.admin_ui.restore_btn.clicked.connect(self.restore_backup)
 
         self.start_backup_scheduler()
         self.load_backup_table()
         self.load_backup_configuration()
-
+        
+        
     def get_current_admin(self):
-        return "admin-01-0001"
+        return 'admin-01-0001'
 
     def load_system_logs(self):
         """Load all log files into the system_log_list QComboBox."""
@@ -1312,15 +1058,11 @@ class Admin:
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
 
-        log_files = [
-            f for f in os.listdir(log_dir) if os.path.isfile(os.path.join(log_dir, f))
-        ]
+        log_files = [f for f in os.listdir(log_dir) if os.path.isfile(os.path.join(log_dir, f))]
         self.admin_ui.system_log_list.addItems(log_files)
 
     def display_selected_log(self):
-        self.system_logs.log_system_action(
-            "A log file has been displayed.", "SystemSettings"
-        )
+        self.system_logs.log_system_action("A log file has been displayed.", "SystemSettings")
         selected_log = self.admin_ui.system_log_list.currentText()
         log_dir = "resources/logs"
         log_path = os.path.join(log_dir, selected_log)
@@ -1334,9 +1076,7 @@ class Admin:
                 print(f"Error reading log file {log_path}: {e}")
                 self.admin_ui.system_log_browser.setText("Error loading log file.")
         else:
-            self.admin_ui.system_log_browser.setText(
-                "No log file selected or file does not exist."
-            )
+            self.admin_ui.system_log_browser.setText("No log file selected or file does not exist.")
 
     def update_date_today(self):
         current_date = datetime.now()
@@ -1350,17 +1090,15 @@ class Admin:
 
     def load_feedback_titles(self):
         try:
-            cursor = self.db.execute_query(
-                """
+            cursor = self.db.execute_query('''
                 SELECT title FROM feedback 
                 ORDER BY created_at DESC
-            """
-            )
+            ''')
             titles = [row[0] for row in cursor.fetchall()]
-
+            
             self.admin_ui.feedbacks_box.clear()
             self.admin_ui.feedbacks_box.addItems(titles)
-
+            
         except sqlite3.Error as e:
             print(f"Database error while loading feedback titles: {e}")
 
@@ -1369,140 +1107,110 @@ class Admin:
         if not selected_title:
             self.admin_ui.feedbacks_text_box.clear()
             return
-
+            
         try:
-            cursor = self.db.execute_query(
-                """
+            cursor = self.db.execute_query('''
                 SELECT f.message, f.created_at, e.first_name, e.last_name 
                 FROM feedback f
                 JOIN Employee e ON f.created_by = e.employee_id
                 WHERE f.title = ?
-            """,
-                (selected_title,),
-            )
-
+            ''', (selected_title,))
+            
             result = cursor.fetchone()
             if result:
                 message, created_at, first_name, last_name = result
                 formatted_text = f"From: {first_name} {last_name}\n"
                 formatted_text += f"Date: {created_at}\n\n"
                 formatted_text += message
-
+                
                 self.admin_ui.feedbacks_text_box.setText(formatted_text)
             else:
                 self.admin_ui.feedbacks_text_box.clear()
-
+                
         except sqlite3.Error as e:
             print(f"Database error while loading feedback message: {e}")
             self.admin_ui.feedbacks_text_box.clear()
-
+    
     def goto_employee_hr(self):
         self.system_logs.log_system_action("Goes to the employee HR page.", "Employee")
-        employee_hr_page = self.admin_ui.admin_employee_sc_pages.indexOf(
-            self.admin_ui.employee_hr_page
-        )
+        employee_hr_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_hr_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_hr_page)
         self.load_employee_table()
         self.load_hr_table()
 
     def goto_employee_edit(self):
-        self.system_logs.log_system_action(
-            "A selected employee is being edited.", "Employee"
-        )
-        employee_edit_page = self.admin_ui.admin_employee_sc_pages.indexOf(
-            self.admin_ui.employee_edit_page
-        )
+        self.system_logs.log_system_action("A selected employee is being edited.", "Employee")
+        employee_edit_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_edit_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_edit_page)
 
     def goto_employee_enroll(self):
-        self.system_logs.log_system_action(
-            "The employee enrollment page has been opened.", "Employee"
-        )
-        employee_enroll_page = self.admin_ui.admin_employee_sc_pages.indexOf(
-            self.admin_ui.employee_enroll_page
-        )
+        self.system_logs.log_system_action("The employee enrollment page has been opened.", "Employee")
+        employee_enroll_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_enroll_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_enroll_page)
         self.admin_ui.is_hr_no.setChecked(True)
         self.toggle_hr_fields()
 
     def goto_employee_enroll_2(self):
-        self.system_logs.log_system_action(
-            "the enrollment proceed to the step 2.", "Employee"
-        )
-        employee_enroll_2_page = self.admin_ui.admin_employee_sc_pages.indexOf(
-            self.admin_ui.employee_enroll2_page
-        )
+        self.system_logs.log_system_action("the enrollment proceed to the step 2.", "Employee")
+        employee_enroll_2_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_enroll2_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_enroll_2_page)
 
     def goto_employee_enroll_3(self):
-        self.system_logs.log_system_action(
-            "the enrollment proceed to the step 3.", "Employee"
-        )
-        employee_enroll_3_page = self.admin_ui.admin_employee_sc_pages.indexOf(
-            self.admin_ui.employee_enroll3_page
-        )
+        self.system_logs.log_system_action("the enrollment proceed to the step 3.", "Employee")
+        employee_enroll_3_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_enroll3_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_enroll_3_page)
-
+        
     def filter_employee_table(self):
         search_text = self.admin_ui.employee_search_box.text().lower()
-
+        
         for row in range(self.admin_ui.employee_list_tbl.rowCount()):
             self.admin_ui.employee_list_tbl.setRowHidden(row, False)
-
+        
         if not search_text:
             return
-
+        
         for row in range(self.admin_ui.employee_list_tbl.rowCount()):
             match_found = False
-
+            
             for col in range(self.admin_ui.employee_list_tbl.columnCount()):
                 item = self.admin_ui.employee_list_tbl.item(row, col)
                 if item and search_text in item.text().lower():
                     match_found = True
                     break
-
+                    
             self.admin_ui.employee_list_tbl.setRowHidden(row, not match_found)
 
     def filter_hr_table(self):
         search_text = self.admin_ui.hr_search_box.text().lower()
-
+        
         for row in range(self.admin_ui.hr_list_tbl.rowCount()):
             self.admin_ui.hr_list_tbl.setRowHidden(row, False)
-
+        
         if not search_text:
             return
-
+        
         for row in range(self.admin_ui.hr_list_tbl.rowCount()):
             match_found = False
-
+            
             for col in range(self.admin_ui.hr_list_tbl.columnCount()):
                 item = self.admin_ui.hr_list_tbl.item(row, col)
                 if item and search_text in item.text().lower():
                     match_found = True
                     break
-
+                    
             self.admin_ui.hr_list_tbl.setRowHidden(row, not match_found)
 
     def sort_employee_table(self):
         sort_option = self.admin_ui.employee_sort_box.currentText()
 
         if sort_option == "By Name:":
-            self.employees.sort(
-                key=lambda x: (x["last_name"].lower(), x["first_name"].lower())
-            )
+            self.employees.sort(key=lambda x: (x["last_name"].lower(), x["first_name"].lower()))
         elif sort_option == "By Account ID:":
-            self.employees.sort(
-                key=lambda x: (
-                    x["employee_id"].split("-")[0],
-                    int(x["employee_id"].split("-")[2]),
-                )
-            )
+            self.employees.sort(key=lambda x: (x["employee_id"].split('-')[0], int(x["employee_id"].split('-')[2])))
         elif sort_option == "By Department:":
             self.employees.sort(key=lambda x: x["department"].lower())
         elif sort_option == "By Status:":
-            self.employees.sort(
-                key=lambda x: 0 if x["status"].lower() == "active" else 1
-            )
+            self.employees.sort(key=lambda x: 0 if x["status"].lower() == "active" else 1)
 
         self.admin_ui.employee_list_tbl.setRowCount(0)
         for employee_data in self.employees:
@@ -1512,29 +1220,18 @@ class Admin:
         sort_option = self.admin_ui.hr_sort_box.currentText()
 
         if sort_option == "By Name:":
-            self.hr_employees.sort(
-                key=lambda x: (x["last_name"].lower(), x["first_name"].lower())
-            )
+            self.hr_employees.sort(key=lambda x: (x["last_name"].lower(), x["first_name"].lower()))
         elif sort_option == "By Account ID:":
-            self.hr_employees.sort(
-                key=lambda x: (
-                    x["employee_id"].split("-")[0],
-                    int(x["employee_id"].split("-")[2]),
-                )
-            )
+            self.hr_employees.sort(key=lambda x: (x["employee_id"].split('-')[0], int(x["employee_id"].split('-')[2])))
         elif sort_option == "By Status:":
-            self.employees.sort(
-                key=lambda x: 0 if x["status"].lower() == "active" else 1
-            )
+            self.employees.sort(key=lambda x: 0 if x["status"].lower() == "active" else 1)
 
         self.admin_ui.hr_list_tbl.setRowCount(0)
         for hr_data in self.hr_employees:
             self.add_hr_to_table(hr_data)
 
     def goto_employee_view(self):
-        self.system_logs.log_system_action(
-            "A employee is selected to be viewed.", "Employee"
-        )
+        self.system_logs.log_system_action("A employee is selected to be viewed.", "Employee")
         if selected := self.admin_ui.employee_list_tbl.selectedIndexes():
             row = selected[0].row()
             self.display_employee_view(self.employees[row])
@@ -1551,14 +1248,12 @@ class Admin:
             error_msg.setWindowTitle("View Error")
             error_msg.exec()
             return
-
+            
         page_index = self.admin_ui.admin_employee_sc_pages.indexOf(view_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(page_index)
 
     def display_employee_view(self, employee_data):
-        self.system_logs.log_system_action(
-            "Loading all data of an employee for viewing.", "Employee"
-        )
+        self.system_logs.log_system_action("Loading all data of an employee for viewing.", "Employee")
         self.admin_ui.view_employee_first_name.setText(employee_data["first_name"])
         self.admin_ui.view_employee_last_name.setText(employee_data["last_name"])
         self.admin_ui.view_employee_mi.setText(employee_data["middle_initial"])
@@ -1568,28 +1263,24 @@ class Admin:
             birthday_date = datetime.strptime(birthday_str, "%Y-%m-%d")
             formatted_birthday = birthday_date.strftime("%B %d, %Y")
             self.admin_ui.view_employee_birthday.setText(formatted_birthday)
-
+            
             today = datetime.now()
-            age = (
-                today.year
-                - birthday_date.year
-                - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
-            )
+            age = today.year - birthday_date.year - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
             self.admin_ui.view_employee_age.setText(str(age))
         except Exception as e:
             print(f"Error formatting birthday: {e}")
             self.admin_ui.view_employee_birthday.setText(birthday_str)
             self.admin_ui.view_employee_age.setText("N/A")
-
+        
         if employee_data["gender"] == "Male":
             self.admin_ui.view_employee_male.setChecked(True)
         else:
             self.admin_ui.view_employee_female.setChecked(True)
-
+        
         self.admin_ui.view_employee_department_box.setText(employee_data["department"])
         self.admin_ui.view_employee_position_box.setText(employee_data["position"])
         self.admin_ui.view_employee_accountid.setText(employee_data["employee_id"])
-
+        
         if employee_data["schedule"] == "6am to 2pm":
             self.admin_ui.view_employee_sched_1.setChecked(True)
         elif employee_data["schedule"] == "2pm to 10pm":
@@ -1597,15 +1288,11 @@ class Admin:
         else:
             self.admin_ui.view_employee_sched_3.setChecked(True)
 
-        self.display_picture(
-            self.admin_ui.view_employee_picture, employee_data["profile_picture"]
-        )
+        self.display_picture(self.admin_ui.view_employee_picture, employee_data['profile_picture'])
         self.load_employee_attendance_logs(employee_data["employee_id"])
 
     def display_hr_view(self, hr_data):
-        self.system_logs.log_system_action(
-            "Loading all data of an HR employee for viewing.", "Employee"
-        )
+        self.system_logs.log_system_action("Loading all data of an HR employee for viewing.", "Employee")
         self.admin_ui.view_hr_first_name.setText(hr_data["first_name"])
         self.admin_ui.view_hr_last_name.setText(hr_data["last_name"])
         self.admin_ui.view_hr_mi.setText(hr_data["middle_initial"])
@@ -1616,24 +1303,20 @@ class Admin:
             formatted_birthday = birthday_date.strftime("%B %d, %Y")
             self.admin_ui.view_hr_birthday.setText(formatted_birthday)
             today = datetime.now()
-            age = (
-                today.year
-                - birthday_date.year
-                - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
-            )
+            age = today.year - birthday_date.year - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
             self.admin_ui.view_hr_age.setText(str(age))
         except Exception as e:
             print(f"Error formatting birthday: {e}")
             self.admin_ui.view_hr_birthday.setText(birthday_str)
             self.admin_ui.view_hr_age.setText("N/A")
-
+        
         if hr_data["gender"] == "Male":
             self.admin_ui.view_hr_male.setChecked(True)
         else:
             self.admin_ui.view_hr_female.setChecked(True)
-
+        
         self.admin_ui.view_hr_accountid.setText(hr_data["employee_id"])
-
+        
         if hr_data["schedule"] == "6am to 2pm":
             self.admin_ui.view_hr_sched_1.setChecked(True)
         elif hr_data["schedule"] == "2pm to 10pm":
@@ -1641,13 +1324,11 @@ class Admin:
         else:
             self.admin_ui.view_hr_sched_3.setChecked(True)
 
-        self.display_picture(self.admin_ui.view_hr_picture, hr_data["profile_picture"])
+        self.display_picture(self.admin_ui.view_hr_picture, hr_data['profile_picture'])
         self.load_hr_attendance_logs(hr_data["employee_id"])
 
     def handle_edit_button(self):
-        self.system_logs.log_system_action(
-            "The edit button has been clicked.", "Employee"
-        )
+        self.system_logs.log_system_action("The edit button has been clicked.", "Employee")
         employee_selected_rows = self.admin_ui.employee_list_tbl.selectedIndexes()
         hr_selected_rows = self.admin_ui.hr_list_tbl.selectedIndexes()
 
@@ -1660,9 +1341,7 @@ class Admin:
                 self.load_employee_to_edit_form(employee_data)
                 self.goto_employee_edit()
             else:
-                self.system_logs.log_system_action(
-                    "Invalid selection has been made.", "Employee"
-                )
+                self.system_logs.log_system_action("Invalid selection has been made.", "Employee")
                 print("Invalid employee row selected.")
 
         elif hr_selected_rows:
@@ -1674,16 +1353,11 @@ class Admin:
                 self.load_employee_to_edit_form(hr_data)
                 self.goto_employee_edit()
             else:
-                self.system_logs.log_system_action(
-                    "Invalid selection has been made.", "Employee"
-                )
+                self.system_logs.log_system_action("Invalid selection has been made.", "Employee")
                 print("Invalid HR row selected.")
 
         else:
-            self.system_logs.log_system_action(
-                "Invalid selection has been made. (No employee has been selected)",
-                "Employee",
-            )
+            self.system_logs.log_system_action("Invalid selection has been made. (No employee has been selected)", "Employee")
             error_msg = QMessageBox()
             error_msg.setIcon(QMessageBox.Warning)
             error_msg.setText("No Selection")
@@ -1692,50 +1366,40 @@ class Admin:
             error_msg.exec()
 
     def load_employee_to_edit_form(self, employee_data):
-        self.system_logs.log_system_action(
-            "Loading employee data to edit page.", "Employee"
-        )
+        self.system_logs.log_system_action("Loading employee data to edit page.", "Employee")
         self.admin_ui.edit_employee_first_name.setText(employee_data["first_name"])
         self.admin_ui.edit_employee_last_name.setText(employee_data["last_name"])
         self.admin_ui.edit_employee_mi.setText(employee_data["middle_initial"])
-
+        
         date_parts = employee_data["birthday"].split("-")
         if len(date_parts) == 3:
-            year, month, day = (
-                int(date_parts[0]),
-                int(date_parts[1]),
-                int(date_parts[2]),
-            )
+            year, month, day = int(date_parts[0]), int(date_parts[1]), int(date_parts[2])
             self.admin_ui.edit_employee_birthday_edit.setDate(QDate(year, month, day))
-
+        
         if employee_data["gender"] == "Male":
             self.admin_ui.edit_employee_male.setChecked(True)
         else:
             self.admin_ui.edit_employee_female.setChecked(True)
-
+        
         is_hr = employee_data.get("is_hr", False)
         if is_hr:
             self.admin_ui.edit_is_hr_yes.setChecked(True)
         else:
             self.admin_ui.edit_is_hr_no.setChecked(True)
-
+        
         self.toggle_edit_hr_fields()
-
+        
         try:
-            index = self.admin_ui.edit_employee_department_box.findText(
-                employee_data["department"]
-            )
+            index = self.admin_ui.edit_employee_department_box.findText(employee_data["department"])
             if index >= 0:
                 self.admin_ui.edit_employee_department_box.setCurrentIndex(index)
-
-            index = self.admin_ui.edit_employee_position_box.findText(
-                employee_data["position"]
-            )
+                
+            index = self.admin_ui.edit_employee_position_box.findText(employee_data["position"])
             if index >= 0:
                 self.admin_ui.edit_employee_position_box.setCurrentIndex(index)
         except Exception as e:
             print(f"Error setting department/position: {e}")
-
+        
         id_parts = employee_data["employee_id"].split("-")
         if len(id_parts) == 3:
             self.admin_ui.edit_employee_id_pref.setText(id_parts[0])
@@ -1751,17 +1415,17 @@ class Admin:
                     self.admin_ui.edit_employee_id_no.setCurrentIndex(index)
             except Exception as e:
                 print(f"Error setting ID number: {e}")
-
+        
         self.admin_ui.edit_employee_password.setText(employee_data["password"])
         self.admin_ui.edit_employee_confirm_password.setText(employee_data["password"])
-
+        
         if employee_data["schedule"] == "6am to 2pm":
             self.admin_ui.edit_employee_sched_1.setChecked(True)
         elif employee_data["schedule"] == "2pm to 10pm":
             self.admin_ui.edit_employee_sched_2.setChecked(True)
         else:
             self.admin_ui.edit_employee_sched_3.setChecked(True)
-
+        
         status = "Active"
         if self.selected_employee_type == "employee":
             row = self.selected_employee_index
@@ -1773,15 +1437,13 @@ class Admin:
             status_item = self.admin_ui.hr_list_tbl.item(row, 2)
             if status_item:
                 status = status_item.text()
-
+        
         if status == "Active":
             self.admin_ui.employee_edit_deactivate.setText("Deactivate")
         else:
             self.admin_ui.employee_edit_deactivate.setText("Activate")
 
-        self.display_picture(
-            self.admin_ui.edit_emplyee_picture, employee_data["profile_picture"]
-        )
+        self.display_picture(self.admin_ui.edit_emplyee_picture, employee_data['profile_picture'])
 
     def toggle_edit_hr_fields(self):
         try:
@@ -1789,11 +1451,11 @@ class Admin:
             self.admin_ui.edit_is_hr_no.toggled.connect(self.toggle_edit_hr_fields)
         except:
             pass
-
+        
         is_hr = self.admin_ui.edit_is_hr_yes.isChecked()
         self.admin_ui.edit_employee_department_box.setDisabled(is_hr)
         self.admin_ui.edit_employee_position_box.setDisabled(is_hr)
-
+        
         if is_hr:
             self.admin_ui.edit_employee_department_box.setCurrentText("Human Resources")
             self.admin_ui.edit_employee_position_box.setCurrentText("HR Staff")
@@ -1834,9 +1496,7 @@ class Admin:
 
         # Validate first name and last name
         if not first_name or not all(part.isalpha() for part in first_name.split()):
-            missing_fields.append(
-                "Valid First Name (letters only, multiple names allowed)"
-            )
+            missing_fields.append("Valid First Name (letters only, multiple names allowed)")
         if not last_name or not last_name.isalpha():
             missing_fields.append("Valid Last Name (letters only)")
 
@@ -1852,17 +1512,11 @@ class Admin:
             missing_fields.append("Schedule")
 
         # Validate birthday (must be at least 18 years old)
-        birthday = self.admin_ui.edit_employee_birthday_edit.date().toString(
-            "yyyy-MM-dd"
-        )
+        birthday = self.admin_ui.edit_employee_birthday_edit.date().toString("yyyy-MM-dd")
         try:
             birthday_date = datetime.strptime(birthday, "%Y-%m-%d")
             today = datetime.now()
-            age = (
-                today.year
-                - birthday_date.year
-                - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
-            )
+            age = today.year - birthday_date.year - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
             if age < 18:
                 return False, "Employee must be at least 18 years old."
         except ValueError:
@@ -1880,54 +1534,32 @@ class Admin:
         try:
             cursor = self.db.execute_query(
                 "SELECT employee_id FROM Employee WHERE employee_id = ? AND employee_id != ?",
-                (employee_id, self.current_employee_data["employee_id"]),
+                (employee_id, self.current_employee_data["employee_id"])
             )
             if cursor.fetchone():
-                return (
-                    False,
-                    f"Employee ID {employee_id} already exists in the database.",
-                )
+                return False, f"Employee ID {employee_id} already exists in the database."
 
             # Check if the name already exists (excluding the current employee)
             cursor = self.db.execute_query(
                 "SELECT first_name, last_name FROM Employee WHERE first_name = ? AND last_name = ? AND employee_id != ?",
-                (first_name, last_name, self.current_employee_data["employee_id"]),
+                (first_name, last_name, self.current_employee_data["employee_id"])
             )
             if cursor.fetchone():
-                return (
-                    False,
-                    f"An employee with the name {first_name} {last_name} already exists in the database.",
-                )
+                return False, f"An employee with the name {first_name} {last_name} already exists in the database."
         except sqlite3.Error as e:
             print(f"Database error during validation: {e}")
-            return (
-                False,
-                "An error occurred while validating the data. Please try again.",
-            )
+            return False, "An error occurred while validating the data. Please try again."
 
         if missing_fields:
-            return (
-                False,
-                f"Please fill in the following required fields: {', '.join(missing_fields)}",
-            )
+            return False, f"Please fill in the following required fields: {', '.join(missing_fields)}"
 
         status = "Active"
-        if (
-            self.selected_employee_type == "employee"
-            and self.selected_employee_index is not None
-        ):
-            status_item = self.admin_ui.employee_list_tbl.item(
-                self.selected_employee_index, 3
-            )
+        if self.selected_employee_type == "employee" and self.selected_employee_index is not None:
+            status_item = self.admin_ui.employee_list_tbl.item(self.selected_employee_index, 3)
             if status_item:
                 status = status_item.text()
-        elif (
-            self.selected_employee_type == "hr"
-            and self.selected_employee_index is not None
-        ):
-            status_item = self.admin_ui.hr_list_tbl.item(
-                self.selected_employee_index, 2
-            )
+        elif self.selected_employee_type == "hr" and self.selected_employee_index is not None:
+            status_item = self.admin_ui.hr_list_tbl.item(self.selected_employee_index, 2)
             if status_item:
                 status = status_item.text()
 
@@ -1944,7 +1576,7 @@ class Admin:
             "schedule": schedule,
             "is_hr": is_hr,
             "status": status,
-            "profile_picture": self.current_employee_data.get("profile_picture", ""),
+            "profile_picture": self.current_employee_data.get('profile_picture', '')
         }
 
         return True, employee_data
@@ -1971,50 +1603,32 @@ class Admin:
 
         try:
             current_admin = self.get_current_admin()
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
             employee_name = f"{result['first_name']}_{result['last_name']}"
-            picture_path = self.save_picture(result["profile_picture"], employee_name)
+            picture_path = self.save_picture(result['profile_picture'], employee_name)
             if picture_path:
-                result["profile_picture"] = picture_path
+                result['profile_picture'] = picture_path
 
-            self.db.execute_query(
-                """
+            self.db.execute_query('''
                 UPDATE Employee
                 SET first_name = ?, last_name = ?, middle_initial = ?, birthday = ?, gender = ?,
                     department = ?, position = ?, schedule = ?, is_hr = ?, status = ?, 
                     password = ?, profile_picture = ?, last_modified_by = ?, last_modified_at = ?
                 WHERE employee_id = ?
-            """,
-                (
-                    result["first_name"],
-                    result["last_name"],
-                    result["middle_initial"],
-                    result["birthday"],
-                    result["gender"],
-                    result["department"],
-                    result["position"],
-                    result["schedule"],
-                    result["is_hr"],
-                    result["status"],
-                    result["password"],
-                    result["profile_picture"],
-                    current_admin,
-                    current_time,  # Add modification tracking
-                    result["employee_id"],
-                ),
-            )
+            ''', (
+                result['first_name'], result['last_name'], result['middle_initial'], result['birthday'],
+                result['gender'], result['department'], result['position'], result['schedule'],
+                result['is_hr'], result['status'], result['password'], result['profile_picture'],
+                current_admin, current_time,  # Add modification tracking
+                result['employee_id']
+            ))
 
-            self.system_logs.log_system_action(
-                f"Employee {result['employee_id']} was modified by {current_admin}",
-                "Employee",
-            )
+            self.system_logs.log_system_action(f"Employee {result['employee_id']} was modified by {current_admin}", "Employee")
             success_msg = QMessageBox()
             success_msg.setIcon(QMessageBox.Information)
             success_msg.setText("Employee Updated")
-            success_msg.setInformativeText(
-                f"Employee {result['first_name']} {result['last_name']} has been updated."
-            )
+            success_msg.setInformativeText(f"Employee {result['first_name']} {result['last_name']} has been updated.")
             success_msg.setWindowTitle("Edit Success")
             success_msg.exec()
 
@@ -2038,7 +1652,7 @@ class Admin:
 
         try:
             current_admin = self.get_current_admin()
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             if self.selected_employee_type == "employee":
                 employee = self.employees[self.selected_employee_index]
@@ -2047,26 +1661,20 @@ class Admin:
 
             new_status = "Inactive" if employee["status"] == "Active" else "Active"
 
-            self.db.execute_query(
-                """
+            self.db.execute_query('''
                 UPDATE Employee 
                 SET status = ?, last_modified_by = ?, last_modified_at = ? 
                 WHERE employee_id = ?
-            """,
-                (new_status, current_admin, current_time, employee["employee_id"]),
-            )
+            ''', (new_status, current_admin, current_time, employee["employee_id"]))
 
             employee["status"] = new_status
-
+            
             self.system_logs.log_system_action(
-                f"Employee {employee['employee_id']} status changed to {new_status} by {current_admin}",
-                "Employee",
+                f"Employee {employee['employee_id']} status changed to {new_status} by {current_admin}", "Employee"
             )
 
-            self.show_success(
-                "Status Updated",
-                f"Employee {employee['first_name']} {employee['last_name']} has been {new_status.lower()}.",
-            )
+            self.show_success("Status Updated", 
+                f"Employee {employee['first_name']} {employee['last_name']} has been {new_status.lower()}.")
 
             self.load_employee_table()
             self.load_hr_table()
@@ -2084,7 +1692,7 @@ class Admin:
         id_no = self.admin_ui.employee_id_no.currentText()
         password = self.admin_ui.employee_password.text()
         confirm_password = self.admin_ui.employee_confirm_password.text()
-        profile_picture = self.current_employee_data.get("profile_picture", "")
+        profile_picture = self.current_employee_data.get('profile_picture', '')
 
         gender = None
         if self.admin_ui.employee_male.isChecked():
@@ -2113,9 +1721,7 @@ class Admin:
 
         # Validate first name and last name
         if not first_name or not all(part.isalpha() for part in first_name.split()):
-            missing_fields.append(
-                "Valid First Name (letters only, multiple names allowed)"
-            )
+            missing_fields.append("Valid First Name (letters only, multiple names allowed)")
         if not last_name or not last_name.isalpha():
             missing_fields.append("Valid Last Name (letters only)")
 
@@ -2137,11 +1743,7 @@ class Admin:
         try:
             birthday_date = datetime.strptime(birthday, "%Y-%m-%d")
             today = datetime.now()
-            age = (
-                today.year
-                - birthday_date.year
-                - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
-            )
+            age = today.year - birthday_date.year - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
             if age < 18:
                 return False, "Employee must be at least 18 years old."
         except ValueError:
@@ -2157,37 +1759,23 @@ class Admin:
         # Check if the employee ID already exists
         employee_id = f"{id_pref}-{id_year}-{id_no}"
         try:
-            cursor = self.db.execute_query(
-                "SELECT employee_id FROM Employee WHERE employee_id = ?", (employee_id,)
-            )
+            cursor = self.db.execute_query("SELECT employee_id FROM Employee WHERE employee_id = ?", (employee_id,))
             if cursor.fetchone():
-                return (
-                    False,
-                    f"Employee ID {employee_id} already exists in the database.",
-                )
+                return False, f"Employee ID {employee_id} already exists in the database."
 
             # Check if the name already exists
             cursor = self.db.execute_query(
                 "SELECT first_name, last_name FROM Employee WHERE first_name = ? AND last_name = ?",
-                (first_name, last_name),
+                (first_name, last_name)
             )
             if cursor.fetchone():
-                return (
-                    False,
-                    f"An employee with the name {first_name} {last_name} already exists in the database.",
-                )
+                return False, f"An employee with the name {first_name} {last_name} already exists in the database."
         except sqlite3.Error as e:
             print(f"Database error during validation: {e}")
-            return (
-                False,
-                "An error occurred while validating the data. Please try again.",
-            )
+            return False, "An error occurred while validating the data. Please try again."
 
         if missing_fields:
-            return (
-                False,
-                f"Please fill in the following required fields: {', '.join(missing_fields)}",
-            )
+            return False, f"Please fill in the following required fields: {', '.join(missing_fields)}"
 
         employee_data = {
             "first_name": first_name,
@@ -2202,15 +1790,13 @@ class Admin:
             "schedule": schedule,
             "is_hr": is_hr,
             "status": "Active",
-            "profile_picture": profile_picture,
+            "profile_picture": profile_picture
         }
 
         return True, employee_data
 
     def load_employee_table(self):
-        self.system_logs.log_system_action(
-            "Loading all employees to the employee table.", "Employee"
-        )
+        self.system_logs.log_system_action("Loading all employees to the employee table.", "Employee")
         try:
             cursor = self.db.execute_query("SELECT * FROM Employee WHERE is_hr = 0")
             employees = cursor.fetchall() if cursor else []
@@ -2231,7 +1817,7 @@ class Admin:
                     "is_hr": employee[9],
                     "status": employee[10],
                     "password": employee[11],
-                    "profile_picture": employee[12],
+                    "profile_picture": employee[12]
                 }
                 self.employees.append(employee_data)
                 self.add_employee_to_table(employee_data)
@@ -2242,9 +1828,7 @@ class Admin:
             print(f"Database error while loading employees: {e}")
 
     def load_hr_table(self):
-        self.system_logs.log_system_action(
-            "Loading all HR employees to the HR table.", "Employee"
-        )
+        self.system_logs.log_system_action("Loading all HR employees to the HR table.", "Employee")
         try:
             cursor = self.db.execute_query("SELECT * FROM Employee WHERE is_hr = 1")
             hr_employees = cursor.fetchall() if cursor else []
@@ -2265,7 +1849,7 @@ class Admin:
                     "is_hr": hr_employee[9],
                     "status": hr_employee[10],
                     "password": hr_employee[11],
-                    "profile_picture": hr_employee[12],
+                    "profile_picture": hr_employee[12]
                 }
                 self.hr_employees.append(hr_data)
                 self.add_hr_to_table(hr_data)
@@ -2276,61 +1860,53 @@ class Admin:
     def add_employee_to_table(self, employee_data):
         row_position = self.admin_ui.employee_list_tbl.rowCount()
         self.admin_ui.employee_list_tbl.insertRow(row_position)
-        middle_initial = (
-            f" {employee_data['middle_initial']}."
-            if employee_data["middle_initial"]
-            else ""
-        )
+        middle_initial = f" {employee_data['middle_initial']}." if employee_data['middle_initial'] else ""
         full_name = f"{employee_data['last_name']}, {employee_data['first_name']}{middle_initial}"
         dept_pos = f"{employee_data['department']} / {employee_data['position']}"
-
+        
         name_item = QTableWidgetItem(full_name)
-        id_item = QTableWidgetItem(employee_data["employee_id"])
+        id_item = QTableWidgetItem(employee_data['employee_id'])
         dept_pos_item = QTableWidgetItem(dept_pos)
-        status_item = QTableWidgetItem(employee_data.get("status", "Active"))
-
+        status_item = QTableWidgetItem(employee_data.get('status', 'Active'))
+        
         name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
         id_item.setFlags(id_item.flags() & ~Qt.ItemIsEditable)
         dept_pos_item.setFlags(dept_pos_item.flags() & ~Qt.ItemIsEditable)
         status_item.setFlags(status_item.flags() & ~Qt.ItemIsEditable)
-
+        
         self.admin_ui.employee_list_tbl.setItem(row_position, 0, name_item)
         self.admin_ui.employee_list_tbl.setItem(row_position, 1, id_item)
         self.admin_ui.employee_list_tbl.setItem(row_position, 2, dept_pos_item)
         self.admin_ui.employee_list_tbl.setItem(row_position, 3, status_item)
-
+        
         self.admin_ui.employee_list_tbl.resizeColumnsToContents()
 
     def add_hr_to_table(self, hr_data):
         row_position = self.admin_ui.hr_list_tbl.rowCount()
         self.admin_ui.hr_list_tbl.insertRow(row_position)
-        middle_initial = (
-            f" {hr_data['middle_initial']}." if hr_data["middle_initial"] else ""
-        )
+        middle_initial = f" {hr_data['middle_initial']}." if hr_data['middle_initial'] else ""
         full_name = f"{hr_data['last_name']}, {hr_data['first_name']}{middle_initial}"
-
+        
         name_item = QTableWidgetItem(full_name)
-        id_item = QTableWidgetItem(hr_data["employee_id"])
-        status_item = QTableWidgetItem(hr_data.get("status", "Active"))
-
+        id_item = QTableWidgetItem(hr_data['employee_id'])
+        status_item = QTableWidgetItem(hr_data.get('status', 'Active'))
+        
         name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
         id_item.setFlags(id_item.flags() & ~Qt.ItemIsEditable)
         status_item.setFlags(status_item.flags() & ~Qt.ItemIsEditable)
-
+        
         self.admin_ui.hr_list_tbl.setItem(row_position, 0, name_item)
         self.admin_ui.hr_list_tbl.setItem(row_position, 1, id_item)
         self.admin_ui.hr_list_tbl.setItem(row_position, 2, status_item)
-
+        
         self.admin_ui.hr_list_tbl.resizeColumnsToContents()
-
+        
     def handle_delete_employee(self):
         employee_selected = self.admin_ui.employee_list_tbl.selectedIndexes()
         hr_selected = self.admin_ui.hr_list_tbl.selectedIndexes()
-
+        
         if not employee_selected and not hr_selected:
-            QMessageBox.warning(
-                None, "Delete Error", "Please select an employee to delete."
-            )
+            QMessageBox.warning(None, "Delete Error", "Please select an employee to delete.")
             return
 
         if employee_selected:
@@ -2342,46 +1918,36 @@ class Admin:
             employee_data = self.hr_employees[row]
             employee_type = "HR Employee"
 
+
         confirm_msg = QMessageBox()
         confirm_msg.setIcon(QMessageBox.Warning)
         confirm_msg.setText("Confirm Deletion")
-        confirm_msg.setInformativeText(
-            f"Are you sure you want to delete {employee_type} {employee_data['first_name']} {employee_data['last_name']}?\n\nThis action cannot be undone."
-        )
+        confirm_msg.setInformativeText(f"Are you sure you want to delete {employee_type} {employee_data['first_name']} {employee_data['last_name']}?\n\nThis action cannot be undone.")
         confirm_msg.setWindowTitle("Delete Confirmation")
         confirm_msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         confirm_msg.setDefaultButton(QMessageBox.No)
 
         if confirm_msg.exec() == QMessageBox.Yes:
             try:
-                self.db.execute_query(
-                    "DELETE FROM attendance_logs WHERE employee_id = ?",
-                    (employee_data["employee_id"],),
-                )
+                self.db.execute_query("DELETE FROM attendance_logs WHERE employee_id = ?", 
+                                    (employee_data['employee_id'],))
+                
+                self.db.execute_query("DELETE FROM feedback WHERE created_by = ?", 
+                                    (employee_data['employee_id'],))
+                
+                self.db.execute_query("DELETE FROM Employee WHERE employee_id = ?", 
+                                    (employee_data['employee_id'],))
 
-                self.db.execute_query(
-                    "DELETE FROM feedback WHERE created_by = ?",
-                    (employee_data["employee_id"],),
-                )
-
-                self.db.execute_query(
-                    "DELETE FROM Employee WHERE employee_id = ?",
-                    (employee_data["employee_id"],),
-                )
-
-                if os.path.exists(employee_data["profile_picture"]):
-                    os.remove(employee_data["profile_picture"])
+                if os.path.exists(employee_data['profile_picture']):
+                    os.remove(employee_data['profile_picture'])
 
                 self.system_logs.log_system_action(
-                    f"{employee_type} {employee_data['employee_id']} has been deleted by {self.get_current_admin()}",
-                    "Employee",
+                    f"{employee_type} {employee_data['employee_id']} has been deleted by {self.get_current_admin()}", 
+                    "Employee"
                 )
 
-                QMessageBox.information(
-                    None,
-                    "Delete Success",
-                    f"{employee_type} {employee_data['first_name']} {employee_data['last_name']} has been deleted.",
-                )
+                QMessageBox.information(None, "Delete Success", 
+                    f"{employee_type} {employee_data['first_name']} {employee_data['last_name']} has been deleted.")
 
                 self.load_employee_table()
                 self.load_hr_table()
@@ -2389,24 +1955,17 @@ class Admin:
 
             except sqlite3.Error as e:
                 print(f"Database error while deleting employee: {e}")
-                QMessageBox.critical(
-                    None,
-                    "Delete Error",
-                    "An error occurred while deleting the employee record.",
-                )
-
+                QMessageBox.critical(None, "Delete Error", 
+                    "An error occurred while deleting the employee record.")
+                
             except Exception as e:
                 print(f"Error during employee deletion: {e}")
-                QMessageBox.critical(
-                    None,
-                    "Delete Error",
-                    "An unexpected error occurred during deletion.",
-                )
-
+                QMessageBox.critical(None, "Delete Error", 
+                    "An unexpected error occurred during deletion.")
+        
     def get_employee_history(self, employee_id):
         try:
-            cursor = self.db.execute_query(
-                """
+            cursor = self.db.execute_query('''
                 SELECT 
                     created_by,
                     created_at,
@@ -2414,105 +1973,66 @@ class Admin:
                     last_modified_at
                 FROM Employee
                 WHERE employee_id = ?
-            """,
-                (employee_id,),
-            )
-
+            ''', (employee_id,))
+            
             result = cursor.fetchone() if cursor else None
             if result:
                 return {
-                    "created_by": result[0],
-                    "created_at": result[1],
-                    "last_modified_by": result[2],
-                    "last_modified_at": result[3],
+                    'created_by': result[0],
+                    'created_at': result[1],
+                    'last_modified_by': result[2],
+                    'last_modified_at': result[3]
                 }
             return None
-
+            
         except sqlite3.Error as e:
             print(f"Database error while fetching employee history: {e}")
             return None
 
     def save_employee_data(self, employee_data):
-        self.system_logs.log_system_action(
-            "Saving employee data to the database.", "Employee"
-        )
+        self.system_logs.log_system_action("Saving employee data to the database.", "Employee")
         try:
             current_admin = self.get_current_admin()
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            cursor = self.db.execute_query(
-                "SELECT employee_id FROM Employee WHERE employee_id = ?",
-                (employee_data["employee_id"],),
-            )
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            cursor = self.db.execute_query("SELECT employee_id FROM Employee WHERE employee_id = ?", 
+                                        (employee_data['employee_id'],))
             result = cursor.fetchone() if cursor else None
 
             if result:
                 # Update existing employee
-                self.db.execute_query(
-                    """
+                self.db.execute_query('''
                     UPDATE Employee
                     SET first_name = ?, last_name = ?, middle_initial = ?, birthday = ?, gender = ?,
                         department = ?, position = ?, schedule = ?, is_hr = ?, status = ?, 
                         password = ?, profile_picture = ?, last_modified_by = ?, last_modified_at = ?
                     WHERE employee_id = ?
-                """,
-                    (
-                        employee_data["first_name"],
-                        employee_data["last_name"],
-                        employee_data["middle_initial"],
-                        employee_data["birthday"],
-                        employee_data["gender"],
-                        employee_data["department"],
-                        employee_data["position"],
-                        employee_data["schedule"],
-                        employee_data["is_hr"],
-                        employee_data["status"],
-                        employee_data["password"],
-                        employee_data["profile_picture"],
-                        current_admin,
-                        current_time,
-                        employee_data["employee_id"],
-                    ),
-                )
-                self.system_logs.log_system_action(
-                    f"Employee {employee_data['employee_id']} modified by {current_admin}",
-                    "Employee",
-                )
+                ''', (
+                    employee_data['first_name'], employee_data['last_name'], employee_data['middle_initial'],
+                    employee_data['birthday'], employee_data['gender'], employee_data['department'],
+                    employee_data['position'], employee_data['schedule'], employee_data['is_hr'],
+                    employee_data['status'], employee_data['password'], employee_data['profile_picture'],
+                    current_admin, current_time,
+                    employee_data['employee_id']
+                ))
+                self.system_logs.log_system_action(f"Employee {employee_data['employee_id']} modified by {current_admin}", "Employee")
             else:
                 # Insert new employee
-                self.db.execute_query(
-                    """
+                self.db.execute_query('''
                     INSERT INTO Employee (
                         employee_id, first_name, last_name, middle_initial, birthday, gender,
                         department, position, schedule, is_hr, status, password, profile_picture,
                         created_by, created_at, last_modified_by, last_modified_at
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        employee_data["employee_id"],
-                        employee_data["first_name"],
-                        employee_data["last_name"],
-                        employee_data["middle_initial"],
-                        employee_data["birthday"],
-                        employee_data["gender"],
-                        employee_data["department"],
-                        employee_data["position"],
-                        employee_data["schedule"],
-                        employee_data["is_hr"],
-                        employee_data["status"],
-                        employee_data["password"],
-                        employee_data["profile_picture"],
-                        current_admin,
-                        current_time,
-                        current_admin,
-                        current_time,
-                    ),
-                )
-                self.system_logs.log_system_action(
-                    f"New employee {employee_data['employee_id']} created by {current_admin}",
-                    "Employee",
-                )
+                ''', (
+                    employee_data['employee_id'], employee_data['first_name'], employee_data['last_name'],
+                    employee_data['middle_initial'], employee_data['birthday'], employee_data['gender'],
+                    employee_data['department'], employee_data['position'], employee_data['schedule'],
+                    employee_data['is_hr'], employee_data['status'], employee_data['password'],
+                    employee_data['profile_picture'], current_admin, current_time, current_admin, current_time
+                ))
+                self.system_logs.log_system_action(f"New employee {employee_data['employee_id']} created by {current_admin}", "Employee")
 
             return True
 
@@ -2534,31 +2054,21 @@ class Admin:
             error_msg.exec()
 
     def finalize_employee_enrollment(self):
-        if hasattr(self, "current_employee_data"):
+        if hasattr(self, 'current_employee_data'):
             employee_name = f"{self.current_employee_data['first_name']}_{self.current_employee_data['last_name']}"
-            picture_path = self.save_picture(
-                self.current_employee_data["profile_picture"], employee_name
-            )
+            picture_path = self.save_picture(self.current_employee_data['profile_picture'], employee_name)
             if picture_path:
-                self.current_employee_data["profile_picture"] = picture_path
+                self.current_employee_data['profile_picture'] = picture_path
 
             success = self.save_employee_data(self.current_employee_data)
-
+            
             if success:
-                self.system_logs.log_system_action(
-                    "A new employee has been enrolled.", "Employee"
-                )
+                self.system_logs.log_system_action("A new employee has been enrolled.", "Employee")
                 success_msg = QMessageBox()
                 success_msg.setIcon(QMessageBox.Information)
                 success_msg.setText("Employee Enrolled Successfully")
-                employee_type = (
-                    "HR Employee"
-                    if self.current_employee_data.get("is_hr", False)
-                    else "Employee"
-                )
-                success_msg.setInformativeText(
-                    f"{employee_type} {self.current_employee_data['first_name']} {self.current_employee_data['last_name']} has been enrolled."
-                )
+                employee_type = "HR Employee" if self.current_employee_data.get('is_hr', False) else "Employee"
+                success_msg.setInformativeText(f"{employee_type} {self.current_employee_data['first_name']} {self.current_employee_data['last_name']} has been enrolled.")
                 success_msg.setWindowTitle("Enrollment Success")
                 success_msg.exec()
                 self.clear_employee_enrollment_fields()
@@ -2566,24 +2076,18 @@ class Admin:
                 self.load_employee_table()
                 self.load_hr_table()
             else:
-                self.system_logs.log_system_action(
-                    "Failed to save employee data.", "Employee"
-                )
+                self.system_logs.log_system_action("Failed to save employee data.", "Employee")
                 error_msg = QMessageBox()
                 error_msg.setIcon(QMessageBox.Critical)
                 error_msg.setText("Enrollment Error")
-                error_msg.setInformativeText(
-                    "Failed to save employee data. Please try again."
-                )
+                error_msg.setInformativeText("Failed to save employee data. Please try again.")
                 error_msg.setWindowTitle("Enrollment Error")
                 error_msg.exec()
         else:
             error_msg = QMessageBox()
             error_msg.setIcon(QMessageBox.Critical)
             error_msg.setText("Process Error")
-            error_msg.setInformativeText(
-                "No employee data found. Please restart the enrollment process."
-            )
+            error_msg.setInformativeText("No employee data found. Please restart the enrollment process.")
             error_msg.setWindowTitle("Enrollment Error")
             error_msg.exec()
 
@@ -2600,39 +2104,33 @@ class Admin:
             cursor = self.db.execute_query("SELECT COUNT(*) FROM Employee")
             total_employees = cursor.fetchone()[0] if cursor else 0
 
-            cursor = self.db.execute_query(
-                "SELECT COUNT(*) FROM Employee WHERE status = 'Active'"
-            )
+            cursor = self.db.execute_query("SELECT COUNT(*) FROM Employee WHERE status = 'Active'")
             active_employees = cursor.fetchone()[0] if cursor else 0
 
             today_date = datetime.now().strftime("%Y-%m-%d")
             cursor = self.db.execute_query(
                 "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs "
-                "WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
-                (today_date,),
+                "WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
+                (today_date,)
             )
             logged_employees = cursor.fetchone()[0] if cursor else 0
 
             cursor = self.db.execute_query(
                 "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs "
-                "WHERE date = ? AND remarks = 'late' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
-                (today_date,),
+                "WHERE date = ? AND remarks = 'late' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
+                (today_date,)
             )
             late_employees = cursor.fetchone()[0] if cursor else 0
 
             cursor = self.db.execute_query(
                 "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND employee_id NOT IN ("
-                "SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)",
-                (today_date,),
+                "SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)", 
+                (today_date,)
             )
             absent_employees = cursor.fetchone()[0] if cursor else 0
 
-            self.system_logs.log_system_action(
-                "Dashboard labels have been updated.", "SystemSettings"
-            )
-            self.admin_ui.total_employee_lbl.setText(
-                f"{total_employees}/{total_employees}"
-            )
+            self.system_logs.log_system_action("Dashboard labels have been updated.", "SystemSettings")
+            self.admin_ui.total_employee_lbl.setText(f"{total_employees}/{total_employees}")
             self.admin_ui.active_employee_lbl.setText(str(active_employees))
             self.admin_ui.logged_employee_lbl.setText(str(logged_employees))
             self.admin_ui.late_employee_lbl.setText(str(late_employees))
@@ -2646,19 +2144,13 @@ class Admin:
         file_dialog.setNameFilter("JPEG Images (*.jpeg *.jpg)")
         if file_dialog.exec():
             selected_file = file_dialog.selectedFiles()[0]
-
+            
             if os.path.getsize(selected_file) > 20 * 1024 * 1024:
-                QMessageBox.warning(
-                    None,
-                    "File Size Error",
-                    "The selected file exceeds the 20MB size limit.",
-                )
+                QMessageBox.warning(None, "File Size Error", "The selected file exceeds the 20MB size limit.")
                 return None
-
+            
             pixmap = QPixmap(selected_file)
-            label.setPixmap(
-                pixmap.scaled(label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            )
+            label.setPixmap(pixmap.scaled(label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
             return selected_file
         return None
 
@@ -2667,9 +2159,7 @@ class Admin:
             os.makedirs("resources/profile_pictures")
 
         file_extension = os.path.splitext(file_path)[1]
-        destination = os.path.join(
-            "resources/profile_pictures", f"{employee_name}{file_extension}"
-        )
+        destination = os.path.join("resources/profile_pictures", f"{employee_name}{file_extension}")
         try:
             shutil.copy(file_path, destination)
             return destination
@@ -2680,19 +2170,17 @@ class Admin:
     def handle_enroll_picture(self):
         file_path = self.select_picture(self.admin_ui.enroll_employee_picture)
         if file_path:
-            self.current_employee_data["profile_picture"] = file_path
+            self.current_employee_data['profile_picture'] = file_path
 
     def handle_edit_picture(self):
         file_path = self.select_picture(self.admin_ui.edit_emplyee_picture)
         if file_path:
-            self.current_employee_data["profile_picture"] = file_path
+            self.current_employee_data['profile_picture'] = file_path
 
     def display_picture(self, label, picture_path):
         if picture_path and os.path.exists(picture_path):
             pixmap = QPixmap(picture_path)
-            pixmap = pixmap.scaled(
-                170, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
+            pixmap = pixmap.scaled(170, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             label.setPixmap(pixmap)
         else:
             label.setPixmap(QPixmap())
@@ -2716,12 +2204,11 @@ class Admin:
         self.admin_ui.employee_sched_2.setChecked(False)
         self.admin_ui.employee_sched_3.setChecked(False)
 
+
     def load_attendance_logs_table(self):
 
         try:
-            cursor = self.db.execute_query(
-                "SELECT employee_id, remarks, date, time FROM attendance_logs"
-            )
+            cursor = self.db.execute_query("SELECT employee_id, remarks, date, time FROM attendance_logs")
             logs = cursor.fetchall() if cursor else []
 
             self.admin_ui.admin_attedance_logs_tbl.setRowCount(0)
@@ -2780,13 +2267,13 @@ class Admin:
             logs.append(log)
 
         if sort_option == "By Date:":
-            logs.sort(key=lambda x: x[2])
+            logs.sort(key=lambda x: x[2])  
         elif sort_option == "By Time:":
-            logs.sort(key=lambda x: x[3])
+            logs.sort(key=lambda x: x[3]) 
         elif sort_option == "By Account ID:":
-            logs.sort(key=lambda x: x[0])
+            logs.sort(key=lambda x: x[0]) 
         elif sort_option == "By Remarks:":
-            logs.sort(key=lambda x: x[1])
+            logs.sort(key=lambda x: x[1]) 
 
         self.admin_ui.admin_attedance_logs_tbl.setRowCount(0)
         for log in logs:
@@ -2795,8 +2282,7 @@ class Admin:
     def load_employee_attendance_logs(self, employee_id):
         try:
             cursor = self.db.execute_query(
-                "SELECT date, time, remarks FROM attendance_logs WHERE employee_id = ?",
-                (employee_id,),
+                "SELECT date, time, remarks FROM attendance_logs WHERE employee_id = ?", (employee_id,)
             )
             logs = cursor.fetchall() if cursor else []
 
@@ -2809,8 +2295,7 @@ class Admin:
     def load_hr_attendance_logs(self, hr_id):
         try:
             cursor = self.db.execute_query(
-                "SELECT date, time, remarks FROM attendance_logs WHERE employee_id = ?",
-                (hr_id,),
+                "SELECT date, time, remarks FROM attendance_logs WHERE employee_id = ?", (hr_id,)
             )
             logs = cursor.fetchall() if cursor else []
 
@@ -2837,11 +2322,11 @@ class Admin:
         table.setItem(row_position, 2, remarks_item)
 
         table.resizeColumnsToContents()
-
+        
     def handle_backup(self):
         try:
             current_admin = self.get_current_admin()
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             if self.admin_ui.backup_basic_btn.isChecked():
                 backup_type = "Basic"
@@ -2852,31 +2337,19 @@ class Admin:
                 backup_frequency = self.admin_ui.backup_custom_number.text().strip()
                 backup_unit = self.admin_ui.backup_custom_box.currentText()
                 if not backup_frequency.isdigit() or int(backup_frequency) <= 0:
-                    QMessageBox.warning(
-                        None,
-                        "Invalid Input",
-                        "Please enter a valid frequency for custom backup.",
-                    )
+                    QMessageBox.warning(None, "Invalid Input", "Please enter a valid frequency for custom backup.")
                     return
                 backup_frequency = int(backup_frequency)
             else:
-                QMessageBox.warning(
-                    None, "Invalid Input", "Please select a backup type."
-                )
+                QMessageBox.warning(None, "Invalid Input", "Please select a backup type.")
                 return
 
             retention_enabled = self.admin_ui.backup_retention_btn.isChecked()
             if retention_enabled:
-                retention_frequency = (
-                    self.admin_ui.backup_retention_numbers.text().strip()
-                )
+                retention_frequency = self.admin_ui.backup_retention_numbers.text().strip()
                 retention_unit = self.admin_ui.backup_retention_box.currentText()
                 if not retention_frequency.isdigit() or int(retention_frequency) <= 0:
-                    QMessageBox.warning(
-                        None,
-                        "Invalid Input",
-                        "Please enter a valid retention frequency.",
-                    )
+                    QMessageBox.warning(None, "Invalid Input", "Please enter a valid retention frequency.")
                     return
                 retention_frequency = int(retention_frequency)
             else:
@@ -2887,58 +2360,33 @@ class Admin:
             config_exists = cursor.fetchone() is not None
 
             if config_exists:
-                self.db.execute_query(
-                    """
+                self.db.execute_query('''
                     UPDATE system_settings 
                     SET backup_type = ?, backup_frequency = ?, backup_unit = ?,
                         retention_enabled = ?, retention_frequency = ?, retention_unit = ?,
                         last_modified_by = ?, last_modified_at = ?
                     WHERE id = 1
-                """,
-                    (
-                        backup_type,
-                        backup_frequency,
-                        backup_unit,
-                        retention_enabled,
-                        retention_frequency,
-                        retention_unit,
-                        current_admin,
-                        current_time,
-                    ),
-                )
-                self.system_logs.log_system_action(
-                    f"Backup configuration updated by {current_admin}", "SystemSettings"
-                )
+                ''', (
+                    backup_type, backup_frequency, backup_unit,
+                    retention_enabled, retention_frequency, retention_unit,
+                    current_admin, current_time
+                ))
+                self.system_logs.log_system_action(f"Backup configuration updated by {current_admin}", "SystemSettings")
             else:
-                self.db.execute_query(
-                    """
+                self.db.execute_query('''
                     INSERT INTO system_settings (
                         backup_type, backup_frequency, backup_unit,
                         retention_enabled, retention_frequency, retention_unit,
                         created_by, created_at, last_modified_by, last_modified_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                    (
-                        backup_type,
-                        backup_frequency,
-                        backup_unit,
-                        retention_enabled,
-                        retention_frequency,
-                        retention_unit,
-                        current_admin,
-                        current_time,
-                        current_admin,
-                        current_time,
-                    ),
-                )
-                self.system_logs.log_system_action(
-                    f"New backup configuration created by {current_admin}",
-                    "SystemSettings",
-                )
+                ''', (
+                    backup_type, backup_frequency, backup_unit,
+                    retention_enabled, retention_frequency, retention_unit,
+                    current_admin, current_time, current_admin, current_time
+                ))
+                self.system_logs.log_system_action(f"New backup configuration created by {current_admin}", "SystemSettings")
 
-            QMessageBox.information(
-                None, "Backup Configuration", "Backup configuration saved successfully."
-            )
+            QMessageBox.information(None, "Backup Configuration", "Backup configuration saved successfully.")
 
             backup_dir = "resources/backups"
             if not os.path.exists(backup_dir):
@@ -2948,14 +2396,9 @@ class Admin:
             backup_file = os.path.join(backup_dir, f"backup_{timestamp}.db")
 
             shutil.copy(self.db.db_name, backup_file)
-            self.system_logs.log_system_action(
-                f"Database backup created by {current_admin}: {backup_file}",
-                "SystemSettings",
-            )
+            self.system_logs.log_system_action(f"Database backup created by {current_admin}: {backup_file}", "SystemSettings")
 
-            QMessageBox.information(
-                None, "Backup", f"Backup created successfully: {backup_file}"
-            )
+            QMessageBox.information(None, "Backup", f"Backup created successfully: {backup_file}")
 
             if retention_enabled:
                 self.handle_retention(backup_dir, retention_frequency, retention_unit)
@@ -2967,31 +2410,21 @@ class Admin:
             error_msg = f"Database error during backup configuration: {e}"
             print(error_msg)
             self.system_logs.log_system_action(error_msg, "SystemSettings")
-            QMessageBox.critical(
-                None,
-                "Database Error",
-                "An error occurred while saving the backup configuration.",
-            )
+            QMessageBox.critical(None, "Database Error", 
+                "An error occurred while saving the backup configuration.")
         except Exception as e:
             error_msg = f"Error during backup process: {e}"
             print(error_msg)
             self.system_logs.log_system_action(error_msg, "SystemSettings")
-            QMessageBox.critical(
-                None,
-                "Backup Error",
-                "An unexpected error occurred during the backup process.",
-            )
-
+            QMessageBox.critical(None, "Backup Error", 
+                "An unexpected error occurred during the backup process.")
+            
     def load_backup_table(self):
         backup_dir = "resources/backups"
         if not os.path.exists(backup_dir):
             os.makedirs(backup_dir)
 
-        backup_files = [
-            f
-            for f in os.listdir(backup_dir)
-            if os.path.isfile(os.path.join(backup_dir, f))
-        ]
+        backup_files = [f for f in os.listdir(backup_dir) if os.path.isfile(os.path.join(backup_dir, f))]
         self.admin_ui.backup_tbl.setRowCount(0)
 
         for backup_file in backup_files:
@@ -3008,10 +2441,8 @@ class Admin:
                 # Ensure the file name matches the expected format: backup_YYYYMMDD_HHMMSS.db
                 if backup_file.startswith("backup_") and backup_file.endswith(".db"):
                     # Extract the full timestamp part between "backup_" and ".db"
-                    timestamp_part = backup_file[len("backup_") :].split(".")[0]
-                    backup_date = datetime.strptime(
-                        timestamp_part, "%Y%m%d_%H%M%S"
-                    ).strftime("%Y-%m-%d %H:%M:%S")
+                    timestamp_part = backup_file[len("backup_"):].split(".")[0]
+                    backup_date = datetime.strptime(timestamp_part, "%Y%m%d_%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
                 else:
                     raise ValueError("Invalid file name format")
             except (IndexError, ValueError):
@@ -3024,9 +2455,7 @@ class Admin:
     def restore_backup(self):
         selected_rows = self.admin_ui.backup_tbl.selectedIndexes()
         if not selected_rows:
-            QMessageBox.warning(
-                None, "Restore Error", "Please select a backup to restore."
-            )
+            QMessageBox.warning(None, "Restore Error", "Please select a backup to restore.")
             return
 
         row = selected_rows[0].row()
@@ -3036,41 +2465,24 @@ class Admin:
         try:
             # Copy the selected backup file to overwrite the current database
             shutil.copy(backup_path, self.db.db_name)
-            QMessageBox.information(
-                None,
-                "Restore",
-                "Database restored successfully. The application will now restart.",
-            )
+            QMessageBox.information(None, "Restore", "Database restored successfully. The application will now restart.")
 
             # Restart the application
             QProcess.startDetached(sys.executable, sys.argv)
             QCoreApplication.quit()
         except Exception as e:
             print(f"Error restoring backup: {e}")
-
+            
     def scheduled_backup(self):
         try:
-            cursor = self.db.execute_query(
-                "SELECT backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit FROM system_settings"
-            )
+            cursor = self.db.execute_query("SELECT backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit FROM system_settings")
             config = cursor.fetchone()
 
             if not config:
-                QMessageBox.warning(
-                    None,
-                    "Backup Error",
-                    "No backup configuration found. Please configure the backup settings first.",
-                )
+                QMessageBox.warning(None, "Backup Error", "No backup configuration found. Please configure the backup settings first.")
                 return
 
-            (
-                backup_type,
-                backup_frequency,
-                backup_unit,
-                retention_enabled,
-                retention_frequency,
-                retention_unit,
-            ) = config
+            backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit = config
 
             backup_dir = "resources/backups"
             if not os.path.exists(backup_dir):
@@ -3080,9 +2492,7 @@ class Admin:
             backup_file = os.path.join(backup_dir, f"backup_{timestamp}.db")
 
             shutil.copy(self.db.db_name, backup_file)
-            QMessageBox.information(
-                None, "Backup", f"Backup created successfully: {backup_file}"
-            )
+            QMessageBox.information(None, "Backup", f"Backup created successfully: {backup_file}")
 
             if retention_enabled:
                 self.handle_retention(backup_dir, retention_frequency, retention_unit)
@@ -3091,7 +2501,7 @@ class Admin:
             print(f"Database error while performing scheduled backup: {e}")
         except Exception as e:
             print(f"Error during scheduled backup: {e}")
-
+            
     def handle_retention(self, backup_dir, retention_frequency, retention_unit):
         try:
             now = datetime.now()
@@ -3102,15 +2512,13 @@ class Admin:
             elif retention_unit == "Weeks":
                 threshold = now - timedelta(weeks=retention_frequency)
             elif retention_unit == "Months":
-                threshold = now - timedelta(
-                    days=retention_frequency * 30
-                )  # Approximate months as 30 days
+                threshold = now - timedelta(days=retention_frequency * 30)  # Approximate months as 30 days
             else:
                 return
 
             for backup_file in os.listdir(backup_dir):
                 if backup_file.startswith("backup_") and backup_file.endswith(".db"):
-                    timestamp_part = backup_file[len("backup_") :].split(".")[0]
+                    timestamp_part = backup_file[len("backup_"):].split(".")[0]
                     try:
                         backup_date = datetime.strptime(timestamp_part, "%Y%m%d_%H%M%S")
                         if backup_date < threshold:
@@ -3121,7 +2529,8 @@ class Admin:
 
         except Exception as e:
             print(f"Error during retention handling: {e}")
-
+            
+            
     def start_backup_scheduler(self):
         self.backup_timer = QTimer()
         self.backup_timer.timeout.connect(self.scheduled_backup)
@@ -3130,9 +2539,7 @@ class Admin:
 
     def load_backup_configuration(self):
         try:
-            cursor = self.db.execute_query(
-                "SELECT backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit FROM system_settings"
-            )
+            cursor = self.db.execute_query("SELECT backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit FROM system_settings")
             config = cursor.fetchone()
 
             if not config:
@@ -3146,14 +2553,7 @@ class Admin:
                 self.admin_ui.backup_retention_box.setCurrentIndex(0)
                 return
 
-            (
-                backup_type,
-                backup_frequency,
-                backup_unit,
-                retention_enabled,
-                retention_frequency,
-                retention_unit,
-            ) = config
+            backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit = config
 
             # Set backup type
             if backup_type == "Basic":
@@ -3171,7 +2571,6 @@ class Admin:
 
         except sqlite3.Error as e:
             print(f"Database error while loading backup configuration: {e}")
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
