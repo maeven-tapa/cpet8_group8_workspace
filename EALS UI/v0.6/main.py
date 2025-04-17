@@ -1377,8 +1377,8 @@ class ForgotPassword:
     def send_verification_email(self, email, code):
         try:
             # Replace with your email credentials
-            sender_email = "eals.tupc@gmail.com"  # TODO: Replace with actual sender email
-            sender_password = "buwl tszg dghr exln"  # TODO: Replace with actual sender password
+            sender_email = "eals.tupc@gmail.com"
+            sender_password = "buwl tszg dghr exln"
 
             # Create the email message
             message = MIMEMultipart()
