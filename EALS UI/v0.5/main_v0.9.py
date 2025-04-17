@@ -13,35 +13,8 @@ from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QDate, QCoreApplication, QProcess, QTimer, QRegularExpression
 from PySide6.QtGui import QPixmap, QRegularExpressionValidator
 from datetime import datetime, timedelta
-import argon2
-import secrets
-
-# Argon2 Password Hasher
-PASSWORD_HASHER = argon2.PasswordHasher()
 
 class DatabaseConnection:
-    """
-    DatabaseConnection is a class that manages a SQLite database connection and provides methods
-    to interact with the database, including creating tables, executing queries, and managing
-    thread safety.
-    Attributes:
-        db_name (str): The name of the SQLite database file. Defaults to "eals_database.db".
-        connection (sqlite3.Connection): The SQLite database connection object.
-        lock (threading.Lock): A threading lock to ensure thread-safe database operations.
-    Methods:
-        __init__(db_name="eals_database.db"):
-            Initializes the DatabaseConnection instance with the specified database name.
-        connect():
-            Establishes a connection to the SQLite database and creates necessary tables.
-        create_tables():
-            Creates the required tables in the database if they do not already exist.
-            Inserts a default admin user if not present.
-        execute_query(query, params=()):
-            Executes a SQL query with optional parameters and commits the changes.
-            Returns the cursor object for further processing.
-        close():
-            Closes the database connection if it is open.
-    """
     def __init__(self, db_name="eals_database.db"):
         self.db_name = db_name
         self.connection = None
@@ -58,7 +31,6 @@ class DatabaseConnection:
         try:
             with self.lock:
                 cursor = self.connection.cursor()
-                admin_password_hash = PASSWORD_HASHER.hash("defaultpassword")
                 cursor.executescript('''
                 CREATE TABLE IF NOT EXISTS Admin (
                     admin_id VARCHAR(20) PRIMARY KEY,
@@ -144,8 +116,8 @@ class DatabaseConnection:
                 );
 
                 INSERT OR IGNORE INTO Admin (admin_id, password, password_changed) 
-                VALUES ('admin-01-0001', '{}', FALSE);
-                '''.format(admin_password_hash))
+                VALUES ('admin-01-0001', 'defaultpassword', FALSE);
+                ''')
                 self.connection.commit()
         except sqlite3.Error as e:
             print(f"Error creating tables: {e}")
@@ -167,26 +139,6 @@ class DatabaseConnection:
 
 
 class SystemLogs:
-    """
-        SystemLogs is a class responsible for managing and logging system actions to both a file and a database.
-        Attributes:
-            db (object): A database connection object used to execute queries.
-        Methods:
-            __init__(db):
-                Initializes the SystemLogs instance with a database connection.
-            log_system_action(action, entity_type):
-                Logs a system action to a text file and updates or inserts the log into the database.
-                Args:
-                    action (str): The description of the action performed.
-                    entity_type (str): The type of entity associated with the action. 
-                                    Possible values: "Employee", "Admin", "Feedback", "AttendanceLog", "SystemSettings".
-                Raises:
-                    Exception: If an error occurs during the logging process.
-                Notes:
-                    - The method creates a daily log file in the "resources/logs" directory if it does not exist.
-                    - It retrieves the entity ID based on the entity type and updates or inserts the log into the `system_logs` table.
-                    - If no specific entity ID is found, the entity type itself is used as the identifier. 
-    """
     def __init__(self, db):
         self.db = db
 
@@ -257,63 +209,23 @@ class SystemLogs:
             print(f"Error logging system action: {e}")
 
 class EALS:
-    """
-    The EALS class serves as the main entry point for the application, managing the 
-    initialization and navigation between different user interfaces (UI) and handling 
-    the database connection.
-    Attributes:
-        db (DatabaseConnection): An instance of the DatabaseConnection class used to 
-            manage the application's database connection.
-        home (Home): An instance of the Home class representing the home UI.
-        global_home_ui: The UI object for the home screen, stored as an instance 
-            attribute for global access.
-    Methods:
-        __init__():
-            Initializes the EALS class by setting up the database connection, 
-            initializing the home UI, and displaying it maximized.
-        __del__():
-            Ensures the database connection is properly closed when the instance 
-            is deleted.
-        goto_admin_ui():
-            Closes the current home UI and transitions to the admin UI, displaying 
-            it maximized.
-    """
     def __init__(self):
         self.db = DatabaseConnection()
         self.db.connect()
         self.home = Home(self.db)
-        self.global_home_ui = self.home.home_ui  # Store home_ui as an instance attribute
-        self.global_home_ui.showMaximized()
+        global global_home_ui
+        global_home_ui = self.home.home_ui
+        global_home_ui.showMaximized()
 
     def __del__(self):
         self.db.close()
 
     def goto_admin_ui(self):
-        self.global_home_ui.close()
+        global_home_ui.close()
         self.admin = Admin(self.db)
         self.admin.admin_ui.showMaximized()
 
 class Feedback:
-    """
-    Feedback Class
-    This class provides functionality for handling feedback submission and management
-    within the application. It interacts with the database to save feedback and logs
-    system actions related to feedback.
-    Attributes:
-        db (object): The database connection object used for executing queries.
-        hr_data (dict): A dictionary containing HR-related data, including the employee ID.
-        system_logs (SystemLogs): An instance of the SystemLogs class for logging system actions.
-        loader (QUiLoader): A loader for loading the feedback UI.
-        feedback_ui (QWidget): The loaded feedback UI widget.
-    Methods:
-        discard_feedback():
-            Clears the feedback form and closes the feedback UI. Logs the action of discarding
-            the feedback draft.
-        save_feedback():
-            Validates and saves the feedback to the database. Clears the form and closes the
-            feedback UI upon successful submission. Logs the action of submitting feedback.
-            Displays appropriate messages for success or failure.
-    """
     def __init__(self, db, hr_data):
         self.db = db
         self.system_logs = SystemLogs(db)
@@ -329,7 +241,7 @@ class Feedback:
         
         
     def discard_feedback(self):
-        self.system_logs.log_system_action("HR discarded feedback draft", "Employee")
+        self.system_logs.log_system_action(f"HR discarded feedback draft", "Employee")
 
         self.feedback_ui.feedback_title_box.clear()
         self.feedback_ui.feedback_box.clear()
@@ -360,57 +272,6 @@ class Feedback:
             QMessageBox.critical(None, "Error", "Failed to save feedback. Please try again.")
 
 class HR:
-    """
-    HR Class
-    This class represents the Human Resources (HR) module of the EALS system. It provides functionality for managing
-    employee data, attendance logs, and system interactions through a graphical user interface (GUI). The class interacts
-    with a database to retrieve and update information and provides various features such as filtering, sorting, and
-    viewing employee and attendance data.
-    Attributes:
-        db (Database): The database connection object used for executing queries.
-        system_logs (SystemLogs): An instance of the SystemLogs class for logging system actions.
-        hr_data (dict): A dictionary containing HR-specific data such as employee ID.
-        loader (QUiLoader): A loader for loading the HR UI from a .ui file.
-        hr_ui (QWidget): The main HR UI widget loaded from the .ui file.
-        hr_employees (list): A list of dictionaries containing employee data.
-    Methods:
-        __init__(db, hr_data):
-            Initializes the HR class with the database connection and HR-specific data.
-        show_feedback_form():
-            Opens the feedback form and logs the action.
-        update_hr_dashboard_labels():
-            Updates the HR dashboard labels with employee and attendance statistics.
-        update_date_today():
-            Updates the current date label in the HR UI.
-        load_hr_employee_table():
-            Loads employee data into the HR employee table.
-        add_hr_employee_to_table(employee_data):
-            Adds a single employee's data to the HR employee table.
-        filter_hr_employee_table():
-            Filters the HR employee table based on the search text.
-        sort_hr_employee_table():
-            Sorts the HR employee table based on the selected sort option.
-        goto_hr_employee_view():
-            Navigates to the employee view page for the selected employee.
-        display_hr_employee_view(employee_data):
-            Displays detailed information about a selected employee.
-        goto_hr_dashboard():
-            Navigates back to the HR dashboard page.
-        handle_logout():
-            Logs out the HR user and records the action in the attendance logs.
-        load_hr_attendance_logs_table():
-            Loads all attendance logs for employees into the attendance logs table.
-        add_attendance_log_to_table(table, log):
-            Adds a single attendance log entry to the specified table.
-        filter_hr_attendance_logs_table():
-            Filters the HR attendance logs table based on the search text.
-        sort_hr_attendance_logs_table():
-            Sorts the HR attendance logs table based on the selected sort option.
-        load_hr_employee_attendance_logs(employee_id):
-            Loads attendance logs for a specific employee into the employee logs table.
-        add_log_to_table(table, log):
-            Adds a single log entry to the specified table.
-    """
     def __init__(self, db, hr_data):
         self.db = db
         self.system_logs = SystemLogs(db)
@@ -598,6 +459,7 @@ class HR:
         self.db.execute_query("INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)",
                               (self.hr_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), "Clock Out"))
         self.hr_ui.close()
+        global_home_ui.showMaximized()
         self.system_logs.log_system_action("The HR logged out.", "Employee")
 
     def load_hr_attendance_logs_table(self):
@@ -712,40 +574,7 @@ class HR:
         table.resizeColumnsToContents()
 
 class Home:
-    """
-    The `Home` class represents the main user interface and logic for the EALS application. 
-    It handles user authentication, navigation between pages, and various system functionalities.
-    Attributes:
-        password_changed (bool): Tracks whether the admin password has been changed.
-        failed_attempts (int): Counts the number of failed login attempts.
-        db (object): Database connection object for executing queries.
-        system_logs (SystemLogs): Instance for logging system actions.
-        loader (QUiLoader): Loader for loading UI files.
-        home_ui (object): The main UI object for the home screen.
-        admin_id (str): Default admin ID.
-        employee_data (dict): Stores logged-in employee data.
-        password_visible (bool): Tracks the visibility state of the password field.
-    Methods:
-        __init__(db): Initializes the `Home` class with the database connection and sets up the UI.
-        update_date_today(): Updates the current date on the home UI.
-        validate_hr_attendance(hr_data): Validates HR attendance based on schedule and logs.
-        handle_login(): Handles the login process for both admin and employee users.
-        prompt_password_change(): Prompts the user to change their password after multiple failed attempts.
-        validate_attendance(): Validates employee attendance and logs clock-in or clock-out actions.
-        goto_hr_ui(hr_data): Navigates to the HR UI and logs attendance.
-        goto_bio1(): Navigates to the first biometric page and displays employee details.
-        goto_bio2(): Navigates to the second biometric page and displays employee details.
-        goto_result_prompt(): Navigates to the result prompt page and logs attendance.
-        parse_schedule(schedule): Parses a schedule string into start and end hours.
-        convert_to_24_hour(time_str): Converts a 12-hour time string to a 24-hour format.
-        is_within_schedule(start_hour, end_hour, current_hour): Checks if the current hour is within the given schedule.
-        show_error(title, message): Displays an error message dialog.
-        goto_change_pass(): Navigates to the change password UI.
-        goto_admin_ui(): Navigates to the admin UI.
-        toggle_password_visibility(): Toggles the visibility of the password field.
-        goto_forgot_password(): Navigates to the forgot password UI.
-        check_internet_connection(): Checks if there is an active internet connection.
-    """
+    admin_password = "defaultpassword"
     password_changed = False
     failed_attempts = 0 
 
@@ -805,8 +634,7 @@ class Home:
 
             if admin_result:
                 db_password, password_changed = admin_result
-                try:
-                    PASSWORD_HASHER.verify(db_password, password)
+                if password == db_password:
                     Home.failed_attempts = 0  
                     Home.password_changed = password_changed
                     if password_changed:
@@ -818,7 +646,7 @@ class Home:
                     self.home_ui.home_id_box.clear() 
                     self.home_ui.home_pass_box.clear() 
                     return
-                except argon2.exceptions.VerifyMismatchError:
+                else:
                     Home.failed_attempts += 1
                     self.system_logs.log_system_action("An invalid Admin login attempt has been made.", "Admin")
                     if Home.failed_attempts >= 3:
@@ -827,7 +655,7 @@ class Home:
                         self.show_error("Invalid credentials", "Please enter valid admin ID and password")
                     return
 
-            cursor = self.db.execute_query("SELECT * FROM Employee WHERE employee_id = ?", (user_id,))
+            cursor = self.db.execute_query("SELECT * FROM Employee WHERE employee_id = ? AND password = ?", (user_id, password))
             employee_result = cursor.fetchone() if cursor else None
 
             if employee_result:
@@ -845,27 +673,20 @@ class Home:
                     "password_changed": employee_result[12],
                     "profile_picture": employee_result[13],
                 }
-                
-                db_password = employee_result[11]
-                try:
-                    PASSWORD_HASHER.verify(db_password, password)
-                    if not employee_data["password_changed"]:
-                        self.changepass = ChangePassword(self.db, employee_data["employee_id"], "employee")
-                        self.changepass.change_pass_ui.show()
-                        return
-                        
-                    if employee_data["is_hr"]:
-                        if self.validate_hr_attendance(employee_data):
-                            self.goto_hr_ui(employee_data)
-                            self.system_logs.log_system_action("A user is logged in as HR", "Employee")
-                    else:
-                        self.employee_data = employee_data
-                        if self.validate_attendance():
-                            self.system_logs.log_system_action("A user is logged in as an employee", "Employee")
-                            self.goto_bio1()
-                except argon2.exceptions.VerifyMismatchError:
-                    self.show_error("Invalid credentials", "Please enter valid employee ID and password")
-                    self.system_logs.log_system_action("An invalid login attempt has been made.", "Employee")
+                if not employee_data["password_changed"]:
+                    self.changepass = ChangePassword(self.db, employee_data["employee_id"], "employee")
+                    self.changepass.change_pass_ui.show()
+                    return
+                    
+                if employee_data["is_hr"]:
+                    if self.validate_hr_attendance(employee_data):
+                        self.goto_hr_ui(employee_data)
+                        self.system_logs.log_system_action("A user is logged in as HR", "Employee")
+                else:
+                    self.employee_data = employee_data
+                    if self.validate_attendance():
+                        self.system_logs.log_system_action("A user is logged in as an employee", "Employee")
+                        self.goto_bio1()
             else:
                 self.show_error("Invalid credentials", "Please enter valid employee ID and password")
                 self.system_logs.log_system_action("An invalid login attempt has been made.", "Employee")
@@ -936,7 +757,7 @@ class Home:
         current_date = current_time.strftime("%Y-%m-%d")
         self.db.execute_query("INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)",
                               (hr_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), hr_data.get("remarks", "Clock In")))
-        self.home_ui.close()
+        global_home_ui.close()
         self.hr = HR(self.db, hr_data)
         self.hr.hr_ui.showMaximized()
 
@@ -1076,7 +897,7 @@ class Home:
         self.changepass.change_pass_ui.show()
     
     def goto_admin_ui(self):
-        self.home_ui.close()
+        global_home_ui.close()
         self.admin = Admin(self.db)
         self.admin.admin_ui.showMaximized()
 
@@ -1111,19 +932,6 @@ class Home:
             return False
 
 class ChangePassword:
-    """
-    A class to handle the password change functionality for admin and employee users.
-    Attributes:
-        db (DatabaseConnection): The database connection object for executing queries.
-        user_id (int): The ID of the user whose password is being changed.
-        user_type (str): The type of user, either "admin" or "employee". Defaults to "admin".
-        system_logs (SystemLogs): An instance of the SystemLogs class for logging system actions.
-        loader (QUiLoader): The loader for loading the UI file.
-        change_pass_ui (QWidget): The loaded UI widget for the change password interface.
-    Methods:
-        validate_and_change_password():
-            Validates the current password, checks the new password requirements, and updates the password in the database.
-    """
     def __init__(self, db, user_id, user_type="admin"):
         self.db = db
         self.system_logs = SystemLogs(db)
@@ -1159,20 +967,10 @@ class ChangePassword:
                 table = "Employee"
                 id_field = "employee_id"
 
-            cursor = self.db.execute_query(
-                "SELECT password FROM {} WHERE {} = ?".format(table, id_field),
-                (self.user_id,)
-            )
+            cursor = self.db.execute_query(f"SELECT password FROM {table} WHERE {id_field} = ?", (self.user_id,))
             result = cursor.fetchone()
 
-            if not result:
-                self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
-                return
-            
-            try:
-                PASSWORD_HASHER.verify(result[0], current_password)
-            except argon2.exceptions.VerifyMismatchError:
+            if not result or current_password != result[0]:
                 self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
                 return
@@ -1192,13 +990,10 @@ class ChangePassword:
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
                 return
 
-            # Hash the new password
-            hashed_password = PASSWORD_HASHER.hash(new_password)
-
             # Update password in appropriate table
             self.db.execute_query(
-                "UPDATE {} SET password = ?, password_changed = TRUE WHERE {} = ?".format(table, id_field),
-                (hashed_password, self.user_id)
+                f"UPDATE {table} SET password = ?, password_changed = TRUE WHERE {id_field} = ?", 
+                (new_password, self.user_id)
             )
 
             success_msg = QMessageBox()
@@ -1224,39 +1019,6 @@ class ChangePassword:
             
 
 class ForgotPassword:
-    """
-    ForgotPassword Class
-    This class provides the functionality for handling the "Forgot Password" feature in the application. 
-    It includes account validation, verification code generation, email sending, and password reset.
-    Attributes:
-        db (object): Database connection object.
-        system_logs (SystemLogs): Instance of the SystemLogs class for logging system actions.
-        loader (QUiLoader): Loader for loading UI files.
-        forgot_pass_ui (QWidget): The main UI widget for the "Forgot Password" feature.
-        current_employee (dict): Stores the current employee's information after validation.
-        verification_code (str): Stores the generated verification code.
-    Methods:
-        __init__(db):
-            Initializes the ForgotPassword class with the database connection and sets up the UI.
-        setup_pin_inputs():
-            Configures the PIN input fields with constraints and validators.
-        move_focus_to_next(current, next_input):
-            Moves focus to the next input field when the current field is filled.
-        check_verification_ready():
-            Checks if all PIN fields are filled and enables the verification button.
-        validate_account():
-            Validates the account information provided by the user and generates a verification code.
-        send_verification_email(email, code):
-            Sends the verification code to the user's email address.
-        verify_code():
-            Verifies the entered code against the generated verification code and transitions to the password change UI.
-        validate_and_change_password():
-            Validates the new password and updates it in the database.
-        go_back_to_page1():
-            Navigates back to the first page of the "Forgot Password" UI.
-        close_window():
-            Closes the "Forgot Password" UI window.
-    """
     def __init__(self, db):
         self.db = db
         self.system_logs = SystemLogs(db)
@@ -1351,7 +1113,7 @@ class ForgotPassword:
             }
             
             # Generate and send verification code
-            self.verification_code = ''.join([str(secrets.randbelow(10)) for _ in range(4)])
+            self.verification_code = ''.join([str(random.randint(0, 9)) for _ in range(4)])
             self.system_logs.log_system_action(
                 f"Password reset verification code generated for employee {account_id}", 
                 "Employee"
@@ -1448,13 +1210,10 @@ class ForgotPassword:
             return
 
         try:
-            # Hash the new password
-            hashed_password = PASSWORD_HASHER.hash(new_password)
-
             # Update the password in the database
             self.db.execute_query(
                 "UPDATE Employee SET password = ?, password_changed = TRUE WHERE employee_id = ?",
-                (hashed_password, self.current_employee["employee_id"])
+                (new_password, self.current_employee["employee_id"])
             )
             self.change_pass_ui.close()
             QMessageBox.information(None, "Success", "Password changed successfully.")
@@ -1469,79 +1228,6 @@ class ForgotPassword:
         self.forgot_pass_ui.close()
 
 class Admin:
-    """
-    Admin Class
-    This class represents the Admin interface and functionality for the Employee Attendance and Logging System (EALS). 
-    It provides methods to manage employees, HR staff, system logs, attendance logs, feedback, and backup configurations.
-    Attributes:
-        db (Database): The database connection object.
-        system_logs (SystemLogs): An instance of the SystemLogs class for logging system actions.
-        loader (QUiLoader): The loader for loading UI files.
-        admin_ui (QWidget): The main admin UI widget loaded from the UI file.
-        employees (list): A list of employee data dictionaries.
-        hr_employees (list): A list of HR employee data dictionaries.
-        current_employee_data (dict): The currently selected employee's data.
-        selected_employee_index (int): The index of the currently selected employee in the table.
-        selected_employee_type (str): The type of the currently selected employee ("employee" or "hr").
-    Methods:
-        get_current_admin(): Returns the current admin's ID.
-        load_system_logs(): Loads all system log files into the system log list.
-        display_selected_log(): Displays the content of the selected log file.
-        update_date_today(): Updates the current date label in the UI.
-        goto_home(): Logs out the admin and navigates to the home screen.
-        load_feedback_titles(): Loads feedback titles from the database into the feedback combo box.
-        display_selected_feedback(): Displays the details of the selected feedback.
-        goto_employee_hr(): Navigates to the employee HR page and reloads employee and HR tables.
-        goto_employee_edit(): Navigates to the employee edit page.
-        goto_employee_enroll(): Navigates to the employee enrollment page.
-        goto_employee_enroll_2(): Navigates to the second step of employee enrollment.
-        goto_employee_enroll_3(): Navigates to the third step of employee enrollment.
-        filter_employee_table(): Filters the employee table based on the search text.
-        filter_hr_table(): Filters the HR table based on the search text.
-        sort_employee_table(): Sorts the employee table based on the selected sort option.
-        sort_hr_table(): Sorts the HR table based on the selected sort option.
-        goto_employee_view(): Navigates to the employee view page for the selected employee.
-        display_employee_view(employee_data): Displays the details of the selected employee in the view page.
-        display_hr_view(hr_data): Displays the details of the selected HR employee in the view page.
-        handle_edit_button(): Handles the edit button click event for editing an employee.
-        load_employee_to_edit_form(employee_data): Loads the selected employee's data into the edit form.
-        toggle_edit_hr_fields(): Toggles the HR-specific fields in the edit form.
-        validate_edited_employee_data(): Validates the data entered in the edit form.
-        save_edited_employee(): Saves the edited employee data to the database.
-        toggle_employee_status(): Toggles the status (Active/Inactive) of the selected employee.
-        validate_employee_data(): Validates the data entered during employee enrollment.
-        load_employee_table(): Loads all employees into the employee table.
-        load_hr_table(): Loads all HR employees into the HR table.
-        add_employee_to_table(employee_data): Adds an employee's data to the employee table.
-        add_hr_to_table(hr_data): Adds an HR employee's data to the HR table.
-        handle_delete_employee(): Deletes the selected employee from the database.
-        get_employee_history(employee_id): Retrieves the creation and modification history of an employee.
-        save_employee_data(employee_data): Saves employee data to the database (insert or update).
-        goto_employee_enroll_2_with_validation(): Validates data and navigates to the second step of enrollment.
-        finalize_employee_enrollment(): Finalizes the employee enrollment process.
-        toggle_hr_fields(): Toggles the HR-specific fields in the enrollment form.
-        update_dashboard_labels(): Updates the dashboard labels with employee statistics.
-        select_picture(label): Opens a file dialog to select a profile picture.
-        save_picture(file_path, employee_name): Saves the selected profile picture to the resources directory.
-        handle_enroll_picture(): Handles the selection of a profile picture during enrollment.
-        handle_edit_picture(): Handles the selection of a profile picture during editing.
-        display_picture(label, picture_path): Displays a profile picture in the specified label.
-        clear_employee_enrollment_fields(): Clears all fields in the employee enrollment form.
-        load_attendance_logs_table(): Loads all attendance logs into the attendance logs table.
-        add_attendance_log_to_table(log): Adds an attendance log entry to the attendance logs table.
-        filter_attendance_logs_table(): Filters the attendance logs table based on the search text.
-        sort_attendance_logs_table(): Sorts the attendance logs table based on the selected sort option.
-        load_employee_attendance_logs(employee_id): Loads attendance logs for a specific employee.
-        load_hr_attendance_logs(hr_id): Loads attendance logs for a specific HR employee.
-        add_log_to_table(table, log): Adds a log entry to the specified table.
-        handle_backup(): Handles the backup process and saves the backup configuration.
-        load_backup_table(): Loads the list of backup files into the backup table.
-        restore_backup(): Restores the database from a selected backup file.
-        scheduled_backup(): Performs a scheduled backup based on the configuration.
-        handle_retention(backup_dir, retention_frequency, retention_unit): Handles backup retention by deleting old backups.
-        start_backup_scheduler(): Starts the backup scheduler with a timer.
-        load_backup_configuration(): Loads the backup configuration from the database.
-    """
     def __init__(self, db):
         self.db = db
         self.system_logs = SystemLogs(db)
@@ -1666,7 +1352,7 @@ class Admin:
 
     def goto_home(self):
         self.system_logs.log_system_action("The Admin logged out.", "Admin")
-        self.global_home_ui.showMaximized()
+        global_home_ui.showMaximized()
         self.admin_ui.close()
 
     def load_feedback_titles(self):
@@ -2029,9 +1715,11 @@ class Admin:
         self.display_picture(self.admin_ui.edit_emplyee_picture, employee_data['profile_picture'])
 
     def toggle_edit_hr_fields(self):
-        self.admin_ui.edit_is_hr_yes.toggled.connect(self.toggle_edit_hr_fields)
-        self.admin_ui.edit_is_hr_no.toggled.connect(self.toggle_edit_hr_fields)
-
+        try:
+            self.admin_ui.edit_is_hr_yes.toggled.connect(self.toggle_edit_hr_fields)
+            self.admin_ui.edit_is_hr_no.toggled.connect(self.toggle_edit_hr_fields)
+        except:
+            pass
         
         is_hr = self.admin_ui.edit_is_hr_yes.isChecked()
         self.admin_ui.edit_employee_department_box.setDisabled(is_hr)
@@ -2343,14 +2031,13 @@ class Admin:
             return False, f"Please fill in the following required fields: {', '.join(missing_fields)}"
         
         password = ' '.join(word.upper() for word in last_name.split())
-        hashed_password = PASSWORD_HASHER.hash(password)
 
         employee_data = {
             "first_name": first_name,
             "last_name": last_name,
             "middle_initial": mi,
             "employee_id": employee_id,
-            "password": hashed_password,
+            "password": password,
             "gender": gender,
             "birthday": birthday,
             "department": department,

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1169</width>
-    <height>878</height>
+    <height>841</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -101,7 +101,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <property name="iconSize">
        <size>
@@ -1111,7 +1111,7 @@ QToolTip {
            <string notr="true"/>
           </property>
           <property name="currentIndex">
-           <number>6</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="employee_hr_page">
            <layout class="QGridLayout" name="gridLayout_40" rowstretch="12,1">
@@ -2088,7 +2088,7 @@ QRadioButton::indicator:checked:hover {
 }
 </string>
            </property>
-           <layout class="QGridLayout" name="gridLayout_24" rowstretch="5,6,4,1" columnstretch="5,2,0,0,0">
+           <layout class="QGridLayout" name="gridLayout_24" rowstretch="6,6,7,1" columnstretch="5,2,0,0,0">
             <item row="0" column="0">
              <widget class="QFrame" name="frame_13">
               <property name="styleSheet">
@@ -2220,7 +2220,7 @@ border-radius:6px;</string>
               <property name="frameShadow">
                <enum>QFrame::Shadow::Raised</enum>
               </property>
-              <layout class="QVBoxLayout" name="verticalLayout_26" stretch="2,2,0,2,2,0,2,2,0,2,2">
+              <layout class="QVBoxLayout" name="verticalLayout_26" stretch="2,2,0,2,2,0,2,2">
                <property name="leftMargin">
                 <number>12</number>
                </property>
@@ -3636,7 +3636,7 @@ QScrollBar::sub-page:vertical {
                   <string notr="true">border: none;</string>
                  </property>
                  <property name="text">
-                  <string>Password</string>
+                  <string>Email</string>
                  </property>
                  <property name="indent">
                   <number>6</number>
@@ -3651,7 +3651,7 @@ border-radius: 6px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_28">
                   <item>
-                   <widget class="QLineEdit" name="edit_employee_password">
+                   <widget class="QLineEdit" name="edit_employee_email">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -3680,91 +3680,10 @@ QLineEdit:focus {
 }</string>
                     </property>
                     <property name="echoMode">
-                     <enum>QLineEdit::EchoMode::Password</enum>
+                     <enum>QLineEdit::EchoMode::Normal</enum>
                     </property>
                     <property name="placeholderText">
-                     <string>Enter password.</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="Line" name="line_13">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>1</height>
-                  </size>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Orientation::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_44">
-                 <property name="font">
-                  <font>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: none;</string>
-                 </property>
-                 <property name="text">
-                  <string>Confirm Password</string>
-                 </property>
-                 <property name="indent">
-                  <number>6</number>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QWidget" name="widget_29" native="true">
-                 <property name="styleSheet">
-                  <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 6px;</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_29">
-                  <item>
-                   <widget class="QLineEdit" name="edit_employee_confirm_password">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="toolTip">
-                     <string>Please confirm your password.</string>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">QLineEdit {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    padding-left: 10px; /* space for icon */
-    padding-right: 10px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    font: 12px 'Segoe UI', sans-serif;
-    color: #333333;
-}
-
-QLineEdit:focus {
-    border: 1px solid #4a90e2;
-    outline: none;
-}</string>
-                    </property>
-                    <property name="echoMode">
-                     <enum>QLineEdit::EchoMode::Password</enum>
-                    </property>
-                    <property name="placeholderText">
-                     <string>Confirm password.</string>
+                     <string>Enter email.</string>
                     </property>
                    </widget>
                   </item>
@@ -5895,286 +5814,6 @@ border-radius: 10px;</string>
               </layout>
              </widget>
             </item>
-            <item row="0" column="1" rowspan="2" colspan="2">
-             <widget class="QFrame" name="frame_58">
-              <property name="styleSheet">
-               <string notr="true">background-color: rgb(251, 251, 251);
-border: 1px solid rgb(239, 239, 239);
-border-radius:6px;</string>
-              </property>
-              <property name="frameShape">
-               <enum>QFrame::Shape::StyledPanel</enum>
-              </property>
-              <property name="frameShadow">
-               <enum>QFrame::Shadow::Raised</enum>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_93" stretch="2,2,0,2,16,0,2,2">
-               <property name="leftMargin">
-                <number>12</number>
-               </property>
-               <property name="rightMargin">
-                <number>12</number>
-               </property>
-               <property name="bottomMargin">
-                <number>20</number>
-               </property>
-               <item>
-                <widget class="QLabel" name="label_126">
-                 <property name="font">
-                  <font>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: none;</string>
-                 </property>
-                 <property name="text">
-                  <string>Account ID</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QWidget" name="widget_84" native="true">
-                 <property name="font">
-                  <font>
-                   <stylestrategy>PreferAntialias</stylestrategy>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-                 </property>
-                 <layout class="QGridLayout" name="gridLayout_45" columnstretch="0">
-                  <item row="0" column="0">
-                   <widget class="QLabel" name="view_hr_accountid">
-                    <property name="styleSheet">
-                     <string notr="true">border: none;</string>
-                    </property>
-                    <property name="text">
-                     <string>PREFIX-YEAR-NO</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="Line" name="line_42">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>1</height>
-                  </size>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Orientation::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_129">
-                 <property name="font">
-                  <font>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: none;</string>
-                 </property>
-                 <property name="text">
-                  <string>AccessLogs</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QTableWidget" name="view_hr_tbl">
-                 <property name="styleSheet">
-                  <string notr="true">QTableWidget {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    gridline-color: #e0e0e0;
-    font: 12px 'Segoe UI', sans-serif;
-    alternate-background-color: #f9f9f9;
-    selection-background-color: #e6f0ff;
-    selection-color: #000000;
-}
-
-QHeaderView::section {
-    background-color: #f2f2f2;
-    color: #333333;
-    padding: 8px;
-    border: none;
-    border-bottom: 1px solid #dcdcdc;
-    font-weight: bold;
-}
-
-QTableWidget::item {
-    padding: 8px;
-    border: none;
-}
-
-QTableWidget::item:selected {
-    background-color: #e6f0ff;
-    color: #000000;
-}
-
-QScrollBar:vertical, QScrollBar:horizontal {
-    background: #f2f2f2;
-    width: 8px;
-    height: 8px;
-    margin: 0px;
-    border: none;
-}
-
-QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-    background: #c4c4c4;
-    min-height: 20px;
-    border-radius: 4px;
-}
-
-QScrollBar::add-line, QScrollBar::sub-line {
-    height: 0px;
-    width: 0px;
-}
-</string>
-                 </property>
-                 <attribute name="horizontalHeaderDefaultSectionSize">
-                  <number>161</number>
-                 </attribute>
-                 <attribute name="horizontalHeaderStretchLastSection">
-                  <bool>true</bool>
-                 </attribute>
-                 <column>
-                  <property name="text">
-                   <string>Date:</string>
-                  </property>
-                 </column>
-                 <column>
-                  <property name="text">
-                   <string>Time:</string>
-                  </property>
-                 </column>
-                 <column>
-                  <property name="text">
-                   <string>Remarks:</string>
-                  </property>
-                 </column>
-                </widget>
-               </item>
-               <item>
-                <widget class="Line" name="line_44">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>1</height>
-                  </size>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Orientation::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_131">
-                 <property name="font">
-                  <font>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: none;</string>
-                 </property>
-                 <property name="text">
-                  <string>Schedule</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QWidget" name="widget_87" native="true">
-                 <property name="enabled">
-                  <bool>false</bool>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_96">
-                  <property name="topMargin">
-                   <number>4</number>
-                  </property>
-                  <property name="bottomMargin">
-                   <number>4</number>
-                  </property>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_16">
-                    <item>
-                     <widget class="QRadioButton" name="view_hr_sched_1">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="layoutDirection">
-                       <enum>Qt::LayoutDirection::RightToLeft</enum>
-                      </property>
-                      <property name="text">
-                       <string>6am to 2pm</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QRadioButton" name="view_hr_sched_2">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="layoutDirection">
-                       <enum>Qt::LayoutDirection::RightToLeft</enum>
-                      </property>
-                      <property name="text">
-                       <string>2pm to 10pm</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QRadioButton" name="view_hr_sched_3">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="layoutDirection">
-                       <enum>Qt::LayoutDirection::RightToLeft</enum>
-                      </property>
-                      <property name="text">
-                       <string>10pm to 6am</string>
-                      </property>
-                      <property name="iconSize">
-                       <size>
-                        <width>16</width>
-                        <height>15</height>
-                       </size>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
             <item row="1" column="0">
              <widget class="QFrame" name="frame_55">
               <property name="styleSheet">
@@ -6556,20 +6195,6 @@ border-radius: 10px;</string>
               </layout>
              </widget>
             </item>
-            <item row="2" column="0" colspan="3">
-             <widget class="QFrame" name="frame_59">
-              <property name="styleSheet">
-               <string notr="true">background-color: rgb(255, 255, 255);
-border: none;</string>
-              </property>
-              <property name="frameShape">
-               <enum>QFrame::Shape::StyledPanel</enum>
-              </property>
-              <property name="frameShadow">
-               <enum>QFrame::Shadow::Raised</enum>
-              </property>
-             </widget>
-            </item>
             <item row="3" column="0" colspan="2">
              <widget class="QFrame" name="frame_57">
               <property name="styleSheet">
@@ -6619,6 +6244,356 @@ border: none;</string>
               <property name="text">
                <string>Back</string>
               </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QFrame" name="frame_59">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(255, 255, 255);
+border: none;</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1" rowspan="3" colspan="2">
+             <widget class="QFrame" name="frame_58">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(251, 251, 251);
+border: 1px solid rgb(239, 239, 239);
+border-radius:6px;</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_93" stretch="2,3,0,2,3,0,2,16,0,2,3">
+               <property name="leftMargin">
+                <number>12</number>
+               </property>
+               <property name="rightMargin">
+                <number>12</number>
+               </property>
+               <property name="bottomMargin">
+                <number>20</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_126">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>Account ID</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_84" native="true">
+                 <property name="font">
+                  <font>
+                   <stylestrategy>PreferAntialias</stylestrategy>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_45" columnstretch="0">
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="view_hr_accountid">
+                    <property name="styleSheet">
+                     <string notr="true">border: none;</string>
+                    </property>
+                    <property name="text">
+                     <string>PREFIX-YEAR-NO</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_42">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_127">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>Email</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_85" native="true">
+                 <property name="font">
+                  <font>
+                   <stylestrategy>PreferAntialias</stylestrategy>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_60" columnstretch="0">
+                  <item row="1" column="0">
+                   <widget class="QLabel" name="view_hr_email">
+                    <property name="styleSheet">
+                     <string notr="true">border: none;</string>
+                    </property>
+                    <property name="text">
+                     <string>XXXXXXX@XXXX.XXX</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_43">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_129">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>AccessLogs</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QTableWidget" name="view_hr_tbl">
+                 <property name="styleSheet">
+                  <string notr="true">QTableWidget {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    gridline-color: #e0e0e0;
+    font: 12px 'Segoe UI', sans-serif;
+    alternate-background-color: #f9f9f9;
+    selection-background-color: #e6f0ff;
+    selection-color: #000000;
+}
+
+QHeaderView::section {
+    background-color: #f2f2f2;
+    color: #333333;
+    padding: 8px;
+    border: none;
+    border-bottom: 1px solid #dcdcdc;
+    font-weight: bold;
+}
+
+QTableWidget::item {
+    padding: 8px;
+    border: none;
+}
+
+QTableWidget::item:selected {
+    background-color: #e6f0ff;
+    color: #000000;
+}
+
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: #f2f2f2;
+    width: 8px;
+    height: 8px;
+    margin: 0px;
+    border: none;
+}
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #c4c4c4;
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    height: 0px;
+    width: 0px;
+}
+</string>
+                 </property>
+                 <attribute name="horizontalHeaderDefaultSectionSize">
+                  <number>161</number>
+                 </attribute>
+                 <attribute name="horizontalHeaderStretchLastSection">
+                  <bool>true</bool>
+                 </attribute>
+                 <column>
+                  <property name="text">
+                   <string>Date:</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Time:</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Remarks:</string>
+                  </property>
+                 </column>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_44">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_131">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>Schedule</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_87" native="true">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_96">
+                  <property name="topMargin">
+                   <number>4</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>4</number>
+                  </property>
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_16">
+                    <item>
+                     <widget class="QRadioButton" name="view_hr_sched_1">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="layoutDirection">
+                       <enum>Qt::LayoutDirection::RightToLeft</enum>
+                      </property>
+                      <property name="text">
+                       <string>6am to 2pm</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QRadioButton" name="view_hr_sched_2">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="layoutDirection">
+                       <enum>Qt::LayoutDirection::RightToLeft</enum>
+                      </property>
+                      <property name="text">
+                       <string>2pm to 10pm</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QRadioButton" name="view_hr_sched_3">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="layoutDirection">
+                       <enum>Qt::LayoutDirection::RightToLeft</enum>
+                      </property>
+                      <property name="text">
+                       <string>10pm to 6am</string>
+                      </property>
+                      <property name="iconSize">
+                       <size>
+                        <width>16</width>
+                        <height>15</height>
+                       </size>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
            </layout>
@@ -6736,7 +6711,7 @@ QRadioButton::indicator:checked:hover {
 }
 </string>
            </property>
-           <layout class="QGridLayout" name="gridLayout_30" rowstretch="5,6,4,1" columnstretch="4,2,0,0">
+           <layout class="QGridLayout" name="gridLayout_30" rowstretch="6,6,7,1" columnstretch="4,2,0,0">
             <item row="0" column="0">
              <widget class="QFrame" name="frame_10">
               <property name="styleSheet">
@@ -6846,6 +6821,1340 @@ border-radius: 10px;</string>
               </layout>
              </widget>
             </item>
+            <item row="1" column="0" rowspan="3">
+             <widget class="QFrame" name="frame_26">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(251, 251, 251);
+border: 1px solid rgb(239, 239, 239);
+border-radius:6px;</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_10" stretch="1,0,0,1,0,0,1,0,0,3">
+               <item>
+                <widget class="QFrame" name="frame_27">
+                 <property name="styleSheet">
+                  <string notr="true">border: none;</string>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::Shape::StyledPanel</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Shadow::Raised</enum>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_29">
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="horizontalSpacing">
+                   <number>10</number>
+                  </property>
+                  <property name="verticalSpacing">
+                   <number>6</number>
+                  </property>
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="label_69">
+                    <property name="font">
+                     <font>
+                      <bold>true</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>First Name</string>
+                    </property>
+                    <property name="indent">
+                     <number>6</number>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QWidget" name="widget_46" native="true">
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_47">
+                     <item>
+                      <widget class="QLineEdit" name="employee_first_name">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="styleSheet">
+                        <string notr="true">QLineEdit {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding-left: 10px; /* space for icon */
+    padding-right: 10px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    font: 12px 'Segoe UI', sans-serif;
+    color: #333333;
+}
+
+QLineEdit:focus {
+    border: 1px solid #4a90e2;
+    outline: none;
+}</string>
+                       </property>
+                       <property name="placeholderText">
+                        <string>Enter first name</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QLabel" name="label_70">
+                    <property name="font">
+                     <font>
+                      <bold>true</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>Last Name</string>
+                    </property>
+                    <property name="indent">
+                     <number>6</number>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QWidget" name="widget_47" native="true">
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_48">
+                     <item>
+                      <widget class="QLineEdit" name="employee_last_name">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="styleSheet">
+                        <string notr="true">QLineEdit {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding-left: 10px; /* space for icon */
+    padding-right: 10px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    font: 12px 'Segoe UI', sans-serif;
+    color: #333333;
+}
+
+QLineEdit:focus {
+    border: 1px solid #4a90e2;
+    outline: none;
+}</string>
+                       </property>
+                       <property name="placeholderText">
+                        <string>Enter last name</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item row="1" column="2">
+                   <widget class="QWidget" name="widget_48" native="true">
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                    </property>
+                    <layout class="QVBoxLayout" name="verticalLayout_49">
+                     <item>
+                      <widget class="QLineEdit" name="employee_mi">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="toolTip">
+                        <string>Enter your middle initial only. (e.g., V.)</string>
+                       </property>
+                       <property name="styleSheet">
+                        <string notr="true">QLineEdit {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding-left: 10px; /* space for icon */
+    padding-right: 10px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    font: 12px 'Segoe UI', sans-serif;
+    color: #333333;
+}
+
+QLineEdit:focus {
+    border: 1px solid #4a90e2;
+    outline: none;
+}</string>
+                       </property>
+                       <property name="placeholderText">
+                        <string>M.I</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item row="0" column="2">
+                   <widget class="QLabel" name="label_71">
+                    <property name="font">
+                     <font>
+                      <bold>true</bold>
+                     </font>
+                    </property>
+                    <property name="text">
+                     <string>M.I</string>
+                    </property>
+                    <property name="indent">
+                     <number>6</number>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_17">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_72">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>Birthday</string>
+                 </property>
+                 <property name="indent">
+                  <number>6</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_37" native="true">
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_41">
+                  <item>
+                   <widget class="QDateEdit" name="employee_birthday_edit">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="toolTip">
+                     <string>Enter your birthday.</string>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">QDateEdit {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+QDateEdit:focus {
+    border: 1px solid #66afe9;
+    outline: none;
+}
+
+QDateEdit QAbstractItemView {
+    background-color: white;
+    border: none;
+}
+
+QDateEdit::drop-down {
+    border: none;
+    background-color: white;
+    padding: 2px;
+}
+
+QDateEdit::down-arrow {
+    width: 12px;
+    height: 12px;
+    image: url(&quot;resources/arrow_down.png&quot;); /* Customize the arrow image if desired */
+}
+
+/* Modern Minimalist PySide6 QCalendar Stylesheet */
+
+QCalendarWidget {
+    background-color: white;
+    border: none;
+}
+
+/* Header row with navigation arrows and month/year */
+QCalendarWidget QWidget#qt_calendar_navigationbar {
+    background-color: #4a90e2;
+    padding: 4px;
+}
+
+/* Month/Year label in header */
+QCalendarWidget QToolButton {
+    color: white;
+    background-color: transparent;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+/* Navigation arrows */
+QCalendarWidget QToolButton#qt_calendar_prevmonth,
+QCalendarWidget QToolButton#qt_calendar_nextmonth {
+    color: white;
+    background-color: transparent;
+    qproperty-icon: none;
+    min-width: 24px;
+    max-width: 24px;
+    min-height: 24px;
+    max-height: 24px;
+    border-radius: 12px;
+}
+
+/* Arrow hover states */
+QCalendarWidget QToolButton#qt_calendar_prevmonth:hover,
+QCalendarWidget QToolButton#qt_calendar_nextmonth:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Previous month arrow */
+QCalendarWidget QToolButton#qt_calendar_prevmonth {
+    qproperty-text: &quot;&lt;&quot;;
+    font-weight: bold;
+}
+
+/* Next month arrow */
+QCalendarWidget QToolButton#qt_calendar_nextmonth {
+    qproperty-text: &quot;&gt;&quot;;
+    font-weight: bold;
+}
+
+/* Day of week header */
+QCalendarWidget QAbstractItemView::section {
+    color: #666666;
+    background-color: #f5f5f5;
+    padding: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+}
+
+/* Weekend headers */
+QCalendarWidget QAbstractItemView::section:first,
+QCalendarWidget QAbstractItemView::section:last {
+    color: #e74c3c;
+}
+
+/* Days grid */
+QCalendarWidget QAbstractItemView {
+    selection-background-color: #4a90e2;
+    selection-color: white;
+    alternate-background-color: transparent;
+    background-color: white;
+    outline: none;
+    border: none;
+}
+
+/* Calendar cells */
+QCalendarWidget QTableView {
+    border: none;
+    font-size: 13px;
+}
+
+/* Actual day cells */
+QCalendarWidget QTableView QTableCornerButton::section,
+QCalendarWidget QTableView QAbstractItemView::item {
+    border: 1px solid #f3f3f3;
+    min-height: 32px;
+    padding: 2px;
+}
+
+/* Today's date */
+QCalendarWidget QTableView QAbstractItemView::item:selected {
+    background-color: #4a90e2;
+    color: white;
+    border-radius: 2px;
+}
+
+/* Hover effect on days */
+QCalendarWidget QTableView QAbstractItemView::item:hover {
+    background-color: #f0f0f0;
+    border-radius: 2px;
+}
+
+/* Days from other months */
+QCalendarWidget QTableView QAbstractItemView::item:!enabled {
+    color: #cccccc;
+    background-color: #fafafa;
+}
+
+/* Weekend days */
+QCalendarWidget QTableView QAbstractItemView::item[weekend=&quot;true&quot;] {
+    color: #e74c3c;
+}
+</string>
+                    </property>
+                    <property name="calendarPopup">
+                     <bool>true</bool>
+                    </property>
+                    <property name="date">
+                     <date>
+                      <year>2025</year>
+                      <month>3</month>
+                      <day>21</day>
+                     </date>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_18">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_73">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>Sex</string>
+                 </property>
+                 <property name="indent">
+                  <number>6</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_38" native="true">
+                 <property name="toolTip">
+                  <string>Select the employee sex.</string>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_42">
+                  <property name="topMargin">
+                   <number>4</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>9</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>4</number>
+                  </property>
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_8">
+                    <item>
+                     <widget class="QRadioButton" name="employee_male">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="layoutDirection">
+                       <enum>Qt::LayoutDirection::RightToLeft</enum>
+                      </property>
+                      <property name="text">
+                       <string>Male</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QRadioButton" name="employee_female">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="layoutDirection">
+                       <enum>Qt::LayoutDirection::RightToLeft</enum>
+                      </property>
+                      <property name="text">
+                       <string>Female</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_19">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_96">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>Job Details:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QFrame" name="frame_12">
+                 <property name="styleSheet">
+                  <string notr="true">background-color: transparent;
+border: none;</string>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::Shape::StyledPanel</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Shadow::Raised</enum>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_9">
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <layout class="QGridLayout" name="gridLayout" columnstretch="1,5">
+                    <item row="0" column="1">
+                     <widget class="QWidget" name="widget_39" native="true">
+                      <property name="styleSheet">
+                       <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                      </property>
+                      <layout class="QVBoxLayout" name="verticalLayout_43">
+                       <item>
+                        <widget class="QComboBox" name="employee_department_box">
+                         <property name="enabled">
+                          <bool>true</bool>
+                         </property>
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="styleSheet">
+                          <string notr="true">QComboBox {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font: 12px 'Segoe UI', sans-serif;
+    color: #333333;
+    combobox-popup: 0;
+}
+
+QComboBox:hover {
+    border: 1px solid #b0b0b0;
+}
+
+QComboBox:focus {
+    border: 1px solid #4a90e2;
+    outline: none;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 25px;
+    border-left: 1px solid #dcdcdc;
+    background-color: transparent;
+}
+
+QComboBox::down-arrow {
+    image: url(&quot;resources/arrow_down.png&quot;);
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    selection-background-color: #e6f0ff;
+    selection-color: #000000;
+    padding: 4px;
+    font: 12px 'Segoe UI', sans-serif;
+}
+
+/* Proper scrollbar styling */
+QScrollBar:vertical {
+    background: #f2f2f2;
+    width: 8px;
+    margin: 0px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background: #c4c4c4;
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::add-line:vertical, 
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar::add-page:vertical, 
+QScrollBar::sub-page:vertical {
+    background: none;
+}</string>
+                         </property>
+                         <property name="currentText">
+                          <string>Administration &amp; Management</string>
+                         </property>
+                         <item>
+                          <property name="text">
+                           <string>Administration &amp; Management</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Finance &amp; Accounting</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Information Technology (IT)</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Marketing &amp; Public Relations</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Sales &amp; Business Development</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Customer Support &amp; Service</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Research &amp; Development (R&amp;D)</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Operations &amp; Logistics</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Legal &amp; Compliance</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Facilities &amp; Maintenance</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Manufacturing &amp; Production </string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Healthcare</string>
+                          </property>
+                         </item>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                    <item row="0" column="0">
+                     <widget class="QLabel" name="label_74">
+                      <property name="font">
+                       <font>
+                        <bold>true</bold>
+                       </font>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">border: none;</string>
+                      </property>
+                      <property name="text">
+                       <string>Department</string>
+                      </property>
+                      <property name="indent">
+                       <number>25</number>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <layout class="QGridLayout" name="gridLayout_22" columnstretch="1,5">
+                    <item row="0" column="0">
+                     <widget class="QLabel" name="label_75">
+                      <property name="font">
+                       <font>
+                        <bold>true</bold>
+                       </font>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">border: none;</string>
+                      </property>
+                      <property name="text">
+                       <string>Position</string>
+                      </property>
+                      <property name="indent">
+                       <number>25</number>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="1">
+                     <widget class="QWidget" name="widget_40" native="true">
+                      <property name="styleSheet">
+                       <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                      </property>
+                      <layout class="QVBoxLayout" name="verticalLayout_50">
+                       <item>
+                        <widget class="QComboBox" name="employee_position_box">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="styleSheet">
+                          <string notr="true">QComboBox {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font: 12px 'Segoe UI', sans-serif;
+    color: #333333;
+    combobox-popup: 0;
+}
+
+QComboBox:hover {
+    border: 1px solid #b0b0b0;
+}
+
+QComboBox:focus {
+    border: 1px solid #4a90e2;
+    outline: none;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 25px;
+    border-left: 1px solid #dcdcdc;
+    background-color: transparent;
+}
+
+QComboBox::down-arrow {
+    image: url(&quot;resources/arrow_down.png&quot;);
+    width: 12px;
+    height: 12px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    border: 1px solid #dcdcdc;
+    selection-background-color: #e6f0ff;
+    selection-color: #000000;
+    padding: 4px;
+    font: 12px 'Segoe UI', sans-serif;
+}
+
+/* Proper scrollbar styling */
+QScrollBar:vertical {
+    background: #f2f2f2;
+    width: 8px;
+    margin: 0px;
+    border: none;
+}
+
+QScrollBar::handle:vertical {
+    background: #c4c4c4;
+    min-height: 20px;
+    border-radius: 4px;
+}
+
+QScrollBar::add-line:vertical, 
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar::add-page:vertical, 
+QScrollBar::sub-page:vertical {
+    background: none;
+}</string>
+                         </property>
+                         <item>
+                          <property name="text">
+                           <string>Chief Executive Officer (CEO)</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Chief Operating Officer (COO)</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Office Manager</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Executive Assistant</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Administrative Coordinator</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Chief Financial Officer (CFO)</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Financial Analyst</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Accountant</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Payroll Specialist</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Chief Technology Officer (CTO)</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>IT Manager</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Software Engineer</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Network Administrator</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>IT Support Specialist</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Chief Marketing Officer (CMO)</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Marketing Manager</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Content Strategist</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Social Media Specialist</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Public Relations (PR) Manager</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Sales Director</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Sales Manager</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Account Executive</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Business Development Representative</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Sales Associate</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Customer Support Manager</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Customer Service Representative</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Technical Support Specialist</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Call Center Agent</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Client Success Manager</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>R&amp;D Director</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Product Development Manager</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Data Scientist</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Research Analyst</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Innovation Specialist</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Chief Operations Officer (COO)</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Operations Manager</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Logistics Coordinator</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Supply Chain Analyst</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Procurement Specialist</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>General Counsel</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Legal Advisor</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Compliance Officer</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Contract Specialist</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Facilities Manager</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Maintenance Technician</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Security Officer</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Janitorial Staff</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Production Manager</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Quality Assurance (QA) Specialist</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Factory Worker</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Warehouse Associate</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Medical Director</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Nurse Practitioner</string>
+                          </property>
+                         </item>
+                         <item>
+                          <property name="text">
+                           <string>Physician</string>
+                          </property>
+                         </item>
+                        </widget>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <layout class="QGridLayout" name="gridLayout_35" columnstretch="1,2">
+                    <item row="0" column="0">
+                     <widget class="QLabel" name="label_95">
+                      <property name="font">
+                       <font>
+                        <bold>false</bold>
+                       </font>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">border: none;</string>
+                      </property>
+                      <property name="text">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Is the employee an HR?&lt;/span&gt;&lt;br/&gt;(If you select &quot;YES&quot;, the department &lt;br/&gt;and position above will be disregarded)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="indent">
+                       <number>25</number>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="1">
+                     <widget class="QWidget" name="widget_59" native="true">
+                      <property name="styleSheet">
+                       <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                      </property>
+                      <layout class="QVBoxLayout" name="verticalLayout_40">
+                       <property name="topMargin">
+                        <number>4</number>
+                       </property>
+                       <property name="bottomMargin">
+                        <number>4</number>
+                       </property>
+                       <item>
+                        <layout class="QHBoxLayout" name="horizontalLayout_11">
+                         <property name="spacing">
+                          <number>6</number>
+                         </property>
+                         <property name="sizeConstraint">
+                          <enum>QLayout::SizeConstraint::SetMinAndMaxSize</enum>
+                         </property>
+                         <property name="topMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="rightMargin">
+                          <number>0</number>
+                         </property>
+                         <property name="bottomMargin">
+                          <number>0</number>
+                         </property>
+                         <item>
+                          <widget class="QRadioButton" name="is_hr_yes">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="layoutDirection">
+                            <enum>Qt::LayoutDirection::RightToLeft</enum>
+                           </property>
+                           <property name="text">
+                            <string>Yes</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QRadioButton" name="is_hr_no">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="layoutDirection">
+                            <enum>Qt::LayoutDirection::RightToLeft</enum>
+                           </property>
+                           <property name="text">
+                            <string>No</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </item>
+                      </layout>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QFrame" name="frame_24">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(255, 255, 255);
+border: none;</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="2">
+             <widget class="QPushButton" name="employee_enroll_cancel">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                <horstretch>1</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>Cancel creating account.</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">    QPushButton {
+	color: rgb(0, 120, 250);
+        border: none;
+        border-radius: 6px;
+        padding: 8px 18px;
+        font-weight: 600;
+    }
+    QPushButton:hover {
+		background-color: rgb(251, 251, 251);
+		color: rgb(0, 0, 0);
+    }
+    QPushButton:pressed {
+		background-color: rgb(0, 122, 255);
+		color: rgb(255, 255, 255);
+    }</string>
+              </property>
+              <property name="text">
+               <string>Cancel</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="3">
+             <widget class="QPushButton" name="employee_enroll_1">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+                <horstretch>1</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="cursor">
+               <cursorShape>PointingHandCursor</cursorShape>
+              </property>
+              <property name="toolTip">
+               <string>Proceed to the biometric enrollment phase.</string>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">    QPushButton {
+	background-color: rgb(235, 235, 235);
+	color: rgb(0, 0, 0);
+        border: none;
+        border-radius: 6px;
+        padding: 8px 18px;
+        font-weight: 600;
+    }
+    QPushButton:hover {
+		background-color: rgb(0, 122, 255);
+		color: rgb(255, 255, 255);
+    }
+    QPushButton:pressed {
+	background-color: rgb(0, 113, 234);
+		color: rgb(255, 255, 255);
+    }</string>
+              </property>
+              <property name="text">
+               <string>Next</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1" colspan="3">
+             <widget class="QFrame" name="frame_23">
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(255, 255, 255);
+border: none;</string>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::Shape::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Shadow::Raised</enum>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="1" rowspan="2" colspan="3">
              <widget class="QFrame" name="frame_25">
               <property name="styleSheet">
@@ -6859,7 +8168,7 @@ border-radius:6px;</string>
               <property name="frameShadow">
                <enum>QFrame::Shadow::Raised</enum>
               </property>
-              <layout class="QVBoxLayout" name="verticalLayout_36" stretch="2,2,0,2,2,0,2,2,0,2,2">
+              <layout class="QVBoxLayout" name="verticalLayout_36" stretch="2,2,0,2,2,0,2,2">
                <property name="leftMargin">
                 <number>12</number>
                </property>
@@ -8278,7 +9587,7 @@ QScrollBar::sub-page:vertical {
                   <string notr="true">border: none;</string>
                  </property>
                  <property name="text">
-                  <string>Password</string>
+                  <string>Email</string>
                  </property>
                  <property name="indent">
                   <number>6</number>
@@ -8293,7 +9602,7 @@ border-radius: 10px;</string>
                  </property>
                  <layout class="QVBoxLayout" name="verticalLayout_37">
                   <item>
-                   <widget class="QLineEdit" name="employee_password">
+                   <widget class="QLineEdit" name="employee_email">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                       <horstretch>0</horstretch>
@@ -8322,10 +9631,10 @@ QLineEdit:focus {
 }</string>
                     </property>
                     <property name="echoMode">
-                     <enum>QLineEdit::EchoMode::Password</enum>
+                     <enum>QLineEdit::EchoMode::Normal</enum>
                     </property>
                     <property name="placeholderText">
-                     <string>Enter password.</string>
+                     <string>Enter email.</string>
                     </property>
                    </widget>
                   </item>
@@ -8334,87 +9643,6 @@ QLineEdit:focus {
                </item>
                <item>
                 <widget class="Line" name="line_7">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>1</height>
-                  </size>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Orientation::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_67">
-                 <property name="font">
-                  <font>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: none;</string>
-                 </property>
-                 <property name="text">
-                  <string>Confirm Password</string>
-                 </property>
-                 <property name="indent">
-                  <number>6</number>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QWidget" name="widget_35" native="true">
-                 <property name="styleSheet">
-                  <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_38">
-                  <item>
-                   <widget class="QLineEdit" name="employee_confirm_password">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="toolTip">
-                     <string>Please confirm your password.</string>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">QLineEdit {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    padding-left: 10px; /* space for icon */
-    padding-right: 10px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    font: 12px 'Segoe UI', sans-serif;
-    color: #333333;
-}
-
-QLineEdit:focus {
-    border: 1px solid #4a90e2;
-    outline: none;
-}</string>
-                    </property>
-                    <property name="echoMode">
-                     <enum>QLineEdit::EchoMode::Password</enum>
-                    </property>
-                    <property name="placeholderText">
-                     <string>Confirm password.</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="Line" name="line_16">
                  <property name="maximumSize">
                   <size>
                    <width>16777215</width>
@@ -8536,1340 +9764,6 @@ border-radius: 10px;</string>
               </layout>
              </widget>
             </item>
-            <item row="1" column="0" rowspan="3">
-             <widget class="QFrame" name="frame_26">
-              <property name="styleSheet">
-               <string notr="true">background-color: rgb(251, 251, 251);
-border: 1px solid rgb(239, 239, 239);
-border-radius:6px;</string>
-              </property>
-              <property name="frameShape">
-               <enum>QFrame::Shape::StyledPanel</enum>
-              </property>
-              <property name="frameShadow">
-               <enum>QFrame::Shadow::Raised</enum>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_10" stretch="1,0,0,1,0,0,1,0,0,3">
-               <item>
-                <widget class="QFrame" name="frame_27">
-                 <property name="styleSheet">
-                  <string notr="true">border: none;</string>
-                 </property>
-                 <property name="frameShape">
-                  <enum>QFrame::Shape::StyledPanel</enum>
-                 </property>
-                 <property name="frameShadow">
-                  <enum>QFrame::Shadow::Raised</enum>
-                 </property>
-                 <layout class="QGridLayout" name="gridLayout_29">
-                  <property name="leftMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="topMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="rightMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="bottomMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="horizontalSpacing">
-                   <number>10</number>
-                  </property>
-                  <property name="verticalSpacing">
-                   <number>6</number>
-                  </property>
-                  <item row="0" column="0">
-                   <widget class="QLabel" name="label_69">
-                    <property name="font">
-                     <font>
-                      <bold>true</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>First Name</string>
-                    </property>
-                    <property name="indent">
-                     <number>6</number>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="0">
-                   <widget class="QWidget" name="widget_46" native="true">
-                    <property name="styleSheet">
-                     <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-                    </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_47">
-                     <item>
-                      <widget class="QLineEdit" name="employee_first_name">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="styleSheet">
-                        <string notr="true">QLineEdit {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    padding-left: 10px; /* space for icon */
-    padding-right: 10px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    font: 12px 'Segoe UI', sans-serif;
-    color: #333333;
-}
-
-QLineEdit:focus {
-    border: 1px solid #4a90e2;
-    outline: none;
-}</string>
-                       </property>
-                       <property name="placeholderText">
-                        <string>Enter first name</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </widget>
-                  </item>
-                  <item row="0" column="1">
-                   <widget class="QLabel" name="label_70">
-                    <property name="font">
-                     <font>
-                      <bold>true</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Last Name</string>
-                    </property>
-                    <property name="indent">
-                     <number>6</number>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="1">
-                   <widget class="QWidget" name="widget_47" native="true">
-                    <property name="styleSheet">
-                     <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-                    </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_48">
-                     <item>
-                      <widget class="QLineEdit" name="employee_last_name">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="styleSheet">
-                        <string notr="true">QLineEdit {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    padding-left: 10px; /* space for icon */
-    padding-right: 10px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    font: 12px 'Segoe UI', sans-serif;
-    color: #333333;
-}
-
-QLineEdit:focus {
-    border: 1px solid #4a90e2;
-    outline: none;
-}</string>
-                       </property>
-                       <property name="placeholderText">
-                        <string>Enter last name</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </widget>
-                  </item>
-                  <item row="1" column="2">
-                   <widget class="QWidget" name="widget_48" native="true">
-                    <property name="styleSheet">
-                     <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-                    </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_49">
-                     <item>
-                      <widget class="QLineEdit" name="employee_mi">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="toolTip">
-                        <string>Enter your middle initial only. (e.g., V.)</string>
-                       </property>
-                       <property name="styleSheet">
-                        <string notr="true">QLineEdit {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    padding-left: 10px; /* space for icon */
-    padding-right: 10px;
-    padding-top: 6px;
-    padding-bottom: 6px;
-    font: 12px 'Segoe UI', sans-serif;
-    color: #333333;
-}
-
-QLineEdit:focus {
-    border: 1px solid #4a90e2;
-    outline: none;
-}</string>
-                       </property>
-                       <property name="placeholderText">
-                        <string>M.I</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </widget>
-                  </item>
-                  <item row="0" column="2">
-                   <widget class="QLabel" name="label_71">
-                    <property name="font">
-                     <font>
-                      <bold>true</bold>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>M.I</string>
-                    </property>
-                    <property name="indent">
-                     <number>6</number>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="Line" name="line_17">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>1</height>
-                  </size>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Orientation::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_72">
-                 <property name="font">
-                  <font>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: none;</string>
-                 </property>
-                 <property name="text">
-                  <string>Birthday</string>
-                 </property>
-                 <property name="indent">
-                  <number>6</number>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QWidget" name="widget_37" native="true">
-                 <property name="styleSheet">
-                  <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_41">
-                  <item>
-                   <widget class="QDateEdit" name="employee_birthday_edit">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="toolTip">
-                     <string>Enter your birthday.</string>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">QDateEdit {
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 5px 10px;
-    font-size: 14px;
-    color: #333;
-}
-
-QDateEdit:focus {
-    border: 1px solid #66afe9;
-    outline: none;
-}
-
-QDateEdit QAbstractItemView {
-    background-color: white;
-    border: none;
-}
-
-QDateEdit::drop-down {
-    border: none;
-    background-color: white;
-    padding: 2px;
-}
-
-QDateEdit::down-arrow {
-    width: 12px;
-    height: 12px;
-    image: url(&quot;resources/arrow_down.png&quot;); /* Customize the arrow image if desired */
-}
-
-/* Modern Minimalist PySide6 QCalendar Stylesheet */
-
-QCalendarWidget {
-    background-color: white;
-    border: none;
-}
-
-/* Header row with navigation arrows and month/year */
-QCalendarWidget QWidget#qt_calendar_navigationbar {
-    background-color: #4a90e2;
-    padding: 4px;
-}
-
-/* Month/Year label in header */
-QCalendarWidget QToolButton {
-    color: white;
-    background-color: transparent;
-    font-size: 14px;
-    font-weight: bold;
-    padding: 5px 10px;
-    border-radius: 4px;
-}
-
-/* Navigation arrows */
-QCalendarWidget QToolButton#qt_calendar_prevmonth,
-QCalendarWidget QToolButton#qt_calendar_nextmonth {
-    color: white;
-    background-color: transparent;
-    qproperty-icon: none;
-    min-width: 24px;
-    max-width: 24px;
-    min-height: 24px;
-    max-height: 24px;
-    border-radius: 12px;
-}
-
-/* Arrow hover states */
-QCalendarWidget QToolButton#qt_calendar_prevmonth:hover,
-QCalendarWidget QToolButton#qt_calendar_nextmonth:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Previous month arrow */
-QCalendarWidget QToolButton#qt_calendar_prevmonth {
-    qproperty-text: &quot;&lt;&quot;;
-    font-weight: bold;
-}
-
-/* Next month arrow */
-QCalendarWidget QToolButton#qt_calendar_nextmonth {
-    qproperty-text: &quot;&gt;&quot;;
-    font-weight: bold;
-}
-
-/* Day of week header */
-QCalendarWidget QAbstractItemView::section {
-    color: #666666;
-    background-color: #f5f5f5;
-    padding: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    border: none;
-}
-
-/* Weekend headers */
-QCalendarWidget QAbstractItemView::section:first,
-QCalendarWidget QAbstractItemView::section:last {
-    color: #e74c3c;
-}
-
-/* Days grid */
-QCalendarWidget QAbstractItemView {
-    selection-background-color: #4a90e2;
-    selection-color: white;
-    alternate-background-color: transparent;
-    background-color: white;
-    outline: none;
-    border: none;
-}
-
-/* Calendar cells */
-QCalendarWidget QTableView {
-    border: none;
-    font-size: 13px;
-}
-
-/* Actual day cells */
-QCalendarWidget QTableView QTableCornerButton::section,
-QCalendarWidget QTableView QAbstractItemView::item {
-    border: 1px solid #f3f3f3;
-    min-height: 32px;
-    padding: 2px;
-}
-
-/* Today's date */
-QCalendarWidget QTableView QAbstractItemView::item:selected {
-    background-color: #4a90e2;
-    color: white;
-    border-radius: 2px;
-}
-
-/* Hover effect on days */
-QCalendarWidget QTableView QAbstractItemView::item:hover {
-    background-color: #f0f0f0;
-    border-radius: 2px;
-}
-
-/* Days from other months */
-QCalendarWidget QTableView QAbstractItemView::item:!enabled {
-    color: #cccccc;
-    background-color: #fafafa;
-}
-
-/* Weekend days */
-QCalendarWidget QTableView QAbstractItemView::item[weekend=&quot;true&quot;] {
-    color: #e74c3c;
-}
-</string>
-                    </property>
-                    <property name="calendarPopup">
-                     <bool>true</bool>
-                    </property>
-                    <property name="date">
-                     <date>
-                      <year>2025</year>
-                      <month>3</month>
-                      <day>21</day>
-                     </date>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="Line" name="line_18">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>1</height>
-                  </size>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Orientation::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_73">
-                 <property name="font">
-                  <font>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: none;</string>
-                 </property>
-                 <property name="text">
-                  <string>Sex</string>
-                 </property>
-                 <property name="indent">
-                  <number>6</number>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QWidget" name="widget_38" native="true">
-                 <property name="toolTip">
-                  <string>Select the employee sex.</string>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_42">
-                  <property name="topMargin">
-                   <number>4</number>
-                  </property>
-                  <property name="rightMargin">
-                   <number>9</number>
-                  </property>
-                  <property name="bottomMargin">
-                   <number>4</number>
-                  </property>
-                  <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_8">
-                    <item>
-                     <widget class="QRadioButton" name="employee_male">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="layoutDirection">
-                       <enum>Qt::LayoutDirection::RightToLeft</enum>
-                      </property>
-                      <property name="text">
-                       <string>Male</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QRadioButton" name="employee_female">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="layoutDirection">
-                       <enum>Qt::LayoutDirection::RightToLeft</enum>
-                      </property>
-                      <property name="text">
-                       <string>Female</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item>
-                <widget class="Line" name="line_19">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>1</height>
-                  </size>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Orientation::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_96">
-                 <property name="font">
-                  <font>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: none;</string>
-                 </property>
-                 <property name="text">
-                  <string>Job Details:</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QFrame" name="frame_12">
-                 <property name="styleSheet">
-                  <string notr="true">background-color: transparent;
-border: none;</string>
-                 </property>
-                 <property name="frameShape">
-                  <enum>QFrame::Shape::StyledPanel</enum>
-                 </property>
-                 <property name="frameShadow">
-                  <enum>QFrame::Shadow::Raised</enum>
-                 </property>
-                 <layout class="QVBoxLayout" name="verticalLayout_9">
-                  <property name="leftMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="topMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="rightMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="bottomMargin">
-                   <number>0</number>
-                  </property>
-                  <item>
-                   <layout class="QGridLayout" name="gridLayout" columnstretch="1,5">
-                    <item row="0" column="1">
-                     <widget class="QWidget" name="widget_39" native="true">
-                      <property name="styleSheet">
-                       <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-                      </property>
-                      <layout class="QVBoxLayout" name="verticalLayout_43">
-                       <item>
-                        <widget class="QComboBox" name="employee_department_box">
-                         <property name="enabled">
-                          <bool>true</bool>
-                         </property>
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                           <horstretch>0</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
-                         </property>
-                         <property name="styleSheet">
-                          <string notr="true">QComboBox {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    padding: 6px 10px;
-    font: 12px 'Segoe UI', sans-serif;
-    color: #333333;
-    combobox-popup: 0;
-}
-
-QComboBox:hover {
-    border: 1px solid #b0b0b0;
-}
-
-QComboBox:focus {
-    border: 1px solid #4a90e2;
-    outline: none;
-}
-
-QComboBox::drop-down {
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 25px;
-    border-left: 1px solid #dcdcdc;
-    background-color: transparent;
-}
-
-QComboBox::down-arrow {
-    image: url(&quot;resources/arrow_down.png&quot;);
-    width: 12px;
-    height: 12px;
-}
-
-QComboBox QAbstractItemView {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    selection-background-color: #e6f0ff;
-    selection-color: #000000;
-    padding: 4px;
-    font: 12px 'Segoe UI', sans-serif;
-}
-
-/* Proper scrollbar styling */
-QScrollBar:vertical {
-    background: #f2f2f2;
-    width: 8px;
-    margin: 0px;
-    border: none;
-}
-
-QScrollBar::handle:vertical {
-    background: #c4c4c4;
-    min-height: 20px;
-    border-radius: 4px;
-}
-
-QScrollBar::add-line:vertical, 
-QScrollBar::sub-line:vertical {
-    height: 0px;
-}
-
-QScrollBar::add-page:vertical, 
-QScrollBar::sub-page:vertical {
-    background: none;
-}</string>
-                         </property>
-                         <property name="currentText">
-                          <string>Administration &amp; Management</string>
-                         </property>
-                         <item>
-                          <property name="text">
-                           <string>Administration &amp; Management</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Finance &amp; Accounting</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Information Technology (IT)</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Marketing &amp; Public Relations</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Sales &amp; Business Development</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Customer Support &amp; Service</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Research &amp; Development (R&amp;D)</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Operations &amp; Logistics</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Legal &amp; Compliance</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Facilities &amp; Maintenance</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Manufacturing &amp; Production </string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Healthcare</string>
-                          </property>
-                         </item>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="label_74">
-                      <property name="font">
-                       <font>
-                        <bold>true</bold>
-                       </font>
-                      </property>
-                      <property name="styleSheet">
-                       <string notr="true">border: none;</string>
-                      </property>
-                      <property name="text">
-                       <string>Department</string>
-                      </property>
-                      <property name="indent">
-                       <number>25</number>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <layout class="QGridLayout" name="gridLayout_22" columnstretch="1,5">
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="label_75">
-                      <property name="font">
-                       <font>
-                        <bold>true</bold>
-                       </font>
-                      </property>
-                      <property name="styleSheet">
-                       <string notr="true">border: none;</string>
-                      </property>
-                      <property name="text">
-                       <string>Position</string>
-                      </property>
-                      <property name="indent">
-                       <number>25</number>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QWidget" name="widget_40" native="true">
-                      <property name="styleSheet">
-                       <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-                      </property>
-                      <layout class="QVBoxLayout" name="verticalLayout_50">
-                       <item>
-                        <widget class="QComboBox" name="employee_position_box">
-                         <property name="sizePolicy">
-                          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                           <horstretch>0</horstretch>
-                           <verstretch>0</verstretch>
-                          </sizepolicy>
-                         </property>
-                         <property name="styleSheet">
-                          <string notr="true">QComboBox {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    padding: 6px 10px;
-    font: 12px 'Segoe UI', sans-serif;
-    color: #333333;
-    combobox-popup: 0;
-}
-
-QComboBox:hover {
-    border: 1px solid #b0b0b0;
-}
-
-QComboBox:focus {
-    border: 1px solid #4a90e2;
-    outline: none;
-}
-
-QComboBox::drop-down {
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 25px;
-    border-left: 1px solid #dcdcdc;
-    background-color: transparent;
-}
-
-QComboBox::down-arrow {
-    image: url(&quot;resources/arrow_down.png&quot;);
-    width: 12px;
-    height: 12px;
-}
-
-QComboBox QAbstractItemView {
-    background-color: #ffffff;
-    border: 1px solid #dcdcdc;
-    selection-background-color: #e6f0ff;
-    selection-color: #000000;
-    padding: 4px;
-    font: 12px 'Segoe UI', sans-serif;
-}
-
-/* Proper scrollbar styling */
-QScrollBar:vertical {
-    background: #f2f2f2;
-    width: 8px;
-    margin: 0px;
-    border: none;
-}
-
-QScrollBar::handle:vertical {
-    background: #c4c4c4;
-    min-height: 20px;
-    border-radius: 4px;
-}
-
-QScrollBar::add-line:vertical, 
-QScrollBar::sub-line:vertical {
-    height: 0px;
-}
-
-QScrollBar::add-page:vertical, 
-QScrollBar::sub-page:vertical {
-    background: none;
-}</string>
-                         </property>
-                         <item>
-                          <property name="text">
-                           <string>Chief Executive Officer (CEO)</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Chief Operating Officer (COO)</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Office Manager</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Executive Assistant</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Administrative Coordinator</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Chief Financial Officer (CFO)</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Financial Analyst</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Accountant</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Payroll Specialist</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Chief Technology Officer (CTO)</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>IT Manager</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Software Engineer</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Network Administrator</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>IT Support Specialist</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Chief Marketing Officer (CMO)</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Marketing Manager</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Content Strategist</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Social Media Specialist</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Public Relations (PR) Manager</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Sales Director</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Sales Manager</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Account Executive</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Business Development Representative</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Sales Associate</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Customer Support Manager</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Customer Service Representative</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Technical Support Specialist</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Call Center Agent</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Client Success Manager</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>R&amp;D Director</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Product Development Manager</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Data Scientist</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Research Analyst</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Innovation Specialist</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Chief Operations Officer (COO)</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Operations Manager</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Logistics Coordinator</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Supply Chain Analyst</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Procurement Specialist</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>General Counsel</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Legal Advisor</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Compliance Officer</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Contract Specialist</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Facilities Manager</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Maintenance Technician</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Security Officer</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Janitorial Staff</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Production Manager</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Quality Assurance (QA) Specialist</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Factory Worker</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Warehouse Associate</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Medical Director</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Nurse Practitioner</string>
-                          </property>
-                         </item>
-                         <item>
-                          <property name="text">
-                           <string>Physician</string>
-                          </property>
-                         </item>
-                        </widget>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                  <item>
-                   <layout class="QGridLayout" name="gridLayout_35" columnstretch="1,2">
-                    <item row="0" column="0">
-                     <widget class="QLabel" name="label_95">
-                      <property name="font">
-                       <font>
-                        <bold>false</bold>
-                       </font>
-                      </property>
-                      <property name="styleSheet">
-                       <string notr="true">border: none;</string>
-                      </property>
-                      <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Is the employee an HR?&lt;/span&gt;&lt;br/&gt;(If you select &quot;YES&quot;, the department &lt;br/&gt;and position above will be disregarded)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                      </property>
-                      <property name="indent">
-                       <number>25</number>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="0" column="1">
-                     <widget class="QWidget" name="widget_59" native="true">
-                      <property name="styleSheet">
-                       <string notr="true">background-color: rgb(235, 235, 235);
-border-radius: 10px;</string>
-                      </property>
-                      <layout class="QVBoxLayout" name="verticalLayout_40">
-                       <property name="topMargin">
-                        <number>4</number>
-                       </property>
-                       <property name="bottomMargin">
-                        <number>4</number>
-                       </property>
-                       <item>
-                        <layout class="QHBoxLayout" name="horizontalLayout_11">
-                         <property name="spacing">
-                          <number>6</number>
-                         </property>
-                         <property name="sizeConstraint">
-                          <enum>QLayout::SizeConstraint::SetMinAndMaxSize</enum>
-                         </property>
-                         <property name="topMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="rightMargin">
-                          <number>0</number>
-                         </property>
-                         <property name="bottomMargin">
-                          <number>0</number>
-                         </property>
-                         <item>
-                          <widget class="QRadioButton" name="is_hr_yes">
-                           <property name="sizePolicy">
-                            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                            </sizepolicy>
-                           </property>
-                           <property name="layoutDirection">
-                            <enum>Qt::LayoutDirection::RightToLeft</enum>
-                           </property>
-                           <property name="text">
-                            <string>Yes</string>
-                           </property>
-                          </widget>
-                         </item>
-                         <item>
-                          <widget class="QRadioButton" name="is_hr_no">
-                           <property name="sizePolicy">
-                            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                             <horstretch>0</horstretch>
-                             <verstretch>0</verstretch>
-                            </sizepolicy>
-                           </property>
-                           <property name="layoutDirection">
-                            <enum>Qt::LayoutDirection::RightToLeft</enum>
-                           </property>
-                           <property name="text">
-                            <string>No</string>
-                           </property>
-                          </widget>
-                         </item>
-                        </layout>
-                       </item>
-                      </layout>
-                     </widget>
-                    </item>
-                   </layout>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item row="2" column="1" colspan="3">
-             <widget class="QFrame" name="frame_23">
-              <property name="styleSheet">
-               <string notr="true">background-color: rgb(255, 255, 255);
-border: none;</string>
-              </property>
-              <property name="frameShape">
-               <enum>QFrame::Shape::StyledPanel</enum>
-              </property>
-              <property name="frameShadow">
-               <enum>QFrame::Shadow::Raised</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1">
-             <widget class="QFrame" name="frame_24">
-              <property name="styleSheet">
-               <string notr="true">background-color: rgb(255, 255, 255);
-border: none;</string>
-              </property>
-              <property name="frameShape">
-               <enum>QFrame::Shape::StyledPanel</enum>
-              </property>
-              <property name="frameShadow">
-               <enum>QFrame::Shadow::Raised</enum>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="2">
-             <widget class="QPushButton" name="employee_enroll_cancel">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-                <horstretch>1</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="toolTip">
-               <string>Cancel creating account.</string>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">    QPushButton {
-	color: rgb(0, 120, 250);
-        border: none;
-        border-radius: 6px;
-        padding: 8px 18px;
-        font-weight: 600;
-    }
-    QPushButton:hover {
-		background-color: rgb(251, 251, 251);
-		color: rgb(0, 0, 0);
-    }
-    QPushButton:pressed {
-		background-color: rgb(0, 122, 255);
-		color: rgb(255, 255, 255);
-    }</string>
-              </property>
-              <property name="text">
-               <string>Cancel</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="3">
-             <widget class="QPushButton" name="employee_enroll_1">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-                <horstretch>1</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="cursor">
-               <cursorShape>PointingHandCursor</cursorShape>
-              </property>
-              <property name="toolTip">
-               <string>Proceed to the biometric enrollment phase.</string>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">    QPushButton {
-	background-color: rgb(235, 235, 235);
-	color: rgb(0, 0, 0);
-        border: none;
-        border-radius: 6px;
-        padding: 8px 18px;
-        font-weight: 600;
-    }
-    QPushButton:hover {
-		background-color: rgb(0, 122, 255);
-		color: rgb(255, 255, 255);
-    }
-    QPushButton:pressed {
-	background-color: rgb(0, 113, 234);
-		color: rgb(255, 255, 255);
-    }</string>
-              </property>
-              <property name="text">
-               <string>Next</string>
-              </property>
-             </widget>
-            </item>
            </layout>
           </widget>
           <widget class="QWidget" name="employee_view_page">
@@ -9981,7 +9875,7 @@ QRadioButton::indicator:checked:hover {
 }
 </string>
            </property>
-           <layout class="QGridLayout" name="gridLayout_34" rowstretch="6,7,5,1" columnstretch="3,2,0">
+           <layout class="QGridLayout" name="gridLayout_34" rowstretch="5,9,1,1" columnstretch="3,2,0">
             <item row="0" column="0">
              <widget class="QFrame" name="frame_29">
               <property name="styleSheet">
@@ -10073,7 +9967,7 @@ border-radius:6px;</string>
               <property name="frameShadow">
                <enum>QFrame::Shadow::Raised</enum>
               </property>
-              <layout class="QVBoxLayout" name="verticalLayout_61" stretch="1,2,0,1,12,2,0,2">
+              <layout class="QVBoxLayout" name="verticalLayout_61" stretch="1,2,0,0,0,0,1,12,2,0,2">
                <property name="leftMargin">
                 <number>12</number>
                </property>
@@ -10123,6 +10017,57 @@ border-radius: 10px;</string>
                </item>
                <item>
                 <widget class="Line" name="line_25">
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_106">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">border: none;</string>
+                 </property>
+                 <property name="text">
+                  <string>Email</string>
+                 </property>
+                 <property name="indent">
+                  <number>6</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QWidget" name="widget_66" native="true">
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 235, 235);
+border-radius: 10px;</string>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_71">
+                  <item>
+                   <widget class="QLabel" name="view_employee_email">
+                    <property name="text">
+                     <string>XXXXXXX@XXXX.XXX</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_29">
                  <property name="maximumSize">
                   <size>
                    <width>16777215</width>
