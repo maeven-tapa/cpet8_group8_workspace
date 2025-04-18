@@ -219,14 +219,15 @@ class EALS:
         self.db = DatabaseConnection()
         self.db.connect()
         self.home = Home(self.db)
-        self.global_home_ui = self.home.home_ui  # Store home_ui as an instance attribute
-        self.global_home_ui.showMaximized()
+        global global_home_ui
+        global_home_ui = self.home.home_ui
+        global_home_ui.showMaximized()
 
     def __del__(self):
         self.db.close()
 
     def goto_admin_ui(self):
-        self.global_home_ui.close()
+        global_home_ui.close()
         self.admin = Admin(self.db)
         self.admin.admin_ui.showMaximized()
 
@@ -464,6 +465,7 @@ class HR:
         self.db.execute_query("INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)",
                               (self.hr_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), "Clock Out"))
         self.hr_ui.close()
+        global_home_ui.showMaximized()
         self.system_logs.log_system_action("The HR logged out.", "Employee")
 
     def load_hr_attendance_logs_table(self):
@@ -768,7 +770,7 @@ class Home:
         current_date = current_time.strftime("%Y-%m-%d")
         self.db.execute_query("INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)",
                               (hr_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), hr_data.get("remarks", "Clock In")))
-        self.home_ui.close()
+        global_home_ui.close()
         self.hr = HR(self.db, hr_data)
         self.hr.hr_ui.showMaximized()
 
@@ -908,7 +910,7 @@ class Home:
         self.changepass.change_pass_ui.show()
     
     def goto_admin_ui(self):
-        self.home_ui.close()
+        global_home_ui.close()
         self.admin = Admin(self.db)
         self.admin.admin_ui.showMaximized()
 
@@ -1379,7 +1381,7 @@ class Admin:
 
     def goto_home(self):
         self.system_logs.log_system_action("The Admin logged out.", "Admin")
-        self.global_home_ui.showMaximized()
+        global_home_ui.showMaximized()
         self.admin_ui.close()
 
     def load_feedback_titles(self):
