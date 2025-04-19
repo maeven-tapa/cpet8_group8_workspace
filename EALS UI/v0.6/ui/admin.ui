@@ -1111,7 +1111,7 @@ QToolTip {
            <string notr="true"/>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>5</number>
           </property>
           <widget class="QWidget" name="employee_hr_page">
            <layout class="QGridLayout" name="gridLayout_40" rowstretch="12,1">
@@ -8153,6 +8153,40 @@ border: none;</string>
               <property name="frameShadow">
                <enum>QFrame::Shadow::Raised</enum>
               </property>
+              <layout class="QGridLayout" name="gridLayout_61" rowstretch="2,1">
+               <item row="0" column="0">
+                <widget class="QFrame" name="frame_46">
+                 <property name="frameShape">
+                  <enum>QFrame::Shape::StyledPanel</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Shadow::Raised</enum>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="fp_page1_note">
+                 <property name="font">
+                  <font>
+                   <bold>true</bold>
+                  </font>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">background-color: rgb(235, 243, 252);
+border: 1px solid rgb(17, 94, 163);</string>
+                 </property>
+                 <property name="text">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#115da2;&quot;&gt;Note: &lt;/span&gt;The default password for each employee is their surname in uppercase.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="wordWrap">
+                  <bool>true</bool>
+                 </property>
+                 <property name="indent">
+                  <number>11</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
             <item row="0" column="1" rowspan="2" colspan="3">
