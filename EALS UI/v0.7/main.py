@@ -1828,7 +1828,7 @@ class Admin:
             self.admin_ui.view_hr_female.setChecked(True)
         
         self.admin_ui.view_hr_accountid.setText(hr_data["employee_id"])
-        self.admin_ui.view_hr_email.setText(hr_data["employee_email"])
+        self.admin_ui.view_hr_email.setText(hr_data.get("email", ""))
         
         if hr_data["schedule"] == "6am to 2pm":
             self.admin_ui.view_hr_sched_1.setChecked(True)
@@ -2702,10 +2702,12 @@ class Admin:
             label.setPixmap(QPixmap())
 
     def clear_employee_enrollment_fields(self):
+        self.admin_ui.enroll_employee_picture.clear()
         self.admin_ui.employee_first_name.clear()
         self.admin_ui.employee_last_name.clear()
         self.admin_ui.employee_mi.clear()
         self.admin_ui.employee_id_pref.clear()
+        self.admin_ui.employee_email.clear()
         self.admin_ui.employee_id_year.setCurrentIndex(0)
         self.admin_ui.employee_id_no.setCurrentIndex(0)
         self.admin_ui.employee_birthday_edit.setDate(QDate.currentDate())
