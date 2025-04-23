@@ -310,7 +310,6 @@ class HR:
         self.loader = QUiLoader()
         self.hr_ui = self.loader.load("ui/hr.ui")
         self.hr_ui.setWindowIcon(QIcon('resources/logo.ico'))
-        self.hr_ui.setWindowFlags(self.hr_ui.windowFlags() & ~Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint)
         self.hr_ui.setWindowTitle("EALS - HR")
         self.hr_ui.hr_employee_sc_pages.setCurrentWidget(self.hr_ui.hr_employee_dashboard_page)
         self.hr_ui.hr_employee_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -616,7 +615,6 @@ class Home:
         self.loader = QUiLoader()
         self.home_ui = self.loader.load("ui/home.ui")
         self.home_ui.setWindowIcon(QIcon('resources/logo.ico'))
-        self.home_ui.setWindowFlags(self.home_ui.windowFlags() & ~Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint)
         self.home_ui.setWindowTitle("EALS")
         self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
         self.admin_id = None
@@ -1470,7 +1468,6 @@ class Admin:
         self.loader = QUiLoader()
         self.admin_ui = self.loader.load("ui/admin.ui")
         self.admin_ui.setWindowIcon(QIcon('resources/logo.ico'))
-        self.admin_ui.setWindowFlags(self.admin_ui.windowFlags() & ~Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowMinimizeButtonHint)
         self.admin_ui.setWindowTitle("EALS - Admin")
         self.admin_ui.home_tabs.setCurrentWidget(self.admin_ui.admin_dashboard)
         self.admin_ui.admin_employee_sc_pages.setCurrentWidget(self.admin_ui.employee_hr_page)
