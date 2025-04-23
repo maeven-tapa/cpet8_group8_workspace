@@ -40,7 +40,6 @@ class DatabaseConnection:
                 CREATE TABLE IF NOT EXISTS Admin (
                     admin_id VARCHAR(20) PRIMARY KEY,
                     password VARCHAR(255) NOT NULL,
-                    default_pass VARCHAR(255) NOT NULL,
                     password_changed BOOLEAN DEFAULT FALSE
                 );
 
@@ -139,14 +138,11 @@ class DatabaseConnection:
             admin_id = f"admin-01-0001"
             admin_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
             hashed_password = PASSWORD_HASHER.hash(admin_password)
-            hashed_default_pass = PASSWORD_HASHER.hash(admin_password)  # Hash the default password
             self.execute_query('''
-                INSERT INTO Admin (admin_id, password, default_pass, password_changed)
-                VALUES (?, ?, ?, FALSE)
-            ''', (admin_id, hashed_password, hashed_default_pass))  # Store the hashed default password
+                INSERT INTO Admin (admin_id, password, password_changed)
+                VALUES (?, ?, FALSE)
+            ''', (admin_id, hashed_password))
             self.connection.commit()
-            system_logs = SystemLogs(self)
-            system_logs.log_system_action(f"Initial admin account {admin_id} created", "Admin")
             return admin_id, admin_password
         except sqlite3.Error as e:
             print(f"Database error during initial admin creation: {e}")
@@ -626,7 +622,7 @@ class Home:
         self.home_ui.home_login_btn.clicked.connect(self.handle_login)
         self.home_ui.bio1_next.clicked.connect(self.goto_bio2)
         self.home_ui.bio2_next.clicked.connect(self.goto_result_prompt)
-        self.employee_data = None  
+        self.employee_data = None  # Store logged-in employee data
         self.system_logs.log_system_action("The home UI has been loaded.", "SystemSettings")
         self.home_ui.pass_visibility_button.clicked.connect(self.toggle_password_visibility)
         self.home_ui.forgot_pass_btn.clicked.connect(self.goto_forgot_password)
@@ -746,129 +742,15 @@ class Home:
         dialog.setText("Too Many Failed Attempts")
         dialog.setInformativeText("You have entered the wrong password 3 times. Would you like to change your password?")
         dialog.setWindowTitle("Change Password")
-        dialog.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         dialog.setDefaultButton(QMessageBox.Yes)
 
         response = dialog.exec()
         if response == QMessageBox.Yes:
-            self.goto_admin_change_pass_ui()  # Redirect to the new admin change password UI
+            self.goto_change_pass()
         else:
             Home.failed_attempts = 0
-            
-    def goto_admin_change_pass_ui(self):
-        self.admin_change_pass_ui = QUiLoader().load("ui/admin_change_pass.ui")
-        self.admin_change_pass_ui.setWindowTitle("Admin Change Password")
-        self.admin_change_pass_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-        self.admin_change_pass_ui.setWindowModality(Qt.ApplicationModal)
-        
-        self.admin_id = self.home_ui.home_id_box.text()
 
-        self.admin_change_pass_ui.change_pass_note.setText("For security purposes, please enter the admin default password below, then choose a new password and confirm it. Make sure your new password is at least 8 characters long.")
-        self.admin_change_pass_ui.default_visibility_btn.clicked.connect(self.toggle_default_visibility)
-        self.admin_change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
-        self.admin_change_pass_ui.changepass_visibility_btn.clicked.connect(self.toggle_changepass_visibility)
-
-        # Connect the change password button
-        self.admin_change_pass_ui.admin_change_pass_btn.clicked.connect(self.validate_and_change_admin_password)
-
-        self.admin_change_pass_ui.show()
-        
-    def toggle_default_visibility(self):
-        if self.admin_change_pass_ui.default_pass_cp_box.echoMode() == QLineEdit.Password:
-            self.admin_change_pass_ui.default_pass_cp_box.setEchoMode(QLineEdit.Normal)
-        else:
-            self.admin_change_pass_ui.default_pass_cp_box.setEchoMode(QLineEdit.Password)
-
-    def toggle_np_visibility(self):
-        if self.admin_change_pass_ui.change_pass_np_box.echoMode() == QLineEdit.Password:
-            self.admin_change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Normal)
-        else:
-            self.admin_change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Password)
-
-    def toggle_changepass_visibility(self):
-        if self.admin_change_pass_ui.change_pass_confirm_box.echoMode() == QLineEdit.Password:
-            self.admin_change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Normal)
-        else:
-            self.admin_change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Password)
-
-    def validate_and_change_admin_password(self):
-        default_password = self.admin_change_pass_ui.default_pass_cp_box.text()
-        new_password = self.admin_change_pass_ui.change_pass_np_box.text()
-        confirm_password = self.admin_change_pass_ui.change_pass_confirm_box.text()
-
-        try:
-            
-            if not self.admin_id:
-                self.admin_change_pass_ui.change_pass_note.setText("Error: Admin ID is not set. Please log in again.")
-                self.admin_change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-            
-            # Fetch the default password from the database
-            cursor = self.db.execute_query("SELECT default_pass FROM Admin WHERE admin_id = ?", (self.admin_id,))
-            result = cursor.fetchone()
-
-            if not result:
-                self.admin_change_pass_ui.change_pass_note.setText("Error: Failed to fetch admin data. Please try again.")
-                self.admin_change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            db_default_password = result[0]
-
-            # Verify the default password
-            try:
-                PASSWORD_HASHER.verify(db_default_password, default_password)
-            except argon2.exceptions.VerifyMismatchError:
-                self.admin_change_pass_ui.change_pass_note.setText("Invalid Password: The default password you entered is incorrect.")
-                self.admin_change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            # Validate new password
-            if not new_password or not confirm_password:
-                self.admin_change_pass_ui.change_pass_note.setText("Error: All fields are required.")
-                self.admin_change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            if new_password != confirm_password:
-                self.admin_change_pass_ui.change_pass_note.setText("Mismatch: The new password and confirmation password do not match.")
-                self.admin_change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            if len(new_password) < 8:
-                self.admin_change_pass_ui.change_pass_note.setText("Weak Password: The new password must be at least 8 characters long.")
-                self.admin_change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            # Hash the new password and update the database
-            hashed_password = PASSWORD_HASHER.hash(new_password)
-            self.db.execute_query(
-                "UPDATE Admin SET password = ?, password_changed = TRUE WHERE admin_id = ?",
-                (hashed_password, self.admin_id)
-            )
-
-            success_msg = QMessageBox()
-            success_msg.setIcon(QMessageBox.Information)
-            self.system_logs.log_system_action("Admin password changed successfully.", "Admin")
-            success_msg.setText("Password Changed Successfully")
-            success_msg.setInformativeText("Your password has been updated. Please use the new password for future logins.")
-            success_msg.setWindowTitle("Success")
-            success_msg.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-            success_msg.exec()
-
-            self.admin_change_pass_ui.close()
-
-        except sqlite3.Error as e:
-            # Log and display error
-            self.system_logs.log_system_action(f"Database error during admin password change: {e}", "Admin")
-            print(f"Database error during password change: {e}")
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Database Error")
-            error_msg.setInformativeText("An error occurred while changing the password. Please try again.")
-            error_msg.setWindowTitle("Error")
-            error_msg.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-            error_msg.exec()
-            
     def validate_attendance(self):
         if not self.employee_data:
             return False
@@ -1138,6 +1020,7 @@ class ChangePassword:
         self.change_pass_ui.setWindowModality(Qt.ApplicationModal)
 
     def toggle_cp_visibility(self):
+        """Toggle visibility for current password field."""
         if self.cp_visible:
             self.change_pass_ui.change_pass_cp_box.setEchoMode(QLineEdit.Password)
         else:
@@ -1145,6 +1028,7 @@ class ChangePassword:
         self.cp_visible = not self.cp_visible
 
     def toggle_np_visibility(self):
+        """Toggle visibility for new password field."""
         if self.np_visible:
             self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Password)
         else:
@@ -1152,6 +1036,7 @@ class ChangePassword:
         self.np_visible = not self.np_visible
 
     def toggle_changepass_visibility(self):
+        """Toggle visibility for confirm password field."""
         if self.changepass_visible:
             self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Password)
         else:
@@ -1180,29 +1065,29 @@ class ChangePassword:
 
             if not result:
                 self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
+                self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
                 return
             
             try:
                 PASSWORD_HASHER.verify(result[0], current_password)
             except argon2.exceptions.VerifyMismatchError:
                 self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
+                self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
                 return
 
             if not current_password or not new_password or not confirm_password:
                 self.change_pass_ui.change_pass_note.setText("All password fields are required.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
+                self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
                 return
 
             if new_password != confirm_password:
                 self.change_pass_ui.change_pass_note.setText("The new password and confirmation password do not match.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
+                self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
                 return
 
             if len(new_password) < 8:
                 self.change_pass_ui.change_pass_note.setText("Your new password must be at least 8 characters long.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
+                self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
                 return
 
             # Hash the new password

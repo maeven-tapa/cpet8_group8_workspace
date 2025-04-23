@@ -172,7 +172,7 @@ border-radius: 5px;</string>
             <string notr="true">border: none;</string>
            </property>
            <property name="text">
-            <string>Default Password:</string>
+            <string>Current Password:</string>
            </property>
            <property name="indent">
             <number>6</number>
@@ -182,7 +182,7 @@ border-radius: 5px;</string>
          <item>
           <layout class="QGridLayout" name="gridLayout_3" rowstretch="0" columnstretch="10,0">
            <item row="0" column="0">
-            <widget class="QLineEdit" name="default_pass_cp_box">
+            <widget class="QLineEdit" name="change_pass_cp_box">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                <horstretch>0</horstretch>
@@ -219,7 +219,7 @@ QLineEdit:focus {
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QPushButton" name="default_visibility_btn">
+            <widget class="QPushButton" name="cp_visibility_btn">
              <property name="sizePolicy">
               <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                <horstretch>0</horstretch>
