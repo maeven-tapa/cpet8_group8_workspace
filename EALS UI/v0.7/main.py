@@ -400,7 +400,8 @@ class HR:
                     "middle_initial": employee[3],
                     "department": employee[6],
                     "position": employee[7],
-                    "status": employee[10]
+                    "status": employee[10],
+                    "profile_picture": employee[13]
                 }
                 self.hr_employees.append(employee_data)
                 self.add_hr_employee_to_table(employee_data)
@@ -479,7 +480,16 @@ class HR:
         self.hr_ui.hr_view_employee_position_box.setText(employee_data["position"])
         self.hr_ui.hr_view_employee_accountid.setText(employee_data["employee_id"])
         self.load_hr_employee_attendance_logs(employee_data["employee_id"])
-
+        self.display_picture(self.hr_ui.hr_view_employee_picture, employee_data['profile_picture'])
+        
+    def display_picture(self, label, picture_path):
+        if picture_path and os.path.exists(picture_path):
+            pixmap = QPixmap(picture_path)
+            pixmap = pixmap.scaled(170, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            label.setPixmap(pixmap)
+        else:
+            label.setPixmap(QPixmap())
+            
     def goto_hr_dashboard(self):
         self.system_logs.log_system_action("Going back to the HR Employee dashboard.", "Employee")
         dashboard_page = self.hr_ui.hr_employee_sc_pages.indexOf(self.hr_ui.hr_employee_dashboard_page)
