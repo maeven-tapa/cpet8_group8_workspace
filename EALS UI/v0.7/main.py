@@ -754,7 +754,7 @@ class Home:
                     if employee_data["is_hr"]:
                         if self.validate_hr_attendance(employee_data):
                             self.goto_hr_ui(employee_data)
-                            self.show_error("Login Successful", "Welcome back, HR!")
+                            self.show_success("Login Successful", "Welcome back, HR!")
                             self.system_logs.log_system_action("A user is logged in as HR", "Employee")
                     else:
                         self.employee_data = employee_data
