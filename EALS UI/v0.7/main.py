@@ -17,6 +17,7 @@ from pyqttoast import Toast, ToastPreset, ToastPosition
 import argon2
 import secrets
 import string
+import chime
 
 PASSWORD_HASHER = argon2.PasswordHasher()
 
@@ -685,7 +686,7 @@ class Home:
                     Home.password_changed = password_changed
                     if password_changed:
                         self.system_logs.log_system_action("The password is already changed, going to the admin UI.", "Admin")
-                        self.show_error("Login Successful", "Welcome back, Admin!")
+                        self.show_success("Login Successful", "Welcome back, Admin!")
                         self.goto_admin_ui()
                     else:
                         self.system_logs.log_system_action("The password is not changed executing Change Password Prompt", "Admin")
@@ -1040,6 +1041,8 @@ class Home:
             return current_hour >= start_hour or current_hour < end_hour
 
     def show_success(self, title, message):
+        chime.theme('chime')
+        chime.success()
         toast = Toast(self.home_ui)
         toast.setTitle(title)
         toast.setText(message)
@@ -1053,6 +1056,8 @@ class Home:
         toast.show()
 
     def show_error(self, title, message):
+        chime.theme('big-sur')
+        chime.warning()
         toast = Toast(self.home_ui)
         toast.setTitle(title)
         toast.setText(message)
@@ -1194,6 +1199,7 @@ class ChangePassword:
             result = cursor.fetchone()
 
             if not result:
+                chime.warning()
                 self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
@@ -1201,21 +1207,25 @@ class ChangePassword:
             try:
                 PASSWORD_HASHER.verify(result[0], current_password)
             except argon2.exceptions.VerifyMismatchError:
+                chime.warning()
                 self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
 
             if not current_password or not new_password or not confirm_password:
+                chime.warning()
                 self.change_pass_ui.change_pass_note.setText("All password fields are required.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
 
             if new_password != confirm_password:
+                chime.warning()
                 self.change_pass_ui.change_pass_note.setText("The new password and confirmation password do not match.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
 
             if len(new_password) < 8:
+                chime.warning()
                 self.change_pass_ui.change_pass_note.setText("Your new password must be at least 8 characters long.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
@@ -1230,6 +1240,8 @@ class ChangePassword:
             )
 
             self.system_logs.log_system_action(f"The {self.user_type} password has been changed.", "Admin" if self.user_type == "admin" else "Employee")
+            chime.theme('chime')
+            chime.success()
             toast = Toast(self.change_pass_ui)
             toast.setTitle("Password Changed Successfully")
             toast.setText("Your password has been updated. Please use the new password for future logins.")
@@ -1351,7 +1363,9 @@ class ForgotPassword:
             )
             
             if self.send_verification_email(self.current_employee["email"], self.verification_code):
-                # Show success toast notification
+                
+                chime.theme('chime')
+                chime.success()
                 toast = Toast(self.forgot_pass_ui)
                 toast.setTitle("Email Sent")
                 toast.setText(f"A verification code has been sent to {email}.")
@@ -1456,16 +1470,19 @@ class ForgotPassword:
         confirm_password = self.change_pass_ui.change_pass_confirm_box.text()
 
         if not new_password or not confirm_password:
+            chime.warning()
             self.change_pass_ui.change_pass_note.setText("Note: All fields are required.")
             self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
             return
 
         if new_password != confirm_password:
+            chime.warning()
             self.change_pass_ui.change_pass_note.setText("Note: Passwords do not match.")
             self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
             return
 
         if len(new_password) < 8:
+            chime.warning()
             self.change_pass_ui.change_pass_note.setText("Note: Password must be at least 8 characters long.")
             self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
             return
@@ -1481,6 +1498,9 @@ class ForgotPassword:
             )
             self.change_pass_ui.close()
             
+            
+            chime.theme('chime')
+            chime.success()
             toast = Toast(self.forgot_pass_ui)
             toast.setTitle("Success")
             toast.setText("Password changed successfully.")
@@ -3056,26 +3076,32 @@ class Admin:
             print(f"Database error while loading backup configuration: {e}")
 
     def show_success(self, title, message):
+        chime.theme('chime')
+        chime.success()
         toast = Toast(self.admin_ui)
         toast.setTitle(title)
         toast.setText(message)
         toast.setDuration(2000)  # Duration in milliseconds
-        toast.setOffset(30, 70)  
+        toast.setOffset(25, 35)  
         toast.setBorderRadius(6)  
         toast.applyPreset(ToastPreset.SUCCESS)  
         toast.setBackgroundColor(QColor('#FFFFFF')) 
+        toast.setPositionRelativeToWidget(self.admin_ui.home_tabs)
         toast.setPosition(ToastPosition.TOP_RIGHT)  
         toast.show() 
 
     def show_error(self, title, message):
+        chime.theme('big-sur')
+        chime.warning()
         toast = Toast(self.admin_ui)
         toast.setTitle(title)
         toast.setText(message)
         toast.setDuration(2000)  # Duration in milliseconds
-        toast.setOffset(30, 70)  
+        toast.setOffset(25, 35)  
         toast.setBorderRadius(6)  
         toast.applyPreset(ToastPreset.ERROR)  
         toast.setBackgroundColor(QColor('#FFFFFF'))  
+        toast.setPositionRelativeToWidget(self.admin_ui.home_tabs)
         toast.setPosition(ToastPosition.TOP_RIGHT)  
         toast.show()  
     
