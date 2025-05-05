@@ -336,6 +336,7 @@ class HR:
         self.load_hr_employee_table()
         self.load_hr_attendance_logs_table()
         self.update_date_today()
+        self.check_net()
 
     def show_feedback_form(self):
         self.system_logs.log_system_action("HR opened feedback form", "Employee")
@@ -616,6 +617,24 @@ class HR:
         table.setItem(row_position, 2, remarks_item)
 
         table.resizeColumnsToContents()
+        
+    def check_net(self):
+        try:
+            socket.create_connection(("8.8.8.8", 53), timeout=5)
+            return True
+        except OSError:
+            toast = Toast(self.admin_ui)
+            toast.setTitle("No Internet Connection")
+            toast.setText("Please check your internet connection and try again.")
+            toast.setOffset(40, 45)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.ERROR)
+            toast.setBackgroundColor(QColor('#ffb7b6'))
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.setShowDurationBar(False)
+            toast.setDuration(0) 
+            toast.show()
+            return False
 
 class Home:
     password_changed = False
@@ -1608,6 +1627,7 @@ class Admin:
         self.start_backup_scheduler()
         self.load_backup_table()
         self.load_backup_configuration()
+        self.check_net()
         
     def get_current_admin(self):
         try:
@@ -3104,6 +3124,24 @@ class Admin:
         toast.setPositionRelativeToWidget(self.admin_ui.home_tabs)
         toast.setPosition(ToastPosition.TOP_RIGHT)  
         toast.show()  
+        
+    def check_net(self):
+        try:
+            socket.create_connection(("8.8.8.8", 53), timeout=5)
+            return True
+        except OSError:
+            toast = Toast(self.admin_ui)
+            toast.setTitle("No Internet Connection")
+            toast.setText("Please check your internet connection and try again.")
+            toast.setOffset(40, 45)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.ERROR)
+            toast.setBackgroundColor(QColor('#ffb7b6'))
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.setShowDurationBar(False)
+            toast.setDuration(0) 
+            toast.show()
+            return False
     
 if __name__ == "__main__":
     app = QApplication(sys.argv)
