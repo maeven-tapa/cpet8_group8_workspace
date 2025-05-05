@@ -66,6 +66,7 @@ class DatabaseConnection:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_modified_by VARCHAR(20),
                     last_modified_at TIMESTAMP,
+                    attedance_count CHAR(1),
                     FOREIGN KEY (created_by) REFERENCES Admin(admin_id),
                     FOREIGN KEY (last_modified_by) REFERENCES Admin(admin_id)
                 );
@@ -711,7 +712,8 @@ class Home:
                         self.system_logs.log_system_action("The password is not changed executing Change Password Prompt", "Admin")
                         self.goto_change_pass()
                     self.home_ui.home_id_box.clear() 
-                    self.home_ui.home_pass_box.clear() 
+                    self.home_ui.home_pass_box.clear()
+                    self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
                     return
                 except argon2.exceptions.VerifyMismatchError:
                     Home.failed_attempts += 1
@@ -769,7 +771,6 @@ class Home:
             print(f"Database error during login: {e}")
 
 
-        
     def prompt_password_change(self):
         dialog = QMessageBox()
         dialog.setIcon(QMessageBox.Warning)
@@ -892,15 +893,69 @@ class Home:
 
         current_time = datetime.now()
         current_date = current_time.strftime("%Y-%m-%d")
+        current_hour = current_time.hour
 
         cursor = self.db.execute_query(
-            "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?", 
+            "SELECT attedance_count FROM Employee WHERE employee_id = ?",
+            (self.employee_data["employee_id"],)
+        )
+        if cursor:
+            result = cursor.fetchone()
+            attendance_count = int(result[0]) if result and result[0] else 0
+        else:
+            attendance_count = 0
+
+        if self.employee_data["schedule"] == "10pm to 6am":
+            if current_hour >= 22:
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND date = ? AND time >= '22:00:00'",
+                    (self.employee_data["employee_id"], current_date)
+                )
+                night_logs = cursor.fetchone()[0] if cursor else 0
+                if night_logs >= 2:
+                    self.show_warning("Attendance Error", "You have already completed your attendance for tonight's shift.")
+                    return False
+            # If current time is between midnight and 6 AM
+            elif current_hour < 6:
+                # Check previous day's logs after 10 PM
+                previous_date = (current_time - timedelta(days=1)).strftime("%Y-%m-%d")
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND date = ? AND time >= '22:00:00'",
+                    (self.employee_data["employee_id"], previous_date)
+                )
+                previous_night_logs = cursor.fetchone()[0] if cursor else 0
+                
+                # Check current day's logs before 6 AM
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND date = ? AND time <= '06:00:00'",
+                    (self.employee_data["employee_id"], current_date)
+                )
+                early_morning_logs = cursor.fetchone()[0] if cursor else 0
+                
+                total_logs = previous_night_logs + early_morning_logs
+                if total_logs >= 2:
+                    self.show_warning("Attendance Error", "You have already completed your attendance for this shift.")
+                    return False
+        else:
+            # For regular shifts, check if already logged twice today
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND date = ?",
+                (self.employee_data["employee_id"], current_date)
+            )
+            attendance_count = cursor.fetchone()[0] if cursor else 0
+            
+            if attendance_count >= 2:
+                self.show_warning("Attendance Error", "You have already logged your attendance twice today.")
+                return False
+
+        cursor = self.db.execute_query(
+            "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?",
             (self.employee_data["employee_id"], current_date)
         )
         attendance = cursor.fetchone() if cursor else None
 
         if attendance:
-            log_time_str = attendance[0]  # Time as a string
+            log_time_str = attendance[0]
             log_time = datetime.strptime(f"{current_date} {log_time_str}", "%Y-%m-%d %H:%M:%S")
 
             if attendance[1] == "Clock In" and (current_time - log_time).total_seconds() < 8 * 3600:
@@ -914,15 +969,21 @@ class Home:
 
                 response = dialog.exec()
                 if response == QMessageBox.No:
-                    return False  
+                    return False
             self.employee_data["remarks"] = "Clock Out"
         else:
             schedule_start, schedule_end = self.parse_schedule(self.employee_data["schedule"])
             current_hour = current_time.hour
             if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
-                self.show_error("Invalid Login", "You cannot log in outside your scheduled shift.")
+                self.show_warning("Invalid Login", "You cannot log in outside your scheduled shift.")
                 return False
             self.employee_data["remarks"] = "Clock In"
+
+        new_count = attendance_count + 1
+        self.db.execute_query(
+            "UPDATE Employee SET attedance_count = ? WHERE employee_id = ?",
+            (new_count, self.employee_data["employee_id"])
+        )
 
         return True
 
@@ -1024,6 +1085,9 @@ class Home:
 
         result_prompt = self.home_ui.main_page.indexOf(self.home_ui.result_page)
         self.home_ui.main_page.setCurrentIndex(result_prompt)
+        self.home_ui.home_id_box.clear() 
+        self.home_ui.home_pass_box.clear()
+        self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
 
         # Automatically return to the home page after 5 seconds
         threading.Timer(5.0, lambda: self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)).start()
@@ -1084,6 +1148,20 @@ class Home:
         toast.setOffset(30, 70)
         toast.setBorderRadius(6) 
         toast.applyPreset(ToastPreset.ERROR)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPositionRelativeToWidget(self.home_ui.home_page)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+        
+    def show_warning(self, title, message):
+        chime.warning()
+        toast = Toast(self.home_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)
+        toast.setOffset(30, 70)
+        toast.setBorderRadius(6) 
+        toast.applyPreset(ToastPreset.WARNING)
         toast.setBackgroundColor(QColor('#FFFFFF'))
         toast.setPositionRelativeToWidget(self.home_ui.home_page)
         toast.setPosition(ToastPosition.TOP_RIGHT)
