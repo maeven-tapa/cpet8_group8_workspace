@@ -11,8 +11,9 @@ from email.mime.multipart import MIMEMultipart
 from PySide6.QtWidgets import QApplication,QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QDate, QCoreApplication, QProcess, QTimer, QRegularExpression
-from PySide6.QtGui import QPixmap, QRegularExpressionValidator, QIcon
+from PySide6.QtGui import QPixmap, QRegularExpressionValidator, QIcon, QColor 
 from datetime import datetime, timedelta
+from pyqttoast import Toast, ToastPreset, ToastPosition
 import argon2
 import secrets
 import string
@@ -489,7 +490,7 @@ class HR:
             label.setPixmap(pixmap)
         else:
             label.setPixmap(QPixmap())
-            
+
     def goto_hr_dashboard(self):
         self.system_logs.log_system_action("Going back to the HR Employee dashboard.", "Employee")
         dashboard_page = self.hr_ui.hr_employee_sc_pages.indexOf(self.hr_ui.hr_employee_dashboard_page)
@@ -684,6 +685,7 @@ class Home:
                     Home.password_changed = password_changed
                     if password_changed:
                         self.system_logs.log_system_action("The password is already changed, going to the admin UI.", "Admin")
+                        self.show_error("Login Successful", "Welcome back, Admin!")
                         self.goto_admin_ui()
                     else:
                         self.system_logs.log_system_action("The password is not changed executing Change Password Prompt", "Admin")
@@ -730,6 +732,7 @@ class Home:
                     if employee_data["is_hr"]:
                         if self.validate_hr_attendance(employee_data):
                             self.goto_hr_ui(employee_data)
+                            self.show_error("Login Successful", "Welcome back, HR!")
                             self.system_logs.log_system_action("A user is logged in as HR", "Employee")
                     else:
                         self.employee_data = employee_data
@@ -745,8 +748,7 @@ class Home:
         except sqlite3.Error as e:
             print(f"Database error during login: {e}")
 
-        self.home_ui.home_id_box.clear()
-        self.home_ui.home_pass_box.clear()
+
         
     def prompt_password_change(self):
         dialog = QMessageBox()
@@ -854,28 +856,15 @@ class Home:
                 (hashed_password, self.admin_id)
             )
 
-            success_msg = QMessageBox()
-            success_msg.setIcon(QMessageBox.Information)
             self.system_logs.log_system_action("Admin password changed successfully.", "Admin")
-            success_msg.setText("Password Changed Successfully")
-            success_msg.setInformativeText("Your password has been updated. Please use the new password for future logins.")
-            success_msg.setWindowTitle("Success")
-            success_msg.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-            success_msg.exec()
+            self.show_success("Password Changed Successfully", "Your password has been updated. Please use the new password for future logins.")
 
             self.admin_change_pass_ui.close()
 
         except sqlite3.Error as e:
-            # Log and display error
             self.system_logs.log_system_action(f"Database error during admin password change: {e}", "Admin")
             print(f"Database error during password change: {e}")
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Database Error")
-            error_msg.setInformativeText("An error occurred while changing the password. Please try again.")
-            error_msg.setWindowTitle("Error")
-            error_msg.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-            error_msg.exec()
+            self.show_error("Database Error", "An error occurred while changing the password. Please try again.")
             
     def validate_attendance(self):
         if not self.employee_data:
@@ -1050,13 +1039,31 @@ class Home:
         else:  
             return current_hour >= start_hour or current_hour < end_hour
 
+    def show_success(self, title, message):
+        toast = Toast(self.home_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)
+        toast.setOffset(30, 70)
+        toast.setBorderRadius(6) 
+        toast.applyPreset(ToastPreset.SUCCESS)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPositionRelativeToWidget(self.home_ui.home_page)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+
     def show_error(self, title, message):
-        error_msg = QMessageBox()
-        error_msg.setIcon(QMessageBox.Critical)
-        error_msg.setText(title)
-        error_msg.setInformativeText(message)
-        error_msg.setWindowTitle("Error")
-        error_msg.exec()
+        toast = Toast(self.home_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)
+        toast.setOffset(30, 70)
+        toast.setBorderRadius(6) 
+        toast.applyPreset(ToastPreset.ERROR)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPositionRelativeToWidget(self.home_ui.home_page)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
     
     def goto_change_pass(self):
         self.changepass = ChangePassword(self.db, self.admin_id)
@@ -1137,7 +1144,7 @@ class ChangePassword:
             self.system_logs.log_system_action("The employee change password prompt has been loaded.", "Employee")
             
         self.change_pass_ui.change_pass_note.setText("For security purposes, please enter your current password below, then choose a new password and confirm it. Make sure your new password is at least 8 characters long.")
-        self.change_pass_ui.change_pass_note.setStyleSheet("color: black")
+        self.change_pass_ui.change_pass_note.setStyleSheet("color: black; border: none;")
         self.change_pass_ui.cp_visibility_btn.clicked.connect(self.toggle_cp_visibility)
         self.change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
         self.change_pass_ui.changepass_visibility_btn.clicked.connect(self.toggle_changepass_visibility)
@@ -1222,17 +1229,18 @@ class ChangePassword:
                 (hashed_password, self.user_id)
             )
 
-            success_msg = QMessageBox()
-            success_msg.setIcon(QMessageBox.Information)
-            self.system_logs.log_system_action(
-                f"The {self.user_type} password has been changed.", 
-                "Admin" if self.user_type == "admin" else "Employee"
-            )
-            success_msg.setText("Password Changed Successfully")
-            success_msg.setInformativeText("Your password has been updated. Please use the new password for future logins.")
-            success_msg.setWindowTitle("Success")
-            success_msg.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-            success_msg.exec()
+            self.system_logs.log_system_action(f"The {self.user_type} password has been changed.", "Admin" if self.user_type == "admin" else "Employee")
+            toast = Toast(self.change_pass_ui)
+            toast.setTitle("Password Changed Successfully")
+            toast.setText("Your password has been updated. Please use the new password for future logins.")
+            toast.setDuration(2000)
+            toast.setOffset(30, 70) 
+            toast.setBorderRadius(6) 
+            toast.applyPreset(ToastPreset.SUCCESS)  
+            toast.setBackgroundColor(QColor('#FFFFFF')) 
+            toast.setPosition(ToastPosition.TOP_RIGHT) 
+            toast.show()
+
 
             self.change_pass_ui.close()
 
@@ -1342,7 +1350,19 @@ class ForgotPassword:
                 "Employee"
             )
             
-            self.send_verification_email(self.current_employee["email"], self.verification_code)
+            if self.send_verification_email(self.current_employee["email"], self.verification_code):
+                # Show success toast notification
+                toast = Toast(self.forgot_pass_ui)
+                toast.setTitle("Email Sent")
+                toast.setText(f"A verification code has been sent to {email}.")
+                toast.setDuration(2000)
+                toast.setOffset(30, 70)
+                toast.setBorderRadius(6)
+                toast.applyPreset(ToastPreset.SUCCESS)
+                toast.setBackgroundColor(QColor('#FFFFFF'))
+                toast.setPosition(ToastPosition.TOP_RIGHT)
+                toast.show()
+
 
             # Switch to verification page
             self.forgot_pass_ui.fp_stackedWidget.setCurrentWidget(self.forgot_pass_ui.fp_page_2)
@@ -1460,7 +1480,18 @@ class ForgotPassword:
                 (hashed_password, self.current_employee["employee_id"])
             )
             self.change_pass_ui.close()
-            QMessageBox.information(None, "Success", "Password changed successfully.")
+            
+            toast = Toast(self.forgot_pass_ui)
+            toast.setTitle("Success")
+            toast.setText("Password changed successfully.")
+            toast.setDuration(2000)
+            toast.setOffset(30, 70)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.SUCCESS)
+            toast.setBackgroundColor(QColor('#FFFFFF'))
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.show()
+
         except sqlite3.Error as e:
             print(f"Database error during password change: {e}")
             QMessageBox.critical(None, "Error", "Failed to change password. Please try again.")
@@ -1758,12 +1789,7 @@ class Admin:
             self.display_hr_view(self.hr_employees[row])
             view_page = self.admin_ui.hr_view_page
         else:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Warning)
-            error_msg.setText("No Selection")
-            error_msg.setInformativeText("Please select an employee to view.")
-            error_msg.setWindowTitle("View Error")
-            error_msg.exec()
+            self.show_error("Viewing Error", "No employee selected for viewing.")
             return
             
         page_index = self.admin_ui.admin_employee_sc_pages.indexOf(view_page)
@@ -1878,12 +1904,7 @@ class Admin:
 
         else:
             self.system_logs.log_system_action("Invalid selection has been made. (No employee has been selected)", "Employee")
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Warning)
-            error_msg.setText("No Selection")
-            error_msg.setInformativeText("Please select an employee to edit.")
-            error_msg.setWindowTitle("Edit Error")
-            error_msg.exec()
+            self.show_error("Edit Error", "No employee selected for editing.")
 
     def load_employee_to_edit_form(self, employee_data):
         self.system_logs.log_system_action("Loading employee data to edit page.", "Employee")
@@ -2092,22 +2113,12 @@ class Admin:
 
     def save_edited_employee(self):
         if self.selected_employee_index is None or self.selected_employee_type is None:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Edit Error")
-            error_msg.setInformativeText("No employee selected for editing.")
-            error_msg.setWindowTitle("Edit Error")
-            error_msg.exec()
+            self.show_error("Edit Error", "No employee selected for editing.")
             return
 
         valid, result = self.validate_edited_employee_data()
         if not valid:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Validation Error")
-            error_msg.setInformativeText(result)
-            error_msg.setWindowTitle("Edit Error")
-            error_msg.exec()
+            self.show_error("Edit Error", "Validation Error.")
             return
 
         try:
@@ -2137,12 +2148,7 @@ class Admin:
             ))
 
             self.system_logs.log_system_action(f"Employee {result['employee_id']} was modified by {current_admin}", "Employee")
-            success_msg = QMessageBox()
-            success_msg.setIcon(QMessageBox.Information)
-            success_msg.setText("Employee Updated")
-            success_msg.setInformativeText(f"Employee {result['first_name']} {result['last_name']} has been updated.")
-            success_msg.setWindowTitle("Edit Success")
-            success_msg.exec()
+            self.show_success("Employee Updated", f"Employee {result['first_name']} {result['last_name']} has been updated.")
 
             self.load_employee_table()
             self.load_hr_table()
@@ -2150,21 +2156,11 @@ class Admin:
 
         except sqlite3.Error as e:
             print(f"Database error while updating employee: {e}")
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Database Error")
-            error_msg.setInformativeText("Failed to update employee record.")
-            error_msg.setWindowTitle("Edit Error")
-            error_msg.exec()
+            self.show_error("Edit Error", "Failed to update employee record.")
 
     def toggle_employee_status(self):
         if self.selected_employee_index is None or self.selected_employee_type is None:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Status Update Error")
-            error_msg.setInformativeText("No employee selected.")
-            error_msg.setWindowTitle("Status Error")
-            error_msg.exec()
+            self.show_error("Status Update Error", "FNo employee is determined.")
             return
 
         try:
@@ -2193,18 +2189,11 @@ class Admin:
             else:
                 self.admin_ui.employee_edit_deactivate.setText("Activate")
                 
-            success_msg = QMessageBox()
-            success_msg.setIcon(QMessageBox.Information)
-            success_msg.setText("Status Updated")
-            success_msg.setInformativeText(f"Employee {employee['first_name']} {employee['last_name']} has been {new_status.lower()}.")
-            success_msg.setWindowTitle("Status Update")
-            success_msg.exec()
+            self.show_success("Status Updated", f"Employee {employee['first_name']} {employee['last_name']} has been {new_status.lower()}.")
 
         except sqlite3.Error as e:
             print(f"Database error while updating status: {e}")
             self.show_error("Database Error", "Failed to update employee status.")
-
-
 
     def validate_employee_data(self):
         first_name = self.admin_ui.employee_first_name.text().strip()
@@ -2429,7 +2418,7 @@ class Admin:
         hr_selected = self.admin_ui.hr_list_tbl.selectedIndexes()
         
         if not employee_selected and not hr_selected:
-            QMessageBox.warning(None, "Delete Error", "Please select an employee to delete.")
+            self.show_error("Delete Error", "Please select an employee to delete.")
             return
 
         if employee_selected:
@@ -2468,9 +2457,8 @@ class Admin:
                     f"{employee_type} {employee_data['employee_id']} has been deleted by {self.get_current_admin()}", 
                     "Employee"
                 )
-
-                QMessageBox.information(None, "Delete Success", 
-                    f"{employee_type} {employee_data['first_name']} {employee_data['last_name']} has been deleted.")
+                
+                self.show_success("Delete Success", f"{employee_type} {employee_data['first_name']} {employee_data['last_name']} has been deleted.")
 
                 self.load_employee_table()
                 self.load_hr_table()
@@ -2569,12 +2557,7 @@ class Admin:
             self.current_employee_data = result
             self.goto_employee_enroll_2()
         else:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Validation Error")
-            error_msg.setInformativeText(result)
-            error_msg.setWindowTitle("Enrollment Error")
-            error_msg.exec()
+            self.show_error("Enrollment Error", "Validation Error.")
 
     def finalize_employee_enrollment(self):
         if hasattr(self, 'current_employee_data'):
@@ -2587,32 +2570,17 @@ class Admin:
             
             if success:
                 self.system_logs.log_system_action("A new employee has been enrolled.", "Employee")
-                success_msg = QMessageBox()
-                success_msg.setIcon(QMessageBox.Information)
-                success_msg.setText("Employee Enrolled Successfully")
                 employee_type = "HR Employee" if self.current_employee_data.get('is_hr', False) else "Employee"
-                success_msg.setInformativeText(f"{employee_type} {self.current_employee_data['first_name']} {self.current_employee_data['last_name']} has been enrolled.")
-                success_msg.setWindowTitle("Enrollment Success")
-                success_msg.exec()
+                self.show_success("Enrollment Success", f"{employee_type} {self.current_employee_data['first_name']} {self.current_employee_data['last_name']} has been enrolled.")
                 self.clear_employee_enrollment_fields()
                 self.goto_employee_hr()
                 self.load_employee_table()
                 self.load_hr_table()
             else:
                 self.system_logs.log_system_action("Failed to save employee data.", "Employee")
-                error_msg = QMessageBox()
-                error_msg.setIcon(QMessageBox.Critical)
-                error_msg.setText("Enrollment Error")
-                error_msg.setInformativeText("Failed to save employee data. Please try again.")
-                error_msg.setWindowTitle("Enrollment Error")
-                error_msg.exec()
+                self.show_error("Enrollment Error", "Failed to save employee data. Please try again.")
         else:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Process Error")
-            error_msg.setInformativeText("No employee data found. Please restart the enrollment process.")
-            error_msg.setWindowTitle("Enrollment Error")
-            error_msg.exec()
+            self.show_error("Process Error", "No employee data found. Please restart the enrollment process.")
 
     def toggle_hr_fields(self):
         is_hr = self.admin_ui.is_hr_yes.isChecked()
@@ -2726,7 +2694,6 @@ class Admin:
         self.admin_ui.employee_sched_1.setChecked(False)
         self.admin_ui.employee_sched_2.setChecked(False)
         self.admin_ui.employee_sched_3.setChecked(False)
-
 
     def load_attendance_logs_table(self):
 
@@ -2930,17 +2897,11 @@ class Admin:
             self.start_backup_scheduler()
 
         except sqlite3.Error as e:
-            error_msg = f"Database error during backup configuration: {e}"
-            print(error_msg)
-            self.system_logs.log_system_action(error_msg, "SystemSettings")
-            QMessageBox.critical(None, "Database Error", 
-                "An error occurred while saving the backup configuration.")
+            self.system_logs.log_system_action(f"Database error during backup configuration: {e}", "SystemSettings")
+            self.show_error("Database Error", "An error occurred while saving the backup configuration.")
         except Exception as e:
-            error_msg = f"Error during backup process: {e}"
-            print(error_msg)
-            self.system_logs.log_system_action(error_msg, "SystemSettings")
-            QMessageBox.critical(None, "Backup Error", 
-                "An unexpected error occurred during the backup process.")
+            self.system_logs.log_system_action(f"Error during backup process: {e}", "SystemSettings")
+            self.show_error("Backup Error", "An unexpected error occurred during the backup process.")
             
     def load_backup_table(self):
         backup_dir = "resources/backups"
@@ -2978,7 +2939,7 @@ class Admin:
     def restore_backup(self):
         selected_rows = self.admin_ui.backup_tbl.selectedIndexes()
         if not selected_rows:
-            QMessageBox.warning(None, "Restore Error", "Please select a backup to restore.")
+            self.show_error("Restore Error", "Please select a backup to restore.")
             return
 
         row = selected_rows[0].row()
@@ -3053,7 +3014,6 @@ class Admin:
         except Exception as e:
             print(f"Error during retention handling: {e}")
             
-            
     def start_backup_scheduler(self):
         self.backup_timer = QTimer()
         self.backup_timer.timeout.connect(self.scheduled_backup)
@@ -3095,6 +3055,30 @@ class Admin:
         except sqlite3.Error as e:
             print(f"Database error while loading backup configuration: {e}")
 
+    def show_success(self, title, message):
+        toast = Toast(self.admin_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)  # Duration in milliseconds
+        toast.setOffset(30, 70)  
+        toast.setBorderRadius(6)  
+        toast.applyPreset(ToastPreset.SUCCESS)  
+        toast.setBackgroundColor(QColor('#FFFFFF')) 
+        toast.setPosition(ToastPosition.TOP_RIGHT)  
+        toast.show() 
+
+    def show_error(self, title, message):
+        toast = Toast(self.admin_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)  # Duration in milliseconds
+        toast.setOffset(30, 70)  
+        toast.setBorderRadius(6)  
+        toast.applyPreset(ToastPreset.ERROR)  
+        toast.setBackgroundColor(QColor('#FFFFFF'))  
+        toast.setPosition(ToastPosition.TOP_RIGHT)  
+        toast.show()  
+    
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     controller = EALS()
