@@ -1653,20 +1653,24 @@ class ForgotPassword:
                 "Employee"
             )
             
-            if self.send_verification_email(self.current_employee["email"], self.verification_code):
-                
-                chime.theme('chime')
-                chime.success()
-                toast = Toast(self.forgot_pass_ui)
-                toast.setTitle("Email Sent")
-                toast.setText(f"A verification code has been sent to {email}.")
-                toast.setDuration(2000)
-                toast.setOffset(30, 70)
-                toast.setBorderRadius(6)
-                toast.applyPreset(ToastPreset.SUCCESS)
-                toast.setBackgroundColor(QColor('#FFFFFF'))
-                toast.setPosition(ToastPosition.TOP_RIGHT)
-                toast.show()
+
+            chime.theme('chime')
+            chime.success()
+            toast = Toast(self.forgot_pass_ui)
+            toast.setTitle("Email Sent")
+            toast.setText(f"A verification code has been sent to {email}.")
+            toast.setDuration(2000)
+            toast.setOffset(30, 70)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.SUCCESS)
+            toast.setBackgroundColor(QColor('#FFFFFF'))
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.show()
+            
+            threading.Thread(
+                target=lambda: self.send_verification_email(self.current_employee["email"], self.verification_code),
+                daemon=True
+            ).start()
 
 
             # Switch to verification page
