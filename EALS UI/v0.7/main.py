@@ -1186,7 +1186,6 @@ class Home:
             self.home_ui.home_pass_box.clear()
             self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
 
-            # Automatically return to the home page after 5 seconds
             QTimer.singleShot(5000, lambda: self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page))
 
     def parse_schedule(self, schedule):
@@ -1912,8 +1911,7 @@ class Admin:
         self.system_logs.log_system_action("Goes to the employee HR page.", "Employee")
         employee_hr_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_hr_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_hr_page)
-        self.load_employee_table()
-        self.load_hr_table()
+
 
     def goto_employee_edit(self):
         self.system_logs.log_system_action("A selected employee is being edited.", "Employee")
@@ -2673,7 +2671,6 @@ class Admin:
         self.admin_ui.employee_list_tbl.setItem(row_position, 2, dept_pos_item)
         self.admin_ui.employee_list_tbl.setItem(row_position, 3, status_item)
         
-        self.admin_ui.employee_list_tbl.resizeColumnsToContents()
 
     def add_hr_to_table(self, hr_data):
         row_position = self.admin_ui.hr_list_tbl.rowCount()
@@ -2692,8 +2689,6 @@ class Admin:
         self.admin_ui.hr_list_tbl.setItem(row_position, 0, name_item)
         self.admin_ui.hr_list_tbl.setItem(row_position, 1, id_item)
         self.admin_ui.hr_list_tbl.setItem(row_position, 2, status_item)
-        
-        self.admin_ui.hr_list_tbl.resizeColumnsToContents()
         
     def handle_delete_employee(self):
         employee_selected = self.admin_ui.employee_list_tbl.selectedIndexes()
@@ -2852,6 +2847,7 @@ class Admin:
                 self.system_logs.log_system_action("A new employee has been enrolled.", "Employee")
                 employee_type = "HR Employee" if self.current_employee_data.get('is_hr', False) else "Employee"
                 self.show_success("Enrollment Success", f"{employee_type} {self.current_employee_data['first_name']} {self.current_employee_data['last_name']} has been enrolled.")
+                threading.Thread(target=lambda: self.send_welcome_email(self.current_employee_data), daemon=True).start()
                 self.clear_employee_enrollment_fields()
                 self.goto_employee_hr()
                 self.load_employee_table()
@@ -2861,6 +2857,42 @@ class Admin:
                 self.show_error("Enrollment Error", "Failed to save employee data. Please try again.")
         else:
             self.show_error("Process Error", "No employee data found. Please restart the enrollment process.")
+
+    def send_welcome_email(self, employee_data):
+        try:
+            sender_email = "eals.tupc@gmail.com"
+            sender_password = "buwl tszg dghr exln" 
+            recipient_email = employee_data["email"]
+
+            message = MIMEMultipart()
+            message["From"] = sender_email
+            message["To"] = recipient_email
+            message["Subject"] = "EALS - Registration Successful"
+
+            body = (
+                f"Dear {employee_data['first_name']} {employee_data['last_name']},\n\n"
+                f"Your employee account has been successfully registered.\n\n"
+                f"Here are your details:\n"
+                f"Employee ID: {employee_data['employee_id']}\n"
+                f"Department: {employee_data['department']}\n"
+                f"Position: {employee_data['position']}\n"
+                f"Schedule: {employee_data['schedule']}\n"
+                f"Email: {employee_data['email']}\n"
+                f"Status: {employee_data['status']}\n\n"
+                f"Your default password is your surname in ALL CAPS: {employee_data['last_name'].upper()}\n"
+                f"Please change your password upon your first login for security purposes.\n\n"
+                f"This is a system-generated email. Please do not reply.\n\n"
+                f"Best regards,\nEALS System"
+            )
+            message.attach(MIMEText(body, "plain"))
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                server.login(sender_email, sender_password)
+                server.send_message(message)
+
+            self.system_logs.log_system_action(f"Welcome email sent to {recipient_email}", "Employee")
+        except Exception as e:
+            print(f"Error sending welcome email: {e}")
 
     def toggle_hr_fields(self):
         is_hr = self.admin_ui.is_hr_yes.isChecked()

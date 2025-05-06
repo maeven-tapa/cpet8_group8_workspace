@@ -16,7 +16,6 @@
   <property name="styleSheet">
    <string notr="true">QMainWindow {
     background-image: url(&quot;resources/bg2.jpg&quot;);
-	background-size: cover; 	
     background-position: center;
     background-repeat: no-repeat;
     background-color: #eef1f6
@@ -1116,7 +1115,7 @@ QToolTip {
            <string notr="true"/>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="employee_hr_page">
            <layout class="QGridLayout" name="gridLayout_40" rowstretch="12,1">
