@@ -82,7 +82,7 @@ class DatabaseConnection:
 
                 CREATE TABLE IF NOT EXISTS feedback (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    title VARCHAR(100) NOT NULL,
+                    title VARCHAR(50) NOT NULL,
                     message TEXT NOT NULL, 
                     created_by VARCHAR(20) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -286,24 +286,59 @@ class Feedback:
         title = self.feedback_ui.feedback_title_box.text().strip()
         message = self.feedback_ui.feedback_box.toPlainText().strip()
         
-        if not title or not message:
-            QMessageBox.warning(None, "Invalid Input", "Please enter both title and message.")
+        # Validate title length
+        if len(title) < 5 or len(title) > 50:
+            self.show_error("Invalid Title", "Title must be between 5 and 50 characters long.")
             return
             
+        # Validate message length
+        if len(message) < 20 or len(message) > 500:
+            self.show_error("Invalid Message", "Message must be between 20 and 500 characters long.")
+            return
+                
         try:
             self.db.execute_query('''
                 INSERT INTO feedback (title, message, created_by)
                 VALUES (?, ?, ?)
             ''', (title, message, self.hr_data["employee_id"]))
+            
             self.feedback_ui.feedback_title_box.clear()
             self.feedback_ui.feedback_box.clear()
             self.feedback_ui.close()
             self.system_logs.log_system_action(f"HR submitted feedback: {title}", "Employee")
-            QMessageBox.information(None, "Success", "Feedback submitted successfully.")
+            self.show_success( "Success", "Feedback submitted successfully.")
             
         except sqlite3.Error as e:
             print(f"Database error while saving feedback: {e}")
-            QMessageBox.critical(None, "Error", "Failed to save feedback. Please try again.")
+            self.show_error("Error", "Failed to save feedback. Please try again.")
+            
+    def show_success(self, title, message):
+        chime.theme('chime')
+        chime.success()
+        toast = Toast(self.feedback_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)  # Duration in milliseconds
+        toast.setOffset(25, 35)  
+        toast.setBorderRadius(6)  
+        toast.applyPreset(ToastPreset.SUCCESS)  
+        toast.setBackgroundColor(QColor('#FFFFFF')) 
+        toast.setPosition(ToastPosition.TOP_RIGHT)  
+        toast.show() 
+            
+    def show_error(self, title, message):
+        chime.theme('big-sur')
+        chime.warning()
+        toast = Toast(self.feedback_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)  # Duration in milliseconds
+        toast.setOffset(25, 35)  
+        toast.setBorderRadius(6)  
+        toast.applyPreset(ToastPreset.ERROR)  
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPosition(ToastPosition.TOP_RIGHT)  
+        toast.show()  
 
 class HR:
     def __init__(self, db, hr_data):
@@ -774,7 +809,6 @@ class Home:
                 self.system_logs.log_system_action("An invalid login attempt has been made.", "Employee")
         except sqlite3.Error as e:
             print(f"Database error during login: {e}")
-
 
     def prompt_password_change(self):
         dialog = QMessageBox()
