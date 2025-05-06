@@ -67,6 +67,8 @@ class DatabaseConnection:
                     last_modified_by VARCHAR(20),
                     last_modified_at TIMESTAMP,
                     attedance_count CHAR(1),
+                    late_count CHAR(2),
+                    absent_count CHAR(2),
                     FOREIGN KEY (created_by) REFERENCES Admin(admin_id),
                     FOREIGN KEY (last_modified_by) REFERENCES Admin(admin_id)
                 );
@@ -77,6 +79,7 @@ class DatabaseConnection:
                     date DATE NOT NULL,
                     time TIME NOT NULL,
                     remarks VARCHAR(10) NOT NULL,
+                    is_late BOOLEAN,
                     FOREIGN KEY (employee_id) REFERENCES Employee(employee_id)
                 );
 
@@ -1017,7 +1020,42 @@ class Home:
             if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
                 self.show_warning("Invalid Login", "You cannot log in outside your scheduled shift.")
                 return False
+
+            # --- LATE FLAGGING LOGIC START ---
+            # Assume schedule_start is the hour employee should start
+            # If current time is after schedule_start + 15 minutes, mark as late
+            
+            if self.employee_data["schedule"] == "10pm to 6am":
+                if current_hour < 6:
+                    # After midnight, so scheduled_time is yesterday at 22:00
+                    scheduled_date = (current_time - timedelta(days=1)).date()
+                else:
+                    # Before midnight, scheduled_time is today at 22:00
+                    scheduled_date = current_time.date()
+                scheduled_time = datetime.combine(scheduled_date, datetime.min.time()).replace(hour=22, minute=0, second=0, microsecond=0)
+            else:
+                scheduled_time = current_time.replace(hour=schedule_start, minute=0, second=0, microsecond=0)
+                    
+            late_threshold = scheduled_time + timedelta(minutes=15)
+            is_late = current_time > late_threshold
+
             self.employee_data["remarks"] = "Clock In"
+            self.employee_data["is_late"] = is_late
+            self.employee_data["was_late"] = is_late
+
+            if is_late:
+                # Increment late_count
+                cursor = self.db.execute_query(
+                    "SELECT late_count FROM Employee WHERE employee_id = ?",
+                    (self.employee_data["employee_id"],)
+                )
+                late_count = int(cursor.fetchone()[0] or 0) if cursor else 0
+                late_count += 1
+                self.db.execute_query(
+                    "UPDATE Employee SET late_count = ? WHERE employee_id = ?",
+                    (late_count, self.employee_data["employee_id"])
+                )
+            # --- LATE FLAGGING LOGIC END ---
 
         new_count = attendance_count + 1
         self.db.execute_query(
@@ -1115,9 +1153,11 @@ class Home:
 
             self.system_logs.log_system_action("A user logged.", "AttendanceLog")
             remarks = self.employee_data.get("remarks", "Clock In")
+            # --- LATE FLAGGING ON ATTENDANCE LOG ---
+            is_late = self.employee_data.get("is_late", False) if remarks == "Clock In" else None
             self.db.execute_query(
-                "INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)", 
-                (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), remarks)
+                "INSERT INTO attendance_logs (employee_id, date, time, remarks, is_late) VALUES (?, ?, ?, ?, ?)", 
+                (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), remarks, is_late)
             )
 
             if self.check_internet_connection():
@@ -1143,12 +1183,56 @@ class Home:
 
                 # Set a random motivational or system message
                 messages = [
-                    "You worked 2 hours extra from your scheduled hours! Great job!",
                     "Keep up the excellent work!",
                     "Your dedication is appreciated!",
                     "You are making a difference every day!",
                     "Thank you for your hard work and commitment!"
                 ]
+                # --- ADD LATE MESSAGE IF APPLICABLE ---
+                cursor = self.db.execute_query(
+                    "SELECT is_late FROM attendance_logs WHERE employee_id = ? ORDER BY date DESC, time DESC LIMIT 1",
+                    (self.employee_data["employee_id"],)
+                )
+                was_late = False
+                if cursor:
+                    result = cursor.fetchone()
+                    was_late = bool(result[0]) if result and result[0] is not None else False
+                if was_late:
+                    messages.insert(0, "You were late for your shift today. Please be punctual next time.")
+                    
+                cursor = self.db.execute_query("SELECT date, time, remarks FROM attendance_logsWHERE employee_id = ?ORDER BY date DESC, time DESCLIMIT 10",
+                (self.employee_data["employee_id"],)
+                )
+                logs = cursor.fetchall() if cursor else []
+
+                clock_in_time = None
+                clock_out_time = None
+
+                for log in logs:
+                    if log[2] == "Clock Out" and not clock_out_time:
+                        clock_out_time = datetime.strptime(f"{log[0]} {log[1]}", "%Y-%m-%d %H:%M:%S")
+                    elif log[2] == "Clock In" and not clock_in_time:
+                        clock_in_time = datetime.strptime(f"{log[0]} {log[1]}", "%Y-%m-%d %H:%M:%S")
+                    if clock_in_time and clock_out_time:
+                        break
+
+                if clock_in_time and clock_out_time:
+                    worked_hours = (clock_out_time - clock_in_time).total_seconds() / 3600
+                    if worked_hours > 8:
+                        overtime_hours = worked_hours - 8
+                        messages.insert(0, f"You worked {overtime_hours:.2f} hours extra from your scheduled hours! Great job!")
+                    elif worked_hours >= 7.5:
+                        messages.append("Almost a full shift! Keep up the consistency!")
+                    elif worked_hours < 7:
+                        messages.append("Try to complete your full shift next time. You can do it!")
+
+                # Add more encouraging messages
+                messages.extend([
+                    "Your reliability is valued by the team!",
+                    "Every extra effort counts. Thank you!",
+                    "Your positive attitude makes a difference!",
+                ])
+                    
                 random_message = random.choice(messages)
                 self.home_ui.result_message_lbl.setText(random_message)
 
