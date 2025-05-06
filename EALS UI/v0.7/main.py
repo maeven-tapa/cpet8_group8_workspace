@@ -1290,8 +1290,13 @@ class ChangePassword:
         self.change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
         self.change_pass_ui.changepass_visibility_btn.clicked.connect(self.toggle_changepass_visibility)
         self.change_pass_ui.admin_change_pass_btn.clicked.connect(self.validate_and_change_password)
+        self.change_pass_ui.admin_change_cancel_btn.clicked.connect(self.cancel_change_password)
         self.change_pass_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         self.change_pass_ui.setWindowModality(Qt.ApplicationModal)
+
+    def cancel_change_password(self):
+        self.system_logs.log_system_action(f"Password change cancelled by {self.user_type}.", "Admin" if self.user_type == "admin" else "Employee")
+        self.change_pass_ui.close()
 
     def toggle_cp_visibility(self):
         if self.cp_visible:
