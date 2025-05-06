@@ -1038,9 +1038,14 @@ class Home:
 
     def goto_bio1(self):
         if self.employee_data:
-            self.home_ui.bio1_employee_pic.setFixedSize(900, 600)
-            self.home_ui.bio1_employee_pic.setPixmap(QPixmap(self.employee_data["profile_picture"]).scaled(
-                self.home_ui.bio1_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            def update_picture():
+                pixmap = QPixmap(self.employee_data["profile_picture"])
+                pixmap = pixmap.scaled(self.home_ui.bio1_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.home_ui.bio1_employee_pic.setPixmap(pixmap)
+
+            # Delay the update to ensure the label is fully laid out
+            QTimer.singleShot(0, update_picture)
+
             self.home_ui.bio1_employee_name.setText(f"<b>Name:</b> {self.employee_data['first_name']} {self.employee_data['last_name']}")
             self.home_ui.bio1_employee_department.setText(f"<b>Department:</b> {self.employee_data['department']}")
             self.home_ui.bio1_employee_position.setText(f"<b>Position:</b> {self.employee_data['position']}")
@@ -1051,9 +1056,14 @@ class Home:
 
     def goto_bio2(self):
         if self.employee_data:
-            self.home_ui.bio2_employee_pic.setFixedSize(900, 600)
-            self.home_ui.bio2_employee_pic.setPixmap(QPixmap(self.employee_data["profile_picture"]).scaled(
-                self.home_ui.bio2_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            def update_picture():
+                pixmap = QPixmap(self.employee_data["profile_picture"])
+                pixmap = pixmap.scaled(self.home_ui.bio2_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.home_ui.bio2_employee_pic.setPixmap(pixmap)
+
+            # Delay the update to ensure the label is fully laid out
+            QTimer.singleShot(0, update_picture)
+
             self.home_ui.bio2_employee_name.setText(f"<b>Name:</b> {self.employee_data['first_name']} {self.employee_data['last_name']}")
             self.home_ui.bio2_employee_department.setText(f"<b>Department:</b> {self.employee_data['department']}")
             self.home_ui.bio2_employee_position.setText(f"<b>Position:</b> {self.employee_data['position']}")
@@ -2171,20 +2181,43 @@ class Admin:
         id_no = self.admin_ui.edit_employee_id_no.currentText()
         email = self.admin_ui.edit_employee_email.text().strip()
 
+        # Validate first name
+        if not first_name:
+            self.show_error("Validation Error", "First Name is required")
+            return False, "First Name is required"
+        if not all(part.isalpha() for part in first_name.split()):
+            self.show_error("Validation Error", "Valid First Name (letters only, multiple names allowed)")
+            return False, "Valid First Name (letters only, multiple names allowed)"
+
+        # Validate last name
+        if not last_name:
+            self.show_error("Validation Error", "Last Name is required")
+            return False, "Last Name is required"
+        if not all(part.isalpha() for part in last_name.split()):
+            self.show_error("Validation Error", "Valid Last Name (letters only, multiple names allowed)")
+            return False, "Valid Last Name (letters only, multiple names allowed)"
+
+        # Validate middle initial
+        if mi and (len(mi) > 1 or not mi.isalpha()):
+            self.show_error("Validation Error", "Valid Middle Initial (single letter only)")
+            return False, "Valid Middle Initial (single letter only)"
+
+        # Validate ID prefix
+        if not id_pref:
+            self.show_error("Validation Error", "ID Prefix is required")
+            return False, "ID Prefix is required"
+
+        # Validate gender selection
         gender = None
         if self.admin_ui.edit_employee_male.isChecked():
             gender = "Male"
         elif self.admin_ui.edit_employee_female.isChecked():
             gender = "Female"
+        if not gender:
+            self.show_error("Validation Error", "Please select a Gender")
+            return False, "Please select a Gender"
 
-        is_hr = self.admin_ui.edit_is_hr_yes.isChecked()
-
-        department = self.admin_ui.edit_employee_department_box.currentText()
-        position = self.admin_ui.edit_employee_position_box.currentText()
-        if is_hr:
-            department = "Human Resources"
-            position = "HR Staff"
-
+        # Validate schedule selection
         schedule = None
         if self.admin_ui.edit_employee_sched_1.isChecked():
             schedule = "6am to 2pm"
@@ -2192,23 +2225,17 @@ class Admin:
             schedule = "2pm to 10pm"
         elif self.admin_ui.edit_employee_sched_3.isChecked():
             schedule = "10pm to 6am"
-
-        missing_fields = []
-
-        # Validate first name and last name
-        if not first_name or not all(part.isalpha() for part in first_name.split()):
-            missing_fields.append("Valid First Name (letters only, multiple names allowed)")
-        if not last_name or not last_name.isalpha():
-            missing_fields.append("Valid Last Name (letters only)")
-
-        if not id_pref:
-            missing_fields.append("ID Prefix")
-        if not gender:
-            missing_fields.append("Gender")
         if not schedule:
-            missing_fields.append("Schedule")
-        if not email or "@" not in email or "." not in email.split("@")[-1]:
-            missing_fields.append("Valid Email Address")
+            self.show_error("Validation Error", "Please select a Schedule")
+            return False, "Please select a Schedule"
+
+        # Validate email
+        if not email:
+            self.show_error("Validation Error", "Email Address is required")
+            return False, "Email Address is required"
+        if "@" not in email or "." not in email.split("@")[1]:
+            self.show_error("Validation Error", "Valid Email Address (must contain @ and domain)")
+            return False, "Valid Email Address (must contain @ and domain)"
 
         # Validate birthday (must be at least 18 years old)
         birthday = self.admin_ui.edit_employee_birthday_edit.date().toString("yyyy-MM-dd")
@@ -2217,11 +2244,21 @@ class Admin:
             today = datetime.now()
             age = today.year - birthday_date.year - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
             if age < 18:
-                return False, "Employee must be at least 18 years old."
+                self.show_error("Validation Error", "Employee must be at least 18 years old")
+                return False, "Employee must be at least 18 years old"
         except ValueError:
-            return False, "Invalid Birthday format."
+            self.show_error("Validation Error", "Invalid Birthday format")
+            return False, "Invalid Birthday format"
 
-        # Check if the employee ID already exists (excluding the current employee)
+        is_hr = self.admin_ui.edit_is_hr_yes.isChecked()
+        department = self.admin_ui.edit_employee_department_box.currentText()
+        position = self.admin_ui.edit_employee_position_box.currentText()
+        
+        if is_hr:
+            department = "Human Resources"
+            position = "HR Staff"
+
+        # Check for existing employee ID
         employee_id = f"{id_pref}-{id_year}-{id_no}"
         try:
             cursor = self.db.execute_query(
@@ -2229,21 +2266,20 @@ class Admin:
                 (employee_id, self.current_employee_data["employee_id"])
             )
             if cursor.fetchone():
-                return False, f"Employee ID {employee_id} already exists in the database."
+                self.show_error("Validation Error", f"Employee ID {employee_id} already exists in the database")
+                return False, f"Employee ID {employee_id} already exists in the database"
 
-            # Check if the name already exists (excluding the current employee)
+            # Check for existing name
             cursor = self.db.execute_query(
                 "SELECT first_name, last_name FROM Employee WHERE first_name = ? AND last_name = ? AND employee_id != ?",
                 (first_name, last_name, self.current_employee_data["employee_id"])
             )
             if cursor.fetchone():
-                return False, f"An employee with the name {first_name} {last_name} already exists in the database."
+                self.show_error("Validation Error", f"An employee with the name {first_name} {last_name} already exists")
+                return False, f"An employee with the name {first_name} {last_name} already exists"
         except sqlite3.Error as e:
-            print(f"Database error during validation: {e}")
-            return False, "An error occurred while validating the data. Please try again."
-
-        if missing_fields:
-            return False, f"Please fill in the following required fields: {', '.join(missing_fields)}"
+            self.show_error("Database Error", "An error occurred while validating the data")
+            return False, "Database error during validation"
 
         status = "Active"
         if self.selected_employee_type == "employee":
@@ -2268,7 +2304,7 @@ class Admin:
             "is_hr": is_hr,
             "status": status,
             "profile_picture": self.current_employee_data.get('profile_picture', ''),
-            "email": email  # Add email to the employee_data dictionary
+            "email": email
         }
 
         return True, employee_data
@@ -2367,21 +2403,43 @@ class Admin:
         profile_picture = self.current_employee_data.get('profile_picture', '')
         email = self.admin_ui.employee_email.text().strip()
 
+        # Validate first name
+        if not first_name:
+            self.show_error("Validation Error", "First Name is required")
+            return False, "First Name is required"
+        if not all(part.isalpha() for part in first_name.split()):
+            self.show_error("Validation Error", "Valid First Name (letters only, multiple names allowed)")
+            return False, "Valid First Name (letters only, multiple names allowed)"
+
+        # Validate last name
+        if not last_name:
+            self.show_error("Validation Error", "Last Name is required")
+            return False, "Last Name is required"
+        if not all(part.isalpha() for part in last_name.split()):
+            self.show_error("Validation Error", "Valid Last Name (letters only, multiple names allowed)")
+            return False, "Valid Last Name (letters only, multiple names allowed)"
+
+        # Validate middle initial
+        if mi and (len(mi) > 1 or not mi.isalpha()):
+            self.show_error("Validation Error", "Valid Middle Initial (single letter only)")
+            return False, "Valid Middle Initial (single letter only)"
+
+        # Validate ID prefix
+        if not id_pref:
+            self.show_error("Validation Error", "ID Prefix is required")
+            return False, "ID Prefix is required"
+
+        # Validate gender selection
         gender = None
         if self.admin_ui.employee_male.isChecked():
             gender = "Male"
         elif self.admin_ui.employee_female.isChecked():
             gender = "Female"
+        if not gender:
+            self.show_error("Validation Error", "Please select a Gender")
+            return False, "Please select a Gender"
 
-        is_hr = self.admin_ui.is_hr_yes.isChecked()
-
-        department = self.admin_ui.employee_department_box.currentText()
-        position = self.admin_ui.employee_position_box.currentText()
-
-        if is_hr:
-            department = "Human Resources"
-            position = "HR Staff"
-
+        # Validate schedule selection
         schedule = None
         if self.admin_ui.employee_sched_1.isChecked():
             schedule = "6am to 2pm"
@@ -2389,25 +2447,22 @@ class Admin:
             schedule = "2pm to 10pm"
         elif self.admin_ui.employee_sched_3.isChecked():
             schedule = "10pm to 6am"
-
-        missing_fields = []
-
-        # Validate first name and last name
-        if not first_name or not all(part.isalpha() for part in first_name.split()):
-            missing_fields.append("Valid First Name (letters only, multiple names allowed)")
-        if not last_name or not all(part.isalpha() for part in last_name.split()):
-            missing_fields.append("Valid Last Name (letters only, multiple names allowed)")
-
-        if not id_pref:
-            missing_fields.append("ID Prefix")
-        if not gender:
-            missing_fields.append("Gender")
         if not schedule:
-            missing_fields.append("Schedule")
+            self.show_error("Validation Error", "Please select a Schedule")
+            return False, "Please select a Schedule"
+
+        # Validate profile picture
         if not profile_picture:
-            missing_fields.append("Profile Picture")
-        if not email or "@" not in email or "." not in email.split("@")[-1]:
-            missing_fields.append("Valid Email Address")
+            self.show_error("Validation Error", "Profile Picture is required")
+            return False, "Profile Picture is required"
+
+        # Validate email
+        if not email:
+            self.show_error("Validation Error", "Email Address is required")
+            return False, "Email Address is required"
+        if "@" not in email or "." not in email.split("@")[1]:
+            self.show_error("Validation Error", "Valid Email Address (must contain @ and domain)")
+            return False, "Valid Email Address (must contain @ and domain)"
 
         # Validate birthday (must be at least 18 years old)
         birthday = self.admin_ui.employee_birthday_edit.date().toString("yyyy-MM-dd")
@@ -2416,17 +2471,27 @@ class Admin:
             today = datetime.now()
             age = today.year - birthday_date.year - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
             if age < 18:
-                return False, "Employee must be at least 18 years old."
+                self.show_error("Validation Error", "Employee must be at least 18 years old")
+                return False, "Employee must be at least 18 years old"
         except ValueError:
-            return False, "Invalid Birthday format."
+            self.show_error("Validation Error", "Invalid Birthday format")
+            return False, "Invalid Birthday format"
 
+        is_hr = self.admin_ui.is_hr_yes.isChecked()
+        department = self.admin_ui.employee_department_box.currentText()
+        position = self.admin_ui.employee_position_box.currentText()
+
+        if is_hr:
+            department = "Human Resources"
+            position = "HR Staff"
 
         # Check if the employee ID already exists
         employee_id = f"{id_pref}-{id_year}-{id_no}"
         try:
             cursor = self.db.execute_query("SELECT employee_id FROM Employee WHERE employee_id = ?", (employee_id,))
             if cursor.fetchone():
-                return False, f"Employee ID {employee_id} already exists in the database."
+                self.show_error("Validation Error", f"Employee ID {employee_id} already exists in the database")
+                return False, f"Employee ID {employee_id} already exists in the database"
 
             # Check if the name already exists
             cursor = self.db.execute_query(
@@ -2434,14 +2499,12 @@ class Admin:
                 (first_name, last_name)
             )
             if cursor.fetchone():
-                return False, f"An employee with the name {first_name} {last_name} already exists in the database."
+                self.show_error("Validation Error", f"An employee with the name {first_name} {last_name} already exists")
+                return False, f"An employee with the name {first_name} {last_name} already exists"
         except sqlite3.Error as e:
-            print(f"Database error during validation: {e}")
-            return False, "An error occurred while validating the data. Please try again."
+            self.show_error("Database Error", "An error occurred while validating the data")
+            return False, "Database error during validation"
 
-        if missing_fields:
-            return False, f"Please fill in the following required fields: {', '.join(missing_fields)}"
-        
         password = ' '.join(word.upper() for word in last_name.split())
         hashed_password = PASSWORD_HASHER.hash(password)
 
@@ -2458,7 +2521,7 @@ class Admin:
             "schedule": schedule,
             "is_hr": is_hr,
             "status": "Active",
-            "password_changed": False,  # Add this line
+            "password_changed": False,
             "profile_picture": profile_picture,
             "email": email
         }
@@ -2718,8 +2781,6 @@ class Admin:
         if valid:
             self.current_employee_data = result
             self.goto_employee_enroll_2()
-        else:
-            self.show_error("Enrollment Error", "Validation Error.")
 
     def finalize_employee_enrollment(self):
         if hasattr(self, 'current_employee_data'):
@@ -2831,12 +2892,16 @@ class Admin:
             self.current_employee_data['profile_picture'] = file_path
 
     def display_picture(self, label, picture_path):
-        if (picture_path and os.path.exists(picture_path)) or picture_path.startswith(":/"):
-            pixmap = QPixmap(picture_path)
-            pixmap = pixmap.scaled(170, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            label.setPixmap(pixmap)
-        else:
-            label.setPixmap(QPixmap())
+        def update_picture():
+            if picture_path and os.path.exists(picture_path):
+                pixmap = QPixmap(picture_path)
+                pixmap = pixmap.scaled(label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                label.setPixmap(pixmap)
+            else:
+                label.clear()
+
+        # Delay the update to ensure the label is fully laid out
+        QTimer.singleShot(0, update_picture)
 
     def clear_employee_enrollment_fields(self):
         self.admin_ui.enroll_employee_picture.clear()
