@@ -728,6 +728,11 @@ class Home:
             employee_result = cursor.fetchone() if cursor else None
 
             if employee_result:
+                if employee_result[10] == "Inactive":
+                    self.show_error("Invalid credentials", "Please enter valid employee ID and password")
+                    self.system_logs.log_system_action("An inactive employee attempted to log in.", "Employee")
+                    return
+                    
                 employee_data = {
                     "employee_id": employee_result[0],
                     "first_name": employee_result[1],
