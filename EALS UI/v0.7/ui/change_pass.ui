@@ -595,15 +595,20 @@ QLineEdit:focus {
        </widget>
       </item>
       <item row="2" column="0" colspan="2">
-       <widget class="QPushButton" name="admin_change_pass_btn">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+       <layout class="QGridLayout" name="gridLayout_7" columnstretch="2,1,1">
+        <property name="horizontalSpacing">
+         <number>6</number>
         </property>
-        <property name="styleSheet">
-         <string notr="true">    QPushButton {
+        <item row="0" column="2">
+         <widget class="QPushButton" name="admin_change_pass_btn">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">    QPushButton {
   		background-color: rgb(0, 122, 255);
 		color: rgb(255, 255, 255);
         border: none;
@@ -619,11 +624,57 @@ QLineEdit:focus {
 	background-color: rgb(0, 113, 234);
 		color: rgb(255, 255, 255);
     }</string>
-        </property>
-        <property name="text">
-         <string>Ok</string>
-        </property>
-       </widget>
+          </property>
+          <property name="text">
+           <string>Proceed/Confirm</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="admin_change_cancel_btn">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">    QPushButton {
+	color: rgb(0, 120, 250);
+        border: none;
+        border-radius: 6px;
+        padding: 8px 18px;
+        font-weight: 600;
+    }
+    QPushButton:hover {
+		background-color: rgb(251, 251, 251);
+		color: rgb(0, 120, 250);
+		text-decoration: underline;
+    }
+    QPushButton:pressed {
+		background-color: rgb(0, 122, 255);
+		color: rgb(255, 255, 255);
+    }</string>
+          </property>
+          <property name="text">
+           <string>Cancel</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>

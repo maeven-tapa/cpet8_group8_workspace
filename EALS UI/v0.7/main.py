@@ -522,7 +522,7 @@ class HR:
         self.display_picture(self.hr_ui.hr_view_employee_picture, employee_data['profile_picture'])
         
     def display_picture(self, label, picture_path):
-        if picture_path and os.path.exists(picture_path):
+        if (picture_path and os.path.exists(picture_path)):
             pixmap = QPixmap(picture_path)
             pixmap = pixmap.scaled(170, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             label.setPixmap(pixmap)
@@ -781,6 +781,7 @@ class Home:
                     "is_hr": employee_result[9],
                     "password_changed": employee_result[12],
                     "profile_picture": employee_result[13],
+                    "email": employee_result[14],
                 }
                 
                 db_password = employee_result[11]
@@ -1072,74 +1073,118 @@ class Home:
         bio2_page = self.home_ui.main_page.indexOf(self.home_ui.bio2_page)
         self.home_ui.main_page.setCurrentIndex(bio2_page)
 
+    def send_attendance_email(self, employee_data, current_time, remarks):
+        try:
+            sender_email = "eals.tupc@gmail.com"
+            sender_password = "buwl tszg dghr exln"  # App-specific password
+            recipient_email = employee_data["email"]
+
+            message = MIMEMultipart()
+            message["From"] = sender_email
+            message["To"] = recipient_email
+            message["Subject"] = f"EALS Attendance Record: {remarks}"
+
+            formatted_time = current_time.strftime("%B %d, %Y at %I:%M:%S %p")
+            body = (
+                f"Dear {employee_data['first_name']} {employee_data['last_name']},\n\n"
+                f"This email confirms that you have {remarks.lower()}ed on {formatted_time}.\n\n"
+                f"Details:\n"
+                f"Employee ID: {employee_data['employee_id']}\n"
+                f"Department: {employee_data['department']}\n"
+                f"Position: {employee_data['position']}\n"
+                f"Schedule: {employee_data['schedule']}\n\n"
+                f"This is a system-generated email. Please do not reply.\n\n"
+                f"Best regards,\nEALS System"
+            )
+            message.attach(MIMEText(body, "plain"))
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                server.login(sender_email, sender_password)
+                server.send_message(message)
+
+            self.system_logs.log_system_action(f"Attendance email sent to {recipient_email}", "Employee")
+            return True
+        except Exception as e:
+            print(f"Error sending attendance email: {e}")
+            return False
+
     def goto_result_prompt(self):
         if self.employee_data:
             current_time = datetime.now()
             current_date = current_time.strftime("%Y-%m-%d")
 
-            # Log attendance
             self.system_logs.log_system_action("A user logged.", "AttendanceLog")
+            remarks = self.employee_data.get("remarks", "Clock In")
             self.db.execute_query(
                 "INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)", 
-                (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), self.employee_data.get("remarks", "Clock In"))
+                (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), remarks)
             )
 
-            hour = current_time.hour
-            if 5 <= hour < 12:
-                greeting = "Good Morning"
-            elif 12 <= hour < 18:
-                greeting = "Good Afternoon"
-            else:
-                greeting = "Good Evening"
-            self.home_ui.result_greetings_lbl.setText(f"{greeting}, {self.employee_data['first_name']}!")
+            if self.check_internet_connection():
+                self.send_attendance_email(self.employee_data, current_time, remarks)
+                self.show_success("Email Notification", "Attendance email notification has been sent.")
+            
+            # Rest of the existing code
+            if self.employee_data:
+                current_time = datetime.now()
+                current_date = current_time.strftime("%Y-%m-%d")
 
-            # Set a random motivational or system message
-            messages = [
-                "You worked 2 hours extra from your scheduled hours! Great job!",
-                "Keep up the excellent work!",
-                "Your dedication is appreciated!",
-                "You are making a difference every day!",
-                "Thank you for your hard work and commitment!"
-            ]
-            random_message = random.choice(messages)
-            self.home_ui.result_message_lbl.setText(random_message)
+                hour = current_time.hour
+                if 5 <= hour < 12:
+                    greeting = "Good Morning"
+                elif 12 <= hour < 18:
+                    greeting = "Good Afternoon"
+                else:
+                    greeting = "Good Evening"
+                self.home_ui.result_greetings_lbl.setText(f"{greeting}, {self.employee_data['first_name']}!")
 
-            try:
-                cursor = self.db.execute_query(
-                    "SELECT remarks, date, time FROM attendance_logs WHERE employee_id = ?", 
-                    (self.employee_data["employee_id"],)
-                )
-                logs = cursor.fetchall() if cursor else []
+                # Set a random motivational or system message
+                messages = [
+                    "You worked 2 hours extra from your scheduled hours! Great job!",
+                    "Keep up the excellent work!",
+                    "Your dedication is appreciated!",
+                    "You are making a difference every day!",
+                    "Thank you for your hard work and commitment!"
+                ]
+                random_message = random.choice(messages)
+                self.home_ui.result_message_lbl.setText(random_message)
 
-                self.home_ui.result_employee_attendance_tbl.setRowCount(0)
-                for log in logs:
-                    row_position = self.home_ui.result_employee_attendance_tbl.rowCount()
-                    self.home_ui.result_employee_attendance_tbl.insertRow(row_position)
+                try:
+                    cursor = self.db.execute_query(
+                        "SELECT remarks, date, time FROM attendance_logs WHERE employee_id = ?", 
+                        (self.employee_data["employee_id"],)
+                    )
+                    logs = cursor.fetchall() if cursor else []
 
-                    remarks_item = QTableWidgetItem(log[0])
-                    date_item = QTableWidgetItem(log[1])
-                    time_item = QTableWidgetItem(log[2])
+                    self.home_ui.result_employee_attendance_tbl.setRowCount(0)
+                    for log in logs:
+                        row_position = self.home_ui.result_employee_attendance_tbl.rowCount()
+                        self.home_ui.result_employee_attendance_tbl.insertRow(row_position)
 
-                    remarks_item.setFlags(remarks_item.flags() & ~Qt.ItemIsEditable)
-                    date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
-                    time_item.setFlags(time_item.flags() & ~Qt.ItemIsEditable)
+                        remarks_item = QTableWidgetItem(log[0])
+                        date_item = QTableWidgetItem(log[1])
+                        time_item = QTableWidgetItem(log[2])
 
-                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 0, remarks_item)
-                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 1, date_item)
-                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 2, time_item)
+                        remarks_item.setFlags(remarks_item.flags() & ~Qt.ItemIsEditable)
+                        date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
+                        time_item.setFlags(time_item.flags() & ~Qt.ItemIsEditable)
 
-                self.home_ui.result_employee_attendance_tbl.resizeColumnsToContents()
-            except sqlite3.Error as e:
-                print(f"Database error while loading attendance logs: {e}")
+                        self.home_ui.result_employee_attendance_tbl.setItem(row_position, 0, remarks_item)
+                        self.home_ui.result_employee_attendance_tbl.setItem(row_position, 1, date_item)
+                        self.home_ui.result_employee_attendance_tbl.setItem(row_position, 2, time_item)
 
-        result_prompt = self.home_ui.main_page.indexOf(self.home_ui.result_page)
-        self.home_ui.main_page.setCurrentIndex(result_prompt)
-        self.home_ui.home_id_box.clear() 
-        self.home_ui.home_pass_box.clear()
-        self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
+                    self.home_ui.result_employee_attendance_tbl.resizeColumnsToContents()
+                except sqlite3.Error as e:
+                    print(f"Database error while loading attendance logs: {e}")
 
-        # Automatically return to the home page after 5 seconds
-        threading.Timer(5.0, lambda: self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)).start()
+            result_prompt = self.home_ui.main_page.indexOf(self.home_ui.result_page)
+            self.home_ui.main_page.setCurrentIndex(result_prompt)
+            self.home_ui.home_id_box.clear() 
+            self.home_ui.home_pass_box.clear()
+            self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
+
+            # Automatically return to the home page after 5 seconds
+            QTimer.singleShot(5000, lambda: self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page))
 
     def parse_schedule(self, schedule):
         
@@ -1279,6 +1324,9 @@ class Home:
     def goto_home_page(self):
         self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
 
+    def send_email_notif(self):
+        pass
+    
 class ChangePassword:
     def __init__(self, db, user_id, user_type="admin"):
         self.db = db
