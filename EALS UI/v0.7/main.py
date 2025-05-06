@@ -1236,13 +1236,7 @@ class Home:
 
     def goto_forgot_password(self):
         if not self.check_internet_connection():
-            QMessageBox.warning(
-                None,
-                "No Internet Connection",
-                "The Forgot Password feature requires an active internet connection. Please check your connection and try again.",
-                QMessageBox.Ok
-            )
-            return
+            return  
 
         self.forgot_password = ForgotPassword(self.db)
         self.forgot_password.forgot_pass_ui.show()
@@ -1253,6 +1247,18 @@ class Home:
             socket.create_connection(("8.8.8.8", 53), timeout=5)
             return True
         except OSError:
+            toast = Toast(self.home_ui)
+            toast.setTitle("No Internet Connection")
+            toast.setText("Please check your internet connection and try again.")
+            toast.setOffset(40, 45)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.ERROR)
+            toast.setBackgroundColor(QColor('#ffb7b6'))
+            toast.setPositionRelativeToWidget(self.home_ui.home_page)
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.setShowDurationBar(False)
+            toast.setDuration(0)
+            toast.show()
             return False
 
     def check_initial_setup(self):
