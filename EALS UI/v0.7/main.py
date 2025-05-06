@@ -1121,8 +1121,11 @@ class Home:
             )
 
             if self.check_internet_connection():
-                self.send_attendance_email(self.employee_data, current_time, remarks)
-                self.show_success("Email Notification", "Attendance email notification has been sent.")
+                self.show_success("Email Notification", "Attendance email notification is being sent.")
+                threading.Thread(
+                    target=lambda: self.send_attendance_email(self.employee_data, current_time, remarks),
+                    daemon=True
+                ).start()
             
             # Rest of the existing code
             if self.employee_data:
@@ -1295,7 +1298,7 @@ class Home:
             toast = Toast(self.home_ui)
             toast.setTitle("No Internet Connection")
             toast.setText("Please check your internet connection and try again.")
-            toast.setOffset(40, 45)
+            toast.setOffset(30, 70)
             toast.setBorderRadius(6)
             toast.applyPreset(ToastPreset.ERROR)
             toast.setBackgroundColor(QColor('#ffb7b6'))
