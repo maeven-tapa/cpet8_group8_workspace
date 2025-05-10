@@ -8,10 +8,10 @@ import smtplib
 import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from PySide6.QtWidgets import QApplication,QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit
+from PySide6.QtWidgets import QApplication,QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit,QVBoxLayout
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QDate, QCoreApplication, QProcess, QTimer, QRegularExpression
-from PySide6.QtGui import QPixmap, QRegularExpressionValidator, QIcon, QColor 
+from PySide6.QtGui import QPixmap, QRegularExpressionValidator, QIcon, QColor, QPainter
 from datetime import datetime, timedelta
 from pyqttoast import Toast, ToastPreset, ToastPosition
 import argon2
@@ -115,6 +115,9 @@ class DatabaseConnection:
                     last_modified_at TIMESTAMP,
                     entity_started VARCHAR(20), -- ID of the entity that initiated the action
                     stopped_to_the_entity VARCHAR(20), -- ID of the entity where the action stopped
+                    present_count INTEGER DEFAULT 0,
+                    absent_count INTEGER DEFAULT 0,
+                    late_count INTEGER DEFAULT 0,
                     FOREIGN KEY (entity_started) REFERENCES Employee(employee_id),
                     FOREIGN KEY (entity_started) REFERENCES Admin(admin_id),
                     FOREIGN KEY (entity_started) REFERENCES Feedback(id),
@@ -216,8 +219,35 @@ class SystemLogs:
                 entity_id = entity_type
 
             today = datetime.now().strftime('%Y-%m-%d')
+            present_count = 0
+            absent_count = 0
+            late_count = 0
+            try:
+                # Present: employees who have attendance log today
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
+                    (today,)
+                )
+                present_count = cursor.fetchone()[0] if cursor else 0
+
+                # Late: employees who have is_late=1 today
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs WHERE date = ? AND is_late = 1 AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
+                    (today,)
+                )
+                late_count = cursor.fetchone()[0] if cursor else 0
+
+                # Absent: active employees with no attendance log today
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND employee_id NOT IN (SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)",
+                    (today,)
+                )
+                absent_count = cursor.fetchone()[0] if cursor else 0
+            except Exception as e:
+                print(f"Error computing attendance counts for system logs: {e}")
+
             cursor = self.db.execute_query(
-                "SELECT id FROM system_logs WHERE DATE(created_at) = ?",
+                "SELECT id FROM system_logs WHERE date(created_at) = ?",
                 (today,)
             )
             existing_log = cursor.fetchone()
@@ -227,18 +257,21 @@ class SystemLogs:
                     '''
                     UPDATE system_logs
                     SET last_modified_at = ?, 
-                        stopped_to_the_entity = ?
+                        stopped_to_the_entity = ?,
+                        present_count = ?, 
+                        absent_count = ?, 
+                        late_count = ?
                     WHERE id = ?
                     ''',
-                    (current_time, entity_id, existing_log[0])
+                    (current_time, entity_id, present_count, absent_count, late_count, existing_log[0])
                 )
             else:
                 self.db.execute_query(
                     '''
-                    INSERT INTO system_logs (path, created_at, last_modified_at, entity_started, stopped_to_the_entity)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO system_logs (path, created_at, last_modified_at, entity_started, stopped_to_the_entity, present_count, absent_count, late_count)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ''',
-                    (log_file, current_time, current_time, entity_id, entity_id)
+                    (log_file, current_time, current_time, entity_id, entity_id, present_count, absent_count, late_count)
                 )
 
         except Exception as e:
@@ -400,7 +433,7 @@ class HR:
 
             cursor = self.db.execute_query(
                 "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs "
-                "WHERE date = ? AND remarks = 'late' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
+                "WHERE date = ? AND is_late = 1 AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
                 (today_date,)
             )
             late_employees = cursor.fetchone()[0] if cursor else 0
@@ -1905,6 +1938,22 @@ class Admin:
         self.load_backup_configuration()
         self.check_net()
         
+        self.admin_ui.dashboard_pages.setCurrentWidget(self.admin_ui.db_page_1)
+        self.admin_ui.dashboard_nav_btn.setText("Next")
+        self.admin_ui.dashboard_nav_btn.clicked.connect(self.handle_dashboard_nav)
+        
+    
+
+    def handle_dashboard_nav(self):
+        """Navigate between dashboard pages and update button text."""
+        current_widget = self.admin_ui.dashboard_pages.currentWidget()
+        if current_widget == self.admin_ui.db_page_1:
+            self.admin_ui.dashboard_pages.setCurrentWidget(self.admin_ui.db_page_2)
+            self.admin_ui.dashboard_nav_btn.setText("Back")
+        else:
+            self.admin_ui.dashboard_pages.setCurrentWidget(self.admin_ui.db_page_1)
+            self.admin_ui.dashboard_nav_btn.setText("Next")
+        
     def get_current_admin(self):
         try:
             cursor = self.db.execute_query("SELECT admin_id FROM Admin LIMIT 1")
@@ -1925,6 +1974,26 @@ class Admin:
         log_files = [f for f in os.listdir(log_dir) if os.path.isfile(os.path.join(log_dir, f))]
         self.admin_ui.system_log_list.addItems(log_files)
 
+        # --- Load summary table for present/absent/late counts ---
+        try:
+            cursor = self.db.execute_query(
+                "SELECT created_at, present_count, absent_count, late_count FROM system_logs ORDER BY created_at DESC"
+            )
+            logs = cursor.fetchall() if cursor else []
+            # Assume you have a QTableWidget named system_log_summary_tbl with 4 columns: Date, Present, Absent, Late
+            if hasattr(self.admin_ui, "system_log_summary_tbl"):
+                tbl = self.admin_ui.system_log_summary_tbl
+                tbl.setRowCount(0)
+                for log in logs:
+                    row = tbl.rowCount()
+                    tbl.insertRow(row)
+                    for col, val in enumerate(log):
+                        item = QTableWidgetItem(str(val))
+                        item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                        tbl.setItem(row, col, item)
+        except Exception as e:
+            print(f"Error loading system log summary: {e}")
+
     def display_selected_log(self):
         self.system_logs.log_system_action("A log file has been displayed.", "SystemSettings")
         selected_log = self.admin_ui.system_log_list.currentText()
@@ -1935,6 +2004,19 @@ class Admin:
             try:
                 with open(log_path, "r") as file:
                     content = file.read()
+                    # --- Append attendance summary if available ---
+                    cursor = self.db.execute_query(
+                        "SELECT present_count, absent_count, late_count FROM system_logs WHERE path = ? ORDER BY created_at DESC LIMIT 1",
+                        (log_path,)
+                    )
+                    summary = cursor.fetchone() if cursor else None
+                    if summary:
+                        content += (
+                            f"\n\n--- Attendance Summary ---\n"
+                            f"Present: {summary[0]}\n"
+                            f"Absent: {summary[1]}\n"
+                            f"Late: {summary[2]}"
+                        )
                     self.admin_ui.system_log_browser.setText(content)
             except Exception as e:
                 print(f"Error reading log file {log_path}: {e}")
@@ -3008,7 +3090,7 @@ class Admin:
 
             cursor = self.db.execute_query(
                 "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs "
-                "WHERE date = ? AND remarks = 'late' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
+                "WHERE date = ? AND is_late = 1 AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
                 (today_date,)
             )
             late_employees = cursor.fetchone()[0] if cursor else 0
