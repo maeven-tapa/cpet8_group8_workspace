@@ -8,7 +8,7 @@ import smtplib
 import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from PySide6.QtWidgets import QApplication,QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit,QVBoxLayout
+from PySide6.QtWidgets import QApplication,QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit,QVBoxLayout, QPushButton, QRadioButton, QWidget, QHBoxLayout, QLabel, QListWidget, QListWidgetItem  # add QListWidget, QListWidgetItem
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QDate, QCoreApplication, QProcess, QTimer, QRegularExpression
 from PySide6.QtGui import QPixmap, QRegularExpressionValidator, QIcon, QColor, QPainter
@@ -19,6 +19,7 @@ import secrets
 import string
 import chime
 from PySide6.QtCharts import QChart, QChartView, QAreaSeries, QLineSeries, QValueAxis, QCategoryAxis, QBarSeries, QBarSet, QPieSeries
+import json  # For template saving/loading
 
 PASSWORD_HASHER = argon2.PasswordHasher()
 
@@ -88,6 +89,23 @@ class DatabaseConnection:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title VARCHAR(50) NOT NULL,
                     message TEXT NOT NULL, 
+                    created_by VARCHAR(20) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (created_by) REFERENCES Employee(employee_id)
+                );
+                
+                CREATE TABLE IF NOT EXISTS announcements (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    subject VARCHAR(100) NOT NULL,
+                    message TEXT NOT NULL,
+                    sending_type VARCHAR(20) NOT NULL,
+                    involved_employee VARCHAR(20),
+                    schedule_enabled BOOLEAN DEFAULT FALSE,
+                    schedule_frequency INTEGER,
+                    theme_enabled BOOLEAN DEFAULT FALSE,
+                    theme_type VARCHAR(50),
+                    attached_files_count INTEGER,
+                    files_path TEXT,
                     created_by VARCHAR(20) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (created_by) REFERENCES Employee(employee_id)
@@ -485,6 +503,8 @@ class HR:
             self.hr_ui.chart_layout3.addWidget(self.pie_chart_view, 0, 0)
         # --- END HR CHARTS SETUP ---
 
+        self.announcement = Announcement(db, hr_data, self.hr_ui)
+
     # --- HR CHARTS LOGIC (copied and adapted from Admin) ---
     def setup_attendance_area_chart(self):
         self.chart = QChart()
@@ -730,8 +750,6 @@ class HR:
                 absent_slice.setLabelVisible(True)
         except Exception as e:
             print(f"Error updating HR attendance pie chart: {e}")
-
-    # ...existing code...
 
     def show_feedback_form(self):
         self.system_logs.log_system_action("HR opened feedback form", "Employee")
@@ -4275,6 +4293,372 @@ class Admin:
                 absent_slice.setLabelVisible(True)
         except Exception as e:
             print(f"Error updating attendance pie chart: {e}")
+
+class Announcement:
+    def __init__(self, db, hr_data, hr_ui):
+        self.db = db
+        self.hr_data = hr_data
+        self.hr_ui = hr_ui
+        self.attachments = []
+
+        # Connect UI elements
+        self.hr_ui.employee_send_all_btn.toggled.connect(self.toggle_send_all)
+        self.hr_ui.employee_choose_btn.toggled.connect(self.toggle_choose_employee)
+        self.hr_ui.email_employee_search_box.textChanged.connect(self.filter_employee_table)
+        self.hr_ui.email_employee_sort_box.currentIndexChanged.connect(self.sort_employee_table)
+        self.hr_ui.save_as_template_btn.clicked.connect(self.save_as_template)
+        self.hr_ui.import_btn.clicked.connect(self.import_template)
+        self.hr_ui.attach_btn.clicked.connect(self.attach_files)
+        self.hr_ui.send_email_btn.clicked.connect(self.send_announcement_email)
+
+        self.radio_buttons = []  # Track radio buttons for single selection
+
+        self.load_employee_table()
+        self.toggle_send_all()  # Set initial state
+
+        # --- Scheduled emails UI connections ---
+        self.hr_ui.sched_email_search_box.textChanged.connect(self.filter_sched_email_table)
+        self.hr_ui.sched_email_sort_box.currentIndexChanged.connect(self.sort_sched_email_table)
+        self.load_sched_email_table()
+
+        # Ensure table is only enabled when choose is checked
+        self.hr_ui.selectable_employee_list_tbl.setEnabled(self.hr_ui.employee_choose_btn.isChecked())
+        self.hr_ui.employee_choose_btn.toggled.connect(self.toggle_choose_employee)
+
+    def toggle_send_all(self):
+        # If send all is checked, disable table
+        self.hr_ui.selectable_employee_list_tbl.setDisabled(self.hr_ui.employee_send_all_btn.isChecked())
+        # If send all is checked, also unselect all radios
+        if self.hr_ui.employee_send_all_btn.isChecked():
+            for radio in self.radio_buttons:
+                radio.setChecked(False)
+
+    def toggle_choose_employee(self):
+        # Only enable table if choose is checked
+        enabled = self.hr_ui.employee_choose_btn.isChecked()
+        self.hr_ui.selectable_employee_list_tbl.setEnabled(enabled)
+        if not enabled:
+            for radio in self.radio_buttons:
+                radio.setChecked(False)
+
+    # --- Scheduled Emails Table Logic ---
+    def load_sched_email_table(self):
+        tbl = self.hr_ui.sched_email_list_tbl
+        tbl.setRowCount(0)
+        # Only announcements with schedule_enabled=1
+        cursor = self.db.execute_query(
+            "SELECT subject, created_at, schedule_frequency FROM announcements WHERE schedule_enabled = 1 ORDER BY created_at DESC"
+        )
+        self.sched_email_entries = cursor.fetchall() if cursor else []
+        for entry in self.sched_email_entries:
+            row = tbl.rowCount()
+            tbl.insertRow(row)
+            tbl.setItem(row, 0, QTableWidgetItem(entry[0]))  # Subject
+            tbl.setItem(row, 1, QTableWidgetItem(str(entry[1])))  # Created at
+            tbl.setItem(row, 2, QTableWidgetItem(str(entry[2])))  # Frequency
+        tbl.resizeColumnsToContents()
+
+    def filter_sched_email_table(self):
+        search_text = self.hr_ui.sched_email_search_box.text().lower()
+        tbl = self.hr_ui.sched_email_list_tbl
+        for row in range(tbl.rowCount()):
+            show = False
+            for col in range(tbl.columnCount()):
+                item = tbl.item(row, col)
+                if item and search_text in item.text().lower():
+                    show = True
+                    break
+            tbl.setRowHidden(row, not show)
+
+    def sort_sched_email_table(self):
+        sort_option = self.hr_ui.sched_email_sort_box.currentText()
+        tbl = self.hr_ui.sched_email_list_tbl
+        # Gather all rows
+        rows = []
+        for row in range(tbl.rowCount()):
+            row_data = [tbl.item(row, col).text() if tbl.item(row, col) else "" for col in range(tbl.columnCount())]
+            rows.append(row_data)
+        # Sort
+        if sort_option == "By Subject:":
+            rows.sort(key=lambda x: x[0].lower())
+        elif sort_option == "By Created Date:":
+            rows.sort(key=lambda x: x[1], reverse=True)
+        elif sort_option == "By Frequency:":
+            rows.sort(key=lambda x: x[2].lower())
+        # Repopulate
+        tbl.setRowCount(0)
+        for row_data in rows:
+            row = tbl.rowCount()
+            tbl.insertRow(row)
+            for col, val in enumerate(row_data):
+                tbl.setItem(row, col, QTableWidgetItem(val))
+        tbl.resizeColumnsToContents()
+
+    def load_employee_table(self):
+        # Load all employees into selectable_employee_list_tbl
+        cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
+        employees = cursor.fetchall() if cursor else []
+        tbl = self.hr_ui.selectable_employee_list_tbl
+        tbl.setRowCount(0)
+        self.employee_list = []
+        self.radio_buttons = []
+        for emp in employees:
+            emp_data = {
+                "employee_id": emp[0],
+                "first_name": emp[1],
+                "last_name": emp[2],
+                "middle_initial": emp[3],
+                "department": emp[4],
+                "position": emp[5]
+            }
+            self.employee_list.append(emp_data)
+            row = tbl.rowCount()
+            tbl.insertRow(row)
+            # Add radio button for selection
+            radio = QRadioButton()
+            radio.setStyleSheet("background-color: white;")  # Set white background
+            radio.toggled.connect(lambda checked, r=row: self.handle_radio_selected(r, checked))
+            self.radio_buttons.append(radio)
+            tbl.setCellWidget(row, 0, radio)
+            # Name
+            mi = f" {emp_data['middle_initial']}." if emp_data['middle_initial'] else ""
+            name = f"{emp_data['last_name']}, {emp_data['first_name']}{mi}"
+            tbl.setItem(row, 1, QTableWidgetItem(name))
+            tbl.setItem(row, 2, QTableWidgetItem(emp_data['employee_id']))
+            tbl.setItem(row, 3, QTableWidgetItem(f"{emp_data['department']} / {emp_data['position']}"))
+        tbl.resizeColumnsToContents()
+
+    def handle_radio_selected(self, row, checked):
+        if checked:
+            # Uncheck all other radios
+            for idx, radio in enumerate(self.radio_buttons):
+                if idx != row:
+                    radio.setChecked(False)
+
+    def filter_employee_table(self):
+        search_text = self.hr_ui.email_employee_search_box.text().lower()
+        tbl = self.hr_ui.selectable_employee_list_tbl
+        for row in range(tbl.rowCount()):
+            show = False
+            for col in range(1, tbl.columnCount()):
+                item = tbl.item(row, col)
+                if item and search_text in item.text().lower():
+                    show = True
+                    break
+            tbl.setRowHidden(row, not show)
+
+    def sort_employee_table(self):
+        sort_option = self.hr_ui.email_employee_sort_box.currentText()
+        if sort_option == "By Name:":
+            self.employee_list.sort(key=lambda x: (x["last_name"].lower(), x["first_name"].lower()))
+        elif sort_option == "By Account ID:":
+            self.employee_list.sort(key=lambda x: x["employee_id"])
+        elif sort_option == "By Department:":
+            self.employee_list.sort(key=lambda x: x["department"].lower())
+        # Re-populate table
+        self.hr_ui.selectable_employee_list_tbl.setRowCount(0)
+        self.radio_buttons = []
+        for emp_data in self.employee_list:
+            row = self.hr_ui.selectable_employee_list_tbl.rowCount()
+            self.hr_ui.selectable_employee_list_tbl.insertRow(row)
+            radio = QRadioButton()
+            radio.setStyleSheet("background-color: white;")  # Set white background
+            radio.toggled.connect(lambda checked, r=row: self.handle_radio_selected(r, checked))
+            self.radio_buttons.append(radio)
+            self.hr_ui.selectable_employee_list_tbl.setCellWidget(row, 0, radio)
+            mi = f" {emp_data['middle_initial']}." if emp_data['middle_initial'] else ""
+            name = f"{emp_data['last_name']}, {emp_data['first_name']}{mi}"
+            self.hr_ui.selectable_employee_list_tbl.setItem(row, 1, QTableWidgetItem(name))
+            self.hr_ui.selectable_employee_list_tbl.setItem(row, 2, QTableWidgetItem(emp_data['employee_id']))
+            self.hr_ui.selectable_employee_list_tbl.setItem(row, 3, QTableWidgetItem(f"{emp_data['department']} / {emp_data['position']}"))
+        self.hr_ui.selectable_employee_list_tbl.resizeColumnsToContents()
+
+    def attach_files(self):
+        valid_exts = ('.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.zip')
+        files, _ = QFileDialog.getOpenFileNames(self.hr_ui, "Select Attachments", "", 
+            "Allowed Files (*.pdf *.jpg *.jpeg *.png *.doc *.docx *.xls *.xlsx *.txt *.csv *.zip)")
+        if files:
+            valid_files = [f for f in files if os.path.splitext(f)[1].lower() in valid_exts]
+            if len(valid_files) < len(files):
+                QMessageBox.warning(self.hr_ui, "Attachment Error", "Some files were not added because they are not supported by Gmail.")
+            self.attachments.extend([f for f in valid_files if f not in self.attachments])
+            self.update_attachments_list()
+
+    def update_attachments_list(self):
+        # Use QListWidget named attachments_list
+        lw: QListWidget = self.hr_ui.attachments_list
+        lw.clear()
+        for file_path in self.attachments:
+            fname = os.path.basename(file_path)
+            item_widget = QWidget()
+            hbox = QHBoxLayout(item_widget)
+            hbox.setContentsMargins(0, 0, 0, 0)
+            label = QLabel(fname)
+            btn = QPushButton("✕")
+            btn.setFixedSize(20, 20)
+            btn.setStyleSheet("color: red; background: transparent; border: none; font-weight: bold;")
+            btn.clicked.connect(lambda _, f=file_path: self.remove_attachment(f))
+            hbox.addWidget(label)
+            hbox.addWidget(btn)
+            hbox.addStretch()
+            item_widget.setLayout(hbox)
+            item = QListWidgetItem()
+            item.setSizeHint(item_widget.sizeHint())
+            lw.addItem(item)
+            lw.setItemWidget(item, item_widget)
+
+    def remove_attachment(self, file_path):
+        if file_path in self.attachments:
+            self.attachments.remove(file_path)
+            self.update_attachments_list()
+
+    def save_as_template(self):
+        # Save current announcement as a template (JSON)
+        template_dir = "resources/email_templates"
+        if not os.path.exists(template_dir):
+            os.makedirs(template_dir)
+        subject = self.hr_ui.email_subject.text()
+        message = self.hr_ui.email_message.toPlainText()
+        schedule = self.hr_ui.set_schedule_btn.isChecked()
+        schedule_freq = self.hr_ui.schedule_frequency_box.currentText() if schedule else ""
+        theme = self.hr_ui.set_theme_btn.isChecked()
+        theme_type = self.hr_ui.theme_design_box.currentText() if theme else ""
+        template = {
+            "subject": subject,
+            "message": message,
+            "schedule": schedule,
+            "schedule_frequency": schedule_freq,
+            "theme": theme,
+            "theme_type": theme_type
+        }
+        fname, _ = QFileDialog.getSaveFileName(self.hr_ui, "Save Template", template_dir, "JSON Files (*.json)")
+        if fname:
+            with open(fname, "w", encoding="utf-8") as f:
+                json.dump(template, f)
+
+
+    def import_template(self):
+        template_dir = "resources/email_templates"
+        fname, _ = QFileDialog.getOpenFileName(self.hr_ui, "Import Template", template_dir, "JSON Files (*.json)")
+        if fname:
+            with open(fname, "r", encoding="utf-8") as f:
+                template = json.load(f)
+            self.hr_ui.email_subject.setText(template.get("subject", ""))
+            self.hr_ui.email_message.setPlainText(template.get("message", ""))
+            if template.get("schedule", False):
+                self.hr_ui.set_schedule_btn.setChecked(True)
+                self.hr_ui.schedule_frequency_box.setCurrentText(template.get("schedule_frequency", "Daily"))
+            else:
+                self.hr_ui.set_schedule_btn.setChecked(False)
+            if template.get("theme", False):
+                self.hr_ui.set_theme_btn.setChecked(True)
+                self.hr_ui.theme_design_box.setCurrentText(template.get("theme_type", ""))
+            else:
+                self.hr_ui.set_theme_btn.setChecked(False)
+
+
+    def send_announcement_email(self):
+        subject = self.hr_ui.email_subject.text()
+        message = self.hr_ui.email_message.toPlainText()
+        schedule_enabled = self.hr_ui.set_schedule_btn.isChecked()
+        schedule_frequency = self.hr_ui.schedule_frequency_box.currentText() if schedule_enabled else None
+        theme_enabled = self.hr_ui.set_theme_btn.isChecked()
+        theme_type = self.hr_ui.theme_design_box.currentText() if theme_enabled else None
+        files_path = ";".join(self.attachments)
+        attached_files_count = len(self.attachments)
+        sending_type = "All" if self.hr_ui.employee_send_all_btn.isChecked() else "Selected"
+        involved_employee = None
+
+        # Get recipients
+        recipients = []
+        if sending_type == "All":
+            cursor = self.db.execute_query("SELECT email FROM Employee WHERE is_hr = 0 AND status = 'Active'")
+            recipients = [row[0] for row in cursor.fetchall()] if cursor else []
+        else:
+            tbl = self.hr_ui.selectable_employee_list_tbl
+            for row, radio in enumerate(self.radio_buttons):
+                if radio.isChecked():
+                    emp_id = tbl.item(row, 2).text()
+                    cursor = self.db.execute_query("SELECT email FROM Employee WHERE employee_id = ?", (emp_id,))
+                    result = cursor.fetchone()
+                    if result:
+                        recipients.append(result[0])
+                        involved_employee = emp_id
+                    break
+
+        # Save to database
+        self.db.execute_query(
+            '''INSERT INTO announcements (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, attached_files_count, files_path, created_by)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, attached_files_count, files_path, self.hr_data["employee_id"])
+        )
+
+        # Send email
+        sender_email = "eals.tupc@gmail.com"
+        sender_password = "buwl tszg dghr exln"
+        for recipient in recipients:
+            try:
+                msg = MIMEMultipart()
+                msg["From"] = sender_email
+                msg["To"] = recipient
+                msg["Subject"] = subject
+                msg.attach(MIMEText(message, "plain"))
+                # Attach files
+                for file_path in self.attachments:
+                    try:
+                        with open(file_path, "rb") as f:
+                            from email.mime.base import MIMEBase
+                            from email import encoders
+                            part = MIMEBase("application", "octet-stream")
+                            part.setPayload(f.read())
+                            encoders.encode_base64(part)
+                            part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(file_path)}")
+                            msg.attach(part)
+                    except Exception as e:
+                        print(f"Attachment error: {file_path}: {e}")
+                        continue
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                    server.login(sender_email, sender_password)
+                    server.send_message(msg)
+            except Exception as e:
+                print(f"Error sending announcement email to {recipient}: {e}")
+
+
+        chime.theme('chime')
+        chime.success()
+        toast = Toast(self.hr_ui)
+        toast.setTitle("Announcement Sent")
+        toast.setText("Announcement email(s) sent successfully.")
+        toast.setDuration(2000)
+        toast.setOffset(25, 35)
+        toast.setBorderRadius(6)
+        toast.applyPreset(ToastPreset.SUCCESS)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+
+        # --- Clear fields after send ---
+        self.hr_ui.email_subject.clear()
+        self.hr_ui.email_message.clear()
+        self.hr_ui.set_schedule_btn.setChecked(False)
+        self.hr_ui.set_theme_btn.setChecked(False)
+        toast.applyPreset(ToastPreset.SUCCESS)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+
+        # --- Clear fields after send ---
+        self.hr_ui.email_subject.clear()
+        self.hr_ui.email_message.clear()
+        self.hr_ui.set_schedule_btn.setChecked(False)
+        self.hr_ui.set_theme_btn.setChecked(False)
+        self.hr_ui.schedule_frequency_box.setCurrentIndex(0)
+        self.hr_ui.theme_design_box.setCurrentIndex(0)
+        for radio in self.radio_buttons:
+            radio.setChecked(False)
+        self.attachments.clear()
+        self.update_attachments_list()
+        self.load_sched_email_table()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
