@@ -1581,6 +1581,10 @@ class Home:
             message["To"] = recipient_email
             message["Subject"] = f"EALS Attendance Record: {remarks}"
 
+            # Get default header and footer images
+            header_img = os.path.join("resources", "theme_images", "default_theme_header.jpg")
+            footer_img = os.path.join("resources", "theme_images", "default_theme_footer.jpg")
+
             formatted_time = current_time.strftime("%B %d, %Y at %I:%M:%S %p")
             body = (
                 f"Dear {employee_data['first_name']} {employee_data['last_name']},\n\n"
@@ -1593,7 +1597,35 @@ class Home:
                 f"This is a system-generated email. Please do not reply.\n\n"
                 f"Best regards,\nEALS System"
             )
-            message.attach(MIMEText(body, "plain"))
+
+            # Create HTML structure
+            html_header = '<img src="cid:headerimg" style="display:block; margin:auto;"><br>' if os.path.exists(header_img) else ""
+            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto;">' if os.path.exists(footer_img) else ""
+            html_frame = (
+                '<div style="margin: 20px auto; padding: 20px; max-width: 600px; border: none; '
+                'border-radius: 8px; background-color: transparent; font-family: Arial, sans-serif;">'
+                f"{body}</div>"
+            )
+            html_body = f"{html_header}{html_frame}{html_footer}"
+
+            # Attach header image if exists
+            if os.path.exists(header_img):
+                with open(header_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<headerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
+                    message.attach(img)
+
+            # Attach footer image if exists
+            if os.path.exists(footer_img):
+                with open(footer_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<footerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
+                    message.attach(img)
+
+            # Attach HTML body
+            message.attach(MIMEText(html_body, "html"))
 
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.login(sender_email, sender_password)
@@ -2138,16 +2170,57 @@ class ForgotPassword:
             message = MIMEMultipart()
             message["From"] = sender_email
             message["To"] = email
-            message["Subject"] = "EALS Password Reset Verification Code"
-            body = (
-                f"Hello,\n\n"
-                f"We received a request to reset your password. Please use the verification code below to proceed with the password reset process.\n\n"
-                f"Verification Code: {code}\n\n"
-                f"If you did not request a password reset, please ignore this email or contact support.\n\n"
-                f"Thank you,\nThe EALS Team"
-            )
-            message.attach(MIMEText(body, "plain"))
+            message["Subject"] = "EALS Verification Code"
 
+            # Get default header and footer images
+            header_img = os.path.join("resources", "theme_images", "default_theme_header.jpg")
+            footer_img = os.path.join("resources", "theme_images", "default_theme_footer.jpg")
+
+            # Create HTML email content with Google-like styling
+            html_header = '<img src="cid:headerimg" style="display:block; margin:auto; width:100%;"><br>' if os.path.exists(header_img) else ""
+            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto; width:100%;">' if os.path.exists(footer_img) else ""
+            
+            html_content = f"""
+                <div style="margin: 20px auto; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
+                    <div style="background-color: #4285f4; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h2 style="margin: 0; text-align: center;">EALS Verification Code</h2>
+                    </div>
+                    <div style="background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <p style="color: #666666;">This verification code was sent to help you reset your EALS account password:</p>
+                        <div style="text-align: center; padding: 20px;">
+                            <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #202124;">{code}</span>
+                        </div>
+                        <p style="color: #666666;">Don't know why you received this?</p>
+                        <p style="color: #666666;">Someone requested a password reset for your EALS account. If this wasn't you, you can safely ignore this email.</p>
+                        <p style="color: #666666;">To protect your account, don't forward this email or give this code to anyone.</p>
+                        <br>
+                        <p style="color: #666666; margin-bottom: 0;">Best regards,<br>EALS Team</p>
+                    </div>
+                </div>
+            """
+
+            html_content = f"{html_header}{html_content}{html_footer}"
+
+            # Attach HTML content
+            message.attach(MIMEText(html_content, "html"))
+
+            # Attach header image if exists
+            if os.path.exists(header_img):
+                with open(header_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<headerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
+                    message.attach(img)
+
+            # Attach footer image if exists
+            if os.path.exists(footer_img):
+                with open(footer_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<footerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
+                    message.attach(img)
+
+            # Send email
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.login(sender_email, sender_password)
                 server.send_message(message)
@@ -5052,4 +5125,5 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     controller = EALS()
     sys.exit(app.exec())
+
 
