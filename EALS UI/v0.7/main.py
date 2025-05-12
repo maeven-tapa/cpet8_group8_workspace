@@ -18,7 +18,7 @@ import argon2
 import secrets
 import string
 import chime
-from PySide6.QtCharts import QChart, QChartView, QAreaSeries, QLineSeries, QValueAxis, QCategoryAxis, QBarSeries, QBarSet
+from PySide6.QtCharts import QChart, QChartView, QAreaSeries, QLineSeries, QValueAxis, QCategoryAxis, QBarSeries, QBarSet, QPieSeries
 
 PASSWORD_HASHER = argon2.PasswordHasher()
 
@@ -1967,7 +1967,11 @@ class Admin:
         if hasattr(self.admin_ui, "chart_layout2") and self.avg_work_hours_chart_view:
             self.admin_ui.chart_layout2.addWidget(self.avg_work_hours_chart_view, 0, 0)
         
-    
+        # --- PIE CHART SETUP ---
+        self.pie_chart_view = None
+        self.setup_attendance_pie_chart()
+        if hasattr(self.admin_ui, "chart_layout3") and self.pie_chart_view:
+            self.admin_ui.chart_layout3.addWidget(self.pie_chart_view, 0, 0)
 
     def handle_dashboard_nav(self):
         current_widget = self.admin_ui.dashboard_pages.currentWidget()
@@ -3766,7 +3770,9 @@ class Admin:
             for val in hours:
                 self.bar_set << val
                 
-            self.bar_set.setColor(QColor(112, 205, 152))
+            color = QColor(112, 205, 152)
+            color.setAlphaF(0.6)  # 0.6 opacity
+            self.bar_set.setColor(color)
 
             avg_val = sum(hours) / len(hours) if hours else 0
 
@@ -3785,6 +3791,50 @@ class Admin:
         except Exception as e:
             print(f"Error updating avg work hours line chart: {e}")
 
+    def setup_attendance_pie_chart(self):
+        self.pie_chart = QChart()
+        self.pie_chart.setTitle("Today's Attendance Distribution")
+        self.pie_series = QPieSeries()
+        self.pie_chart.addSeries(self.pie_series)
+        self.pie_chart.setBackgroundBrush(QColor(239, 239, 239))
+        self.pie_chart.legend().setVisible(True)
+        self.pie_chart.legend().setAlignment(Qt.AlignBottom)
+        self.pie_chart_view = QChartView(self.pie_chart)
+        self.pie_chart_view.setRenderHint(QPainter.Antialiasing)
+        self.update_attendance_pie_chart()
+
+    def update_attendance_pie_chart(self):
+        self.pie_series.clear()
+        try:
+            today_date = datetime.now().strftime("%Y-%m-%d")
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
+                (today_date,)
+            )
+            present = cursor.fetchone()[0] if cursor else 0
+
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND employee_id NOT IN (SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)",
+                (today_date,)
+            )
+            absent = cursor.fetchone()[0] if cursor else 0
+
+            total = present + absent
+            if total == 0:
+                self.pie_series.append("No Data", 1)
+                self.pie_series.slices()[0].setColor(QColor(200, 200, 200))
+                self.pie_series.slices()[0].setLabelVisible(True)
+            else:
+                present_pct = (present / total) * 100
+                absent_pct = (absent / total) * 100
+                present_slice = self.pie_series.append(f"Present ({present_pct:.1f}%)", present)
+                absent_slice = self.pie_series.append(f"Absent ({absent_pct:.1f}%)", absent)
+                present_slice.setColor(QColor(255, 174, 53))
+                absent_slice.setColor(QColor(240, 86, 68))
+                present_slice.setLabelVisible(True)
+                absent_slice.setLabelVisible(True)
+        except Exception as e:
+            print(f"Error updating attendance pie chart: {e}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
