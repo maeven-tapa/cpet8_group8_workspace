@@ -4647,7 +4647,6 @@ class Announcement:
             else:
                 self.hr_ui.set_theme_btn.setChecked(False)
 
-
     def send_announcement_email(self):
         subject = self.hr_ui.email_subject.text()
         message = self.hr_ui.email_message.toPlainText()
@@ -4656,6 +4655,7 @@ class Announcement:
         theme_enabled = self.hr_ui.set_theme_btn.isChecked()
         theme_type = self.hr_ui.theme_design_box.currentText() if theme_enabled else None
         header_img, footer_img = self.get_theme_images()
+
         def compose_html_body(message):
             html_header = '<img src="cid:headerimg" style="display:block; margin:auto;"><br>' if os.path.exists(header_img) else ""
             html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto;">' if os.path.exists(footer_img) else ""
@@ -4686,10 +4686,9 @@ class Announcement:
 
         self.db.execute_query(
             '''INSERT INTO announcements (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, attached_files_count, files_path, created_by)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, 0, "", self.hr_data["employee_id"])
         )
-        # Get the last inserted announcement id
         cursor = self.db.execute_query("SELECT last_insert_rowid()")
         announcement_id = cursor.fetchone()[0] if cursor else None
         email_files_dir = os.path.join("resources", "email_files", str(announcement_id))
@@ -4704,83 +4703,75 @@ class Announcement:
                 except Exception:
                     continue
             new_attachment_paths.append(dest)
-        # Update DB with new file paths and count
         self.db.execute_query(
             "UPDATE announcements SET attached_files_count = ?, files_path = ? WHERE id = ?",
             (len(new_attachment_paths), ";".join(new_attachment_paths), announcement_id)
         )
-        # Update self.attachments to point to the copied files
         self.attachments = new_attachment_paths
         self.update_attachments_list()
 
-        # --- EMAIL SENDING ---
-        sender_email = "eals.tupc@gmail.com"
-        sender_password = "buwl tszg dghr exln"
-        for recipient in recipients:
-            try:
-                msg = MIMEMultipart()
-                msg["From"] = sender_email
-                msg["To"] = recipient
-                msg["Subject"] = subject
+        def send_emails():
+            sender_email = "eals.tupc@gmail.com"
+            sender_password = "buwl tszg dghr exln"
+            for recipient in recipients:
+                try:
+                    msg = MIMEMultipart()
+                    msg["From"] = sender_email
+                    msg["To"] = recipient
+                    msg["Subject"] = subject
 
-                # Attach header image
-                if os.path.exists(header_img):
-                    print(f"Attaching header image: {header_img}")
-                    with open(header_img, "rb") as f:
-                        img = MIMEImage(f.read())
-                        img.add_header("Content-ID", "<headerimg>")
-                        img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
-                        msg.attach(img)
+                    if os.path.exists(header_img):
+                        with open(header_img, "rb") as f:
+                            img = MIMEImage(f.read())
+                            img.add_header("Content-ID", "<headerimg>")
+                            img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
+                            msg.attach(img)
 
-                # Attach footer image
-                if os.path.exists(footer_img):
-                    print(f"Attaching footer image: {footer_img}")
-                    with open(footer_img, "rb") as f:
-                        img = MIMEImage(f.read())
-                        img.add_header("Content-ID", "<footerimg>")
-                        img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
-                        msg.attach(img)
+                    if os.path.exists(footer_img):
+                        with open(footer_img, "rb") as f:
+                            img = MIMEImage(f.read())
+                            img.add_header("Content-ID", "<footerimg>")
+                            img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
+                            msg.attach(img)
 
-                # Compose and attach the HTML body
-                html_body = compose_html_body(message)
-                msg.attach(MIMEText(html_body, "html"))
+                    html_body = compose_html_body(message)
+                    msg.attach(MIMEText(html_body, "html"))
 
-                # Attach files
-                for file_path in self.attachments:
-                    try:
-                        with open(file_path, "rb") as f:
-                            from email.mime.base import MIMEBase
-                            from email import encoders
-                            part = MIMEBase("application", "octet-stream")
-                            part.setPayload(f.read())
-                            encoders.encode_base64(part)
-                            part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(file_path)}")
-                            msg.attach(part)
-                    except Exception as e:
-                        print(f"Attachment error: {file_path}: {e}")
-                        continue
+                    for file_path in self.attachments:
+                        try:
+                            with open(file_path, "rb") as f:
+                                from email.mime.base import MIMEBase
+                                from email import encoders
+                                part = MIMEBase("application", "octet-stream")
+                                part.setPayload(f.read())
+                                encoders.encode_base64(part)
+                                part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(file_path)}")
+                                msg.attach(part)
+                        except Exception as e:
+                            print(f"Attachment error: {file_path}: {e}")
+                            continue
 
-                # Send the email
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                    server.login(sender_email, sender_password)
-                    server.send_message(msg)
-            except Exception as e:
-                print(f"Error sending announcement email to {recipient}: {e}")
+                    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                        server.login(sender_email, sender_password)
+                        server.send_message(msg)
+                except Exception as e:
+                    print(f"Error sending announcement email to {recipient}: {e}")
 
-        chime.theme('chime')
-        chime.success()
-        toast = Toast(self.hr_ui)
-        toast.setTitle("Announcement Sent")
-        toast.setText("Announcement email(s) sent successfully.")
-        toast.setDuration(2000)
-        toast.setOffset(25, 35)
-        toast.setBorderRadius(6)
-        toast.applyPreset(ToastPreset.SUCCESS)
-        toast.setBackgroundColor(QColor('#FFFFFF'))
-        toast.setPosition(ToastPosition.TOP_RIGHT)
-        toast.show()
+            chime.theme('chime')
+            chime.success()
+            toast = Toast(self.hr_ui)
+            toast.setTitle("Announcement Sent")
+            toast.setText("Announcement email(s) sent successfully.")
+            toast.setDuration(2000)
+            toast.setOffset(25, 35)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.SUCCESS)
+            toast.setBackgroundColor(QColor('#FFFFFF'))
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.show()
 
-        # --- Clear fields after send ---
+        threading.Thread(target=send_emails, daemon=True).start()
+
         self.hr_ui.email_subject.clear()
         self.hr_ui.email_message.clear()
         self.hr_ui.set_schedule_btn.setChecked(False)
