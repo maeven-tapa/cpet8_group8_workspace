@@ -18,7 +18,7 @@ import argon2
 import secrets
 import string
 import chime
-from PySide6.QtCharts import QChart, QChartView, QAreaSeries, QLineSeries, QValueAxis, QCategoryAxis
+from PySide6.QtCharts import QChart, QChartView, QAreaSeries, QLineSeries, QValueAxis, QCategoryAxis, QBarSeries, QBarSet
 
 PASSWORD_HASHER = argon2.PasswordHasher()
 
@@ -1045,9 +1045,7 @@ class Home:
                 if night_logs >= 2:
                     self.show_warning("Attendance Error", "You have already completed your attendance for tonight's shift.")
                     return False
-            # If current time is between midnight and 6 AM
             elif current_hour < 6:
-                # Check previous day's logs after 10 PM
                 previous_date = (current_time - timedelta(days=1)).strftime("%Y-%m-%d")
                 cursor = self.db.execute_query(
                     "SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND date = ? AND time >= '22:00:00'",
@@ -1055,7 +1053,6 @@ class Home:
                 )
                 previous_night_logs = cursor.fetchone()[0] if cursor else 0
                 
-                # Check current day's logs before 6 AM
                 cursor = self.db.execute_query(
                     "SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND date = ? AND time <= '06:00:00'",
                     (self.employee_data["employee_id"], current_date)
@@ -1067,7 +1064,6 @@ class Home:
                     self.show_warning("Attendance Error", "You have already completed your attendance for this shift.")
                     return False
         else:
-            # For regular shifts, check if already logged twice today
             cursor = self.db.execute_query(
                 "SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND date = ?",
                 (self.employee_data["employee_id"], current_date)
@@ -1108,16 +1104,10 @@ class Home:
                 self.show_warning("Invalid Login", "You cannot log in outside your scheduled shift.")
                 return False
 
-            # --- LATE FLAGGING LOGIC START ---
-            # Assume schedule_start is the hour employee should start
-            # If current time is after schedule_start + 15 minutes, mark as late
-            
             if self.employee_data["schedule"] == "10pm to 6am":
                 if current_hour < 6:
-                    # After midnight, so scheduled_time is yesterday at 22:00
                     scheduled_date = (current_time - timedelta(days=1)).date()
                 else:
-                    # Before midnight, scheduled_time is today at 22:00
                     scheduled_date = current_time.date()
                 scheduled_time = datetime.combine(scheduled_date, datetime.min.time()).replace(hour=22, minute=0, second=0, microsecond=0)
             else:
@@ -1131,7 +1121,6 @@ class Home:
             self.employee_data["was_late"] = is_late
 
             if is_late:
-                # Increment late_count
                 cursor = self.db.execute_query(
                     "SELECT late_count FROM Employee WHERE employee_id = ?",
                     (self.employee_data["employee_id"],)
@@ -1142,7 +1131,6 @@ class Home:
                     "UPDATE Employee SET late_count = ? WHERE employee_id = ?",
                     (late_count, self.employee_data["employee_id"])
                 )
-            # --- LATE FLAGGING LOGIC END ---
 
         new_count = attendance_count + 1
         self.db.execute_query(
@@ -1169,7 +1157,6 @@ class Home:
                 pixmap = pixmap.scaled(self.home_ui.bio1_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.home_ui.bio1_employee_pic.setPixmap(pixmap)
 
-            # Delay the update to ensure the label is fully laid out
             QTimer.singleShot(0, update_picture)
 
             self.home_ui.bio1_employee_name.setText(f"<b>Name:</b> {self.employee_data['first_name']} {self.employee_data['last_name']}")
@@ -1187,7 +1174,6 @@ class Home:
                 pixmap = pixmap.scaled(self.home_ui.bio2_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.home_ui.bio2_employee_pic.setPixmap(pixmap)
 
-            # Delay the update to ensure the label is fully laid out
             QTimer.singleShot(0, update_picture)
 
             self.home_ui.bio2_employee_name.setText(f"<b>Name:</b> {self.employee_data['first_name']} {self.employee_data['last_name']}")
@@ -1201,7 +1187,7 @@ class Home:
     def send_attendance_email(self, employee_data, current_time, remarks):
         try:
             sender_email = "eals.tupc@gmail.com"
-            sender_password = "buwl tszg dghr exln"  # App-specific password
+            sender_password = "buwl tszg dghr exln"  
             recipient_email = employee_data["email"]
 
             message = MIMEMultipart()
@@ -1240,8 +1226,6 @@ class Home:
 
             self.system_logs.log_system_action("A user logged.", "AttendanceLog")
             remarks = self.employee_data.get("remarks", "Clock In")
-            # --- LATE FLAGGING ON ATTENDANCE LOG ---
-            is_late = self.employee_data.get("is_late", False) if remarks == "Clock In" else None
             self.db.execute_query(
                 "INSERT INTO attendance_logs (employee_id, date, time, remarks, is_late) VALUES (?, ?, ?, ?, ?)", 
                 (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), remarks, is_late)
@@ -1254,7 +1238,6 @@ class Home:
                     daemon=True
                 ).start()
             
-            # Rest of the existing code
             if self.employee_data:
                 current_time = datetime.now()
                 current_date = current_time.strftime("%Y-%m-%d")
@@ -1268,14 +1251,12 @@ class Home:
                     greeting = "Good Evening"
                 self.home_ui.result_greetings_lbl.setText(f"{greeting}, {self.employee_data['first_name']}!")
 
-                # Set a random motivational or system message
                 messages = [
                     "Keep up the excellent work!",
                     "Your dedication is appreciated!",
                     "You are making a difference every day!",
                     "Thank you for your hard work and commitment!"
                 ]
-                # --- ADD LATE MESSAGE IF APPLICABLE ---
                 cursor = self.db.execute_query(
                     "SELECT is_late FROM attendance_logs WHERE employee_id = ? ORDER BY date DESC, time DESC LIMIT 1",
                     (self.employee_data["employee_id"],)
@@ -1313,7 +1294,6 @@ class Home:
                     elif worked_hours < 7:
                         messages.append("Try to complete your full shift next time. You can do it!")
 
-                # Add more encouraging messages
                 messages.extend([
                     "Your reliability is valued by the team!",
                     "Every extra effort counts. Thank you!",
@@ -1505,7 +1485,7 @@ class ChangePassword:
         self.db = db
         self.system_logs = SystemLogs(db)
         self.user_id = user_id
-        self.user_type = user_type  # "admin" or "employee"
+        self.user_type = user_type  
         self.loader = QUiLoader()
         self.change_pass_ui = self.loader.load("ui/change_pass.ui")
         
@@ -1513,7 +1493,6 @@ class ChangePassword:
         self.np_visible = False
         self.changepass_visible = False
         
-        # Update UI elements based on user type
         if user_type == "admin":
             self.change_pass_ui.setWindowTitle("Change Admin Password")
             self.system_logs.log_system_action("The admin change password prompt has been loaded.", "Admin")
@@ -1562,7 +1541,6 @@ class ChangePassword:
         current_password = self.change_pass_ui.change_pass_cp_box.text()
 
         try:
-            # Query the appropriate table based on user type
             if self.user_type == "admin":
                 table = "Admin"
                 id_field = "admin_id"
@@ -1608,10 +1586,8 @@ class ChangePassword:
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
 
-            # Hash the new password
             hashed_password = PASSWORD_HASHER.hash(new_password)
 
-            # Update password in appropriate table
             self.db.execute_query(
                 "UPDATE {} SET password = ?, password_changed = TRUE WHERE {} = ?".format(table, id_field),
                 (hashed_password, self.user_id)
@@ -1662,20 +1638,17 @@ class ForgotPassword:
         self.setup_pin_inputs()
     
     def setup_pin_inputs(self):
-        # Set maxLength for all PIN boxes
         self.forgot_pass_ui.pin_1.setMaxLength(1)
         self.forgot_pass_ui.pin_2.setMaxLength(1)
         self.forgot_pass_ui.pin_3.setMaxLength(1)
         self.forgot_pass_ui.pin_4.setMaxLength(1)
         
-        # Set validators to only accept numbers
         validator = QRegularExpressionValidator(QRegularExpression("[0-9]"))
         self.forgot_pass_ui.pin_1.setValidator(validator)
         self.forgot_pass_ui.pin_2.setValidator(validator)
         self.forgot_pass_ui.pin_3.setValidator(validator)
         self.forgot_pass_ui.pin_4.setValidator(validator)
         
-        # Connect text changed signals for automatic focus movement
         self.forgot_pass_ui.pin_1.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_1, self.forgot_pass_ui.pin_2))
         self.forgot_pass_ui.pin_2.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_2, self.forgot_pass_ui.pin_3))
         self.forgot_pass_ui.pin_3.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_3, self.forgot_pass_ui.pin_4))
@@ -1698,7 +1671,6 @@ class ForgotPassword:
         birthday = self.forgot_pass_ui.forgot_pass_birthday_box.date().toString("yyyy-MM-dd")
         email = self.forgot_pass_ui.forgot_pass_email_box.text().strip()
 
-        # Check for missing fields
         if not account_id or not birthday or not email:
             missing_fields = []
             if not account_id:
@@ -1733,7 +1705,6 @@ class ForgotPassword:
                 "email": employee[14]
             }
             
-            # Generate and send verification code
             self.verification_code = ''.join([str(secrets.randbelow(10)) for _ in range(4)])
             self.system_logs.log_system_action(
                 f"Password reset verification code generated for employee {account_id}", 
@@ -1760,10 +1731,8 @@ class ForgotPassword:
             ).start()
 
 
-            # Switch to verification page
             self.forgot_pass_ui.fp_stackedWidget.setCurrentWidget(self.forgot_pass_ui.fp_page_2)
             
-            # Clear pin boxes and set focus to first box
             self.forgot_pass_ui.pin_1.clear()
             self.forgot_pass_ui.pin_2.clear()
             self.forgot_pass_ui.pin_3.clear()
@@ -1777,11 +1746,9 @@ class ForgotPassword:
             
     def send_verification_email(self, email, code):
         try:
-            # Replace with your email credentials
-            sender_email = "eals.tupc@gmail.com"  # TODO: Replace with actual sender email
-            sender_password = "buwl tszg dghr exln"  # TODO: Replace with actual sender password
+            sender_email = "eals.tupc@gmail.com"  
+            sender_password = "buwl tszg dghr exln"  
 
-            # Create the email message
             message = MIMEMultipart()
             message["From"] = sender_email
             message["To"] = email
@@ -1795,7 +1762,6 @@ class ForgotPassword:
             )
             message.attach(MIMEText(body, "plain"))
 
-            # Send the email using SMTP
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.login(sender_email, sender_password)
                 server.send_message(message)
@@ -1807,7 +1773,6 @@ class ForgotPassword:
             return False
 
     def verify_code(self):
-        # Collect the entered verification code
         entered_code = ''.join([
             self.forgot_pass_ui.pin_1.text(),
             self.forgot_pass_ui.pin_2.text(),
@@ -1826,10 +1791,8 @@ class ForgotPassword:
             self.change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
             self.change_pass_ui.cp_visibility_btn.clicked.connect(self.toggle_cp_visibility)
             self.forgot_pass_ui.close()
-            # Show the change password UI
             self.change_pass_ui.show()
         else:
-            # Display warning on fp_page2_note
             self.forgot_pass_ui.fp_page2_note.setText("Warning: The verification code you entered is incorrect. Please try again.")
             self.forgot_pass_ui.fp_page2_note.setStyleSheet("color: black; background-color: yellow;")
             
@@ -1870,10 +1833,8 @@ class ForgotPassword:
             return
 
         try:
-            # Hash the new password
             hashed_password = PASSWORD_HASHER.hash(new_password)
 
-            # Update the password in the database
             self.db.execute_query(
                 "UPDATE Employee SET password = ?, password_changed = TRUE WHERE employee_id = ?",
                 (hashed_password, self.current_employee["employee_id"])
@@ -1998,14 +1959,17 @@ class Admin:
         
         self.chart_view = None
         self.setup_attendance_area_chart()
-        # Add chart_view to chart_layout1 if it exists
         if hasattr(self.admin_ui, "chart_layout1") and self.chart_view:
             self.admin_ui.chart_layout1.addWidget(self.chart_view, 0, 0)
+
+        self.avg_work_hours_chart_view = None
+        self.setup_avg_work_hours_line_chart()
+        if hasattr(self.admin_ui, "chart_layout2") and self.avg_work_hours_chart_view:
+            self.admin_ui.chart_layout2.addWidget(self.avg_work_hours_chart_view, 0, 0)
         
     
 
     def handle_dashboard_nav(self):
-        """Navigate between dashboard pages and update button text."""
         current_widget = self.admin_ui.dashboard_pages.currentWidget()
         if current_widget == self.admin_ui.db_page_1:
             self.admin_ui.dashboard_pages.setCurrentWidget(self.admin_ui.db_page_2)
@@ -2024,7 +1988,6 @@ class Admin:
             return None
 
     def load_system_logs(self):
-        """Load all log files into the system_log_list QComboBox."""
         log_dir = "resources/logs"
         self.admin_ui.system_log_list.clear()
 
@@ -2034,13 +1997,11 @@ class Admin:
         log_files = [f for f in os.listdir(log_dir) if os.path.isfile(os.path.join(log_dir, f))]
         self.admin_ui.system_log_list.addItems(log_files)
 
-        # --- Load summary table for present/absent/late counts ---
         try:
             cursor = self.db.execute_query(
                 "SELECT created_at, present_count, absent_count, late_count FROM system_logs ORDER BY created_at DESC"
             )
             logs = cursor.fetchall() if cursor else []
-            # Assume you have a QTableWidget named system_log_summary_tbl with 4 columns: Date, Present, Absent, Late
             if hasattr(self.admin_ui, "system_log_summary_tbl"):
                 tbl = self.admin_ui.system_log_summary_tbl
                 tbl.setRowCount(0)
@@ -2064,7 +2025,6 @@ class Admin:
             try:
                 with open(log_path, "r") as file:
                     content = file.read()
-                    # --- Append attendance summary if available ---
                     cursor = self.db.execute_query(
                         "SELECT present_count, absent_count, late_count FROM system_logs WHERE path = ? ORDER BY created_at DESC LIMIT 1",
                         (log_path,)
@@ -2280,7 +2240,6 @@ class Admin:
         self.admin_ui.view_employee_department_box.setText(employee_data["department"])
         self.admin_ui.view_employee_position_box.setText(employee_data["position"])
         self.admin_ui.view_employee_accountid.setText(employee_data["employee_id"])
-        # Use get() method with a default empty string for email
         self.admin_ui.view_employee_email.setText(employee_data.get("email", ""))
         
         if employee_data["schedule"] == "6am to 2pm":
@@ -2466,7 +2425,6 @@ class Admin:
         id_no = self.admin_ui.edit_employee_id_no.currentText()
         email = self.admin_ui.edit_employee_email.text().strip()
 
-        # Validate first name
         if not first_name:
             self.show_error("Validation Error", "First Name is required")
             return False, "First Name is required"
@@ -2474,7 +2432,6 @@ class Admin:
             self.show_error("Validation Error", "Valid First Name (letters only, multiple names allowed)")
             return False, "Valid First Name (letters only, multiple names allowed)"
 
-        # Validate last name
         if not last_name:
             self.show_error("Validation Error", "Last Name is required")
             return False, "Last Name is required"
@@ -2482,17 +2439,14 @@ class Admin:
             self.show_error("Validation Error", "Valid Last Name (letters only, multiple names allowed)")
             return False, "Valid Last Name (letters only, multiple names allowed)"
 
-        # Validate middle initial
         if mi and (len(mi) > 1 or not mi.isalpha()):
             self.show_error("Validation Error", "Valid Middle Initial (single letter only)")
             return False, "Valid Middle Initial (single letter only)"
 
-        # Validate ID prefix
         if not id_pref:
             self.show_error("Validation Error", "ID Prefix is required")
             return False, "ID Prefix is required"
 
-        # Validate gender selection
         gender = None
         if self.admin_ui.edit_employee_male.isChecked():
             gender = "Male"
@@ -2502,7 +2456,6 @@ class Admin:
             self.show_error("Validation Error", "Please select a Gender")
             return False, "Please select a Gender"
 
-        # Validate schedule selection
         schedule = None
         if self.admin_ui.edit_employee_sched_1.isChecked():
             schedule = "6am to 2pm"
@@ -2514,7 +2467,6 @@ class Admin:
             self.show_error("Validation Error", "Please select a Schedule")
             return False, "Please select a Schedule"
 
-        # Validate email
         if not email:
             self.show_error("Validation Error", "Email Address is required")
             return False, "Email Address is required"
@@ -2522,7 +2474,6 @@ class Admin:
             self.show_error("Validation Error", "Valid Email Address (must contain @ and domain)")
             return False, "Valid Email Address (must contain @ and domain)"
 
-        # Validate birthday (must be at least 18 years old)
         birthday = self.admin_ui.edit_employee_birthday_edit.date().toString("yyyy-MM-dd")
         try:
             birthday_date = datetime.strptime(birthday, "%Y-%m-%d")
@@ -2543,7 +2494,6 @@ class Admin:
             department = "Human Resources"
             position = "HR Staff"
 
-        # Check for existing employee ID
         employee_id = f"{id_pref}-{id_year}-{id_no}"
         try:
             cursor = self.db.execute_query(
@@ -2554,7 +2504,6 @@ class Admin:
                 self.show_error("Validation Error", f"Employee ID {employee_id} already exists in the database")
                 return False, f"Employee ID {employee_id} already exists in the database"
 
-            # Check for existing name
             cursor = self.db.execute_query(
                 "SELECT first_name, last_name FROM Employee WHERE first_name = ? AND last_name = ? AND employee_id != ?",
                 (first_name, last_name, self.current_employee_data["employee_id"])
@@ -2626,7 +2575,7 @@ class Admin:
                 result['first_name'], result['last_name'], result['middle_initial'], result['birthday'],
                 result['gender'], result['department'], result['position'], result['schedule'],
                 result['is_hr'], result['status'], result['profile_picture'],
-                result['email'], current_admin, current_time,  # Add modification tracking
+                result['email'], current_admin, current_time,  
                 result['employee_id']
             ))
 
@@ -2688,7 +2637,6 @@ class Admin:
         profile_picture = self.current_employee_data.get('profile_picture', '')
         email = self.admin_ui.employee_email.text().strip()
 
-        # Validate first name
         if not first_name:
             self.show_error("Validation Error", "First Name is required")
             return False, "First Name is required"
@@ -2696,7 +2644,6 @@ class Admin:
             self.show_error("Validation Error", "Valid First Name (letters only, multiple names allowed)")
             return False, "Valid First Name (letters only, multiple names allowed)"
 
-        # Validate last name
         if not last_name:
             self.show_error("Validation Error", "Last Name is required")
             return False, "Last Name is required"
@@ -2704,17 +2651,14 @@ class Admin:
             self.show_error("Validation Error", "Valid Last Name (letters only, multiple names allowed)")
             return False, "Valid Last Name (letters only, multiple names allowed)"
 
-        # Validate middle initial
         if mi and (len(mi) > 1 or not mi.isalpha()):
             self.show_error("Validation Error", "Valid Middle Initial (single letter only)")
             return False, "Valid Middle Initial (single letter only)"
 
-        # Validate ID prefix
         if not id_pref:
             self.show_error("Validation Error", "ID Prefix is required")
             return False, "ID Prefix is required"
 
-        # Validate gender selection
         gender = None
         if self.admin_ui.employee_male.isChecked():
             gender = "Male"
@@ -2724,7 +2668,6 @@ class Admin:
             self.show_error("Validation Error", "Please select a Gender")
             return False, "Please select a Gender"
 
-        # Validate schedule selection
         schedule = None
         if self.admin_ui.employee_sched_1.isChecked():
             schedule = "6am to 2pm"
@@ -2736,12 +2679,10 @@ class Admin:
             self.show_error("Validation Error", "Please select a Schedule")
             return False, "Please select a Schedule"
 
-        # Validate profile picture
         if not profile_picture:
             self.show_error("Validation Error", "Profile Picture is required")
             return False, "Profile Picture is required"
 
-        # Validate email
         if not email:
             self.show_error("Validation Error", "Email Address is required")
             return False, "Email Address is required"
@@ -2749,7 +2690,6 @@ class Admin:
             self.show_error("Validation Error", "Valid Email Address (must contain @ and domain)")
             return False, "Valid Email Address (must contain @ and domain)"
 
-        # Validate birthday (must be at least 18 years old)
         birthday = self.admin_ui.employee_birthday_edit.date().toString("yyyy-MM-dd")
         try:
             birthday_date = datetime.strptime(birthday, "%Y-%m-%d")
@@ -2770,7 +2710,6 @@ class Admin:
             department = "Human Resources"
             position = "HR Staff"
 
-        # Check if the employee ID already exists
         employee_id = f"{id_pref}-{id_year}-{id_no}"
         try:
             cursor = self.db.execute_query("SELECT employee_id FROM Employee WHERE employee_id = ?", (employee_id,))
@@ -2778,7 +2717,6 @@ class Admin:
                 self.show_error("Validation Error", f"Employee ID {employee_id} already exists in the database")
                 return False, f"Employee ID {employee_id} already exists in the database"
 
-            # Check if the name already exists
             cursor = self.db.execute_query(
                 "SELECT first_name, last_name FROM Employee WHERE first_name = ? AND last_name = ?",
                 (first_name, last_name)
@@ -2835,7 +2773,7 @@ class Admin:
                     "is_hr": employee[9],
                     "status": employee[10],
                     "password": employee[11],
-                    "password_changed": employee[12],  # Add this line
+                    "password_changed": employee[12],  
                     "profile_picture": employee[13],
                     "email": employee[14]
                 }
@@ -2869,7 +2807,7 @@ class Admin:
                     "is_hr": hr_employee[9],
                     "status": hr_employee[10],
                     "password": hr_employee[11],
-                    "password_changed": hr_employee[12],  # Add this line
+                    "password_changed": hr_employee[12],  
                     "profile_picture": hr_employee[13],
                     "email": hr_employee[14]
                 }
@@ -3018,7 +2956,6 @@ class Admin:
             result = cursor.fetchone() if cursor else None
 
             if result:
-                # Update existing employee
                 self.db.execute_query('''
                     UPDATE Employee
                     SET first_name = ?, last_name = ?, middle_initial = ?, birthday = ?, gender = ?,
@@ -3035,7 +2972,6 @@ class Admin:
                 ))
                 self.system_logs.log_system_action(f"Employee {employee_data['employee_id']} modified by {current_admin}", "Employee")
             else:
-                # Insert new employee
                 self.db.execute_query('''
                     INSERT INTO Employee (
                         employee_id, first_name, last_name, middle_initial, birthday, gender,
@@ -3219,7 +3155,6 @@ class Admin:
             else:
                 label.clear()
 
-        # Delay the update to ensure the label is fully laid out
         QTimer.singleShot(0, update_picture)
 
     def clear_employee_enrollment_fields(self):
@@ -3461,16 +3396,12 @@ class Admin:
             row_position = self.admin_ui.backup_tbl.rowCount()
             self.admin_ui.backup_tbl.insertRow(row_position)
 
-            # File Name
             file_name_item = QTableWidgetItem(backup_file)
             file_name_item.setFlags(file_name_item.flags() & ~Qt.ItemIsEditable)
             self.admin_ui.backup_tbl.setItem(row_position, 0, file_name_item)
 
-            # Date (Extracted from file name)
             try:
-                # Ensure the file name matches the expected format: backup_YYYYMMDD_HHMMSS.db
                 if backup_file.startswith("backup_") and backup_file.endswith(".db"):
-                    # Extract the full timestamp part between "backup_" and ".db"
                     timestamp_part = backup_file[len("backup_"):].split(".")[0]
                     backup_date = datetime.strptime(timestamp_part, "%Y%m%d_%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
                 else:
@@ -3493,11 +3424,9 @@ class Admin:
         backup_path = os.path.join("resources/backups", backup_file)
 
         try:
-            # Copy the selected backup file to overwrite the current database
             shutil.copy(backup_path, self.db.db_name)
             QMessageBox.information(None, "Restore", "Database restored successfully. The application will now restart.")
 
-            # Restart the application
             QProcess.startDetached(sys.executable, sys.argv)
             QCoreApplication.quit()
         except Exception as e:
@@ -3542,7 +3471,7 @@ class Admin:
             elif retention_unit == "Weeks":
                 threshold = now - timedelta(weeks=retention_frequency)
             elif retention_unit == "Months":
-                threshold = now - timedelta(days=retention_frequency * 30)  # Approximate months as 30 days
+                threshold = now - timedelta(days=retention_frequency * 30)  
             else:
                 return
 
@@ -3564,7 +3493,7 @@ class Admin:
         self.backup_timer = QTimer()
         self.backup_timer.timeout.connect(self.scheduled_backup)
 
-        self.backup_timer.start(3600000)  # 1 hour in milliseconds
+        self.backup_timer.start(3600000)  
 
     def load_backup_configuration(self):
         try:
@@ -3572,7 +3501,6 @@ class Admin:
             config = cursor.fetchone()
 
             if not config:
-                # No configuration found, set default values
                 self.admin_ui.backup_basic_btn.setChecked(True)
                 self.admin_ui.backup_basic_box.setCurrentIndex(0)
                 self.admin_ui.backup_custom_number.clear()
@@ -3584,7 +3512,6 @@ class Admin:
 
             backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit = config
 
-            # Set backup type
             if backup_type == "Basic":
                 self.admin_ui.backup_basic_btn.setChecked(True)
                 self.admin_ui.backup_basic_box.setCurrentText(backup_unit)
@@ -3607,7 +3534,7 @@ class Admin:
         toast = Toast(self.admin_ui)
         toast.setTitle(title)
         toast.setText(message)
-        toast.setDuration(2000)  # Duration in milliseconds
+        toast.setDuration(2000)  
         toast.setOffset(25, 35)  
         toast.setBorderRadius(6)  
         toast.applyPreset(ToastPreset.SUCCESS)  
@@ -3622,7 +3549,7 @@ class Admin:
         toast = Toast(self.admin_ui)
         toast.setTitle(title)
         toast.setText(message)
-        toast.setDuration(2000)  # Duration in milliseconds
+        toast.setDuration(2000)  
         toast.setOffset(25, 35)  
         toast.setBorderRadius(6)  
         toast.applyPreset(ToastPreset.ERROR)  
@@ -3650,39 +3577,34 @@ class Admin:
             return False
         
     def setup_attendance_area_chart(self):
-        # Prepare chart and series
         self.chart = QChart()
         self.present_series = QLineSeries()
         self.absent_series = QLineSeries()
         self.present_series.setName("Present")
         self.absent_series.setName("Absent")
 
-        # Area series for present and absent
         self.present_area = QAreaSeries(self.present_series)
         self.present_area.setName("Present")
         self.absent_area = QAreaSeries(self.absent_series)
         self.absent_area.setName("Absent")
         
-        # Replace the area series color setting section with:
         self.present_area = QAreaSeries(self.present_series)
         self.present_area.setName("Present")
-        self.present_area.setColor(QColor(128, 173, 246, 180))  # Added alpha value 180 for transparency
-        self.present_area.setBorderColor(QColor(128, 173, 246))  # Solid border color
-        self.present_area.setOpacity(0.6)  # Set opacity to 60%
+        self.present_area.setColor(QColor(128, 173, 246, 180))  
+        self.present_area.setBorderColor(QColor(128, 173, 246))  
+        self.present_area.setOpacity(0.6)  
 
         self.absent_area = QAreaSeries(self.absent_series)
         self.absent_area.setName("Absent")
-        self.absent_area.setColor(QColor(48, 9, 154, 180))  # Added alpha value 180 for transparency
-        self.absent_area.setBorderColor(QColor(48, 9, 154))  # Solid border color
-        self.absent_area.setOpacity(0.6)  # Set opacity to 60%
+        self.absent_area.setColor(QColor(48, 9, 154, 180))  
+        self.absent_area.setBorderColor(QColor(48, 9, 154))  
+        self.absent_area.setOpacity(0.6)  
 
-        # Set chart background color
         self.chart.setBackgroundBrush(QColor(239, 239, 239))
 
         self.chart.addSeries(self.present_area)
         self.chart.addSeries(self.absent_area)
 
-        # Axes
         self.axis_x = QValueAxis()
         self.axis_x.setTitleText("Day of Month")
         self.axis_x.setLabelFormat("%d")
@@ -3730,7 +3652,7 @@ class Admin:
                 date_str, present, absent = row
                 try:
                     date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-                    dates.append(date_obj.strftime("%d"))  # Store day number
+                    dates.append(date_obj.strftime("%d"))  
                     presents.append(int(present))
                     absents.append(int(absent))
                     max_y = max(max_y, int(present), int(absent))
@@ -3740,30 +3662,24 @@ class Admin:
             if not dates:
                 return
 
-            # Reset the chart axes
             self.chart.removeAxis(self.axis_x)
             
-            # Create a new category axis
             axis_x = QCategoryAxis()
             axis_x.setTitleText("Day of Month")
             axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue) 
             self.axis_x = axis_x
             
-            # Add series data with integer x-values
             point_count = len(dates)
             for i in range(point_count):
                 self.present_series.append(i, presents[i])
                 self.absent_series.append(i, absents[i])
-                # Add category label at each point
                 axis_x.append(dates[i], i)
             
-            # Configure axes ranges
             self.axis_x.setRange(0, point_count - 1)
             self.axis_y.setRange(0, max_y)
-            self.axis_y.setTickCount(max_y + 1)  # Integer steps
+            self.axis_y.setTickCount(max_y + 1)  
             self.axis_y.setLabelFormat("%d")
             
-            # Add the axis to the chart and attach to series
             self.chart.addAxis(self.axis_x, Qt.AlignBottom)
             self.present_area.attachAxis(self.axis_x)
             self.absent_area.attachAxis(self.axis_x)
@@ -3771,6 +3687,110 @@ class Admin:
         except Exception as e:
             print(f"Error updating attendance area chart: {e}")
    
+    def setup_avg_work_hours_line_chart(self):
+        self.avg_chart = QChart()
+        self.bar_series = QBarSeries()
+        self.line_series = QLineSeries()
+        self.bar_set = QBarSet("Actual")
+        self.bar_series.append(self.bar_set)
+        self.line_series.setName("Average")
+
+        pen = self.line_series.pen()
+        pen.setWidth(3)
+        pen.setColor(QColor(255, 140, 0))
+        self.line_series.setPen(pen)
+
+        self.avg_chart.addSeries(self.bar_series)
+        self.avg_chart.addSeries(self.line_series)
+        self.avg_chart.setTitle("Average Work Hours (Last 7 Days)")
+        self.avg_chart.setBackgroundBrush(QColor(239, 239, 239))
+
+        self.avg_axis_x = QCategoryAxis()
+        self.avg_axis_x.setTitleText("Day")
+        self.avg_axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+
+        self.avg_axis_y = QValueAxis()
+        self.avg_axis_y.setTitleText("Hours")
+        self.avg_axis_y.setLabelFormat("%.1f")
+        self.avg_axis_y.setRange(0, 12)
+
+        self.avg_chart.addAxis(self.avg_axis_x, Qt.AlignBottom)
+        self.avg_chart.addAxis(self.avg_axis_y, Qt.AlignLeft)
+        self.bar_series.attachAxis(self.avg_axis_x)
+        self.bar_series.attachAxis(self.avg_axis_y)
+        self.line_series.attachAxis(self.avg_axis_x)
+        self.line_series.attachAxis(self.avg_axis_y)
+
+        self.avg_chart.legend().setVisible(True)
+        self.avg_chart.legend().setAlignment(Qt.AlignBottom)
+
+        self.avg_work_hours_chart_view = QChartView(self.avg_chart)
+        self.avg_work_hours_chart_view.setRenderHint(QPainter.Antialiasing)
+
+        self.update_avg_work_hours_line_chart()
+
+    def update_avg_work_hours_line_chart(self):
+        self.bar_set.remove(0, self.bar_set.count())
+        self.line_series.clear()
+        # self.avg_axis_x.clear()  # Remove this line
+
+        # Remove and recreate the X axis to clear categories
+        self.avg_chart.removeAxis(self.avg_axis_x)
+        self.avg_axis_x = QCategoryAxis()
+        self.avg_axis_x.setTitleText("Day")
+        self.avg_axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+
+        try:
+            cursor = self.db.execute_query(
+                """
+                SELECT date(created_at) as log_date, average_work_hours
+                FROM system_logs
+                WHERE date(created_at) >= date('now', '-6 days')
+                ORDER BY date(created_at)
+                """
+            )
+            data = cursor.fetchall() if cursor else []
+            if not data:
+                return
+
+            days = []
+            hours = []
+            max_hour = 1
+
+            for idx, row in enumerate(data):
+                date_str, avg_hours = row
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                day_label = date_obj.strftime("%a")
+                days.append(day_label)
+                hours_val = float(avg_hours) if avg_hours is not None else 0
+                hours.append(hours_val)
+                max_hour = max(max_hour, hours_val)
+
+            # Add bar values
+            for val in hours:
+                self.bar_set << val
+
+            # Calculate average
+            avg_val = sum(hours) / len(hours) if hours else 0
+
+            # Add straight line for average
+            for i in range(len(days)):
+                self.line_series.append(i, avg_val)
+
+            # Set X axis categories
+            for i, label in enumerate(days):
+                self.avg_axis_x.append(label, i)
+
+            self.avg_axis_x.setRange(0, len(days) - 1)
+            self.avg_chart.addAxis(self.avg_axis_x, Qt.AlignBottom)
+            self.bar_series.attachAxis(self.avg_axis_x)
+            self.line_series.attachAxis(self.avg_axis_x)
+            self.avg_axis_y.setRange(0, max(8, int(max_hour + 1)))
+            self.avg_axis_y.setTickCount(min(13, int(max_hour + 2)))
+        except Exception as e:
+            print(f"Error updating avg work hours line chart: {e}")
+# ...existing code...
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     controller = EALS()
