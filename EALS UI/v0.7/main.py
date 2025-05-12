@@ -119,6 +119,7 @@ class DatabaseConnection:
                     present_count INTEGER DEFAULT 0,
                     absent_count INTEGER DEFAULT 0,
                     late_count INTEGER DEFAULT 0,
+                    average_work_hours REAL DEFAULT 0, -- Added column
                     FOREIGN KEY (entity_started) REFERENCES Employee(employee_id),
                     FOREIGN KEY (entity_started) REFERENCES Admin(admin_id),
                     FOREIGN KEY (entity_started) REFERENCES Feedback(id),
@@ -182,6 +183,54 @@ class SystemLogs:
     def __init__(self, db):
         self.db = db
 
+    def get_average_work_hours(self, date_str):
+        """
+        Calculate the average work hours for all employees for a given date.
+        Only considers employees (is_hr = 0) who have both a Clock In and Clock Out on that date.
+        """
+        try:
+            cursor = self.db.execute_query(
+                '''
+                SELECT employee_id FROM attendance_logs
+                WHERE date = ? AND remarks = 'Clock In'
+                AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)
+                ''', (date_str,)
+            )
+            employee_ids = [row[0] for row in cursor.fetchall()] if cursor else []
+            total_hours = 0
+            count = 0
+            for emp_id in employee_ids:
+                # Get Clock In and Clock Out times for this employee on this date
+                cur = self.db.execute_query(
+                    '''
+                    SELECT time, remarks FROM attendance_logs
+                    WHERE employee_id = ? AND date = ?
+                    ORDER BY time ASC
+                    ''', (emp_id, date_str)
+                )
+                logs = cur.fetchall() if cur else []
+                clock_in_time = None
+                clock_out_time = None
+                for log in logs:
+                    if log[1] == "Clock In" and not clock_in_time:
+                        clock_in_time = log[0]
+                    elif log[1] == "Clock Out":
+                        clock_out_time = log[0]
+                if clock_in_time and clock_out_time:
+                    try:
+                        t1 = datetime.strptime(f"{date_str} {clock_in_time}", "%Y-%m-%d %H:%M:%S")
+                        t2 = datetime.strptime(f"{date_str} {clock_out_time}", "%Y-%m-%d %H:%M:%S")
+                        hours = (t2 - t1).total_seconds() / 3600
+                        if hours > 0:
+                            total_hours += hours
+                            count += 1
+                    except Exception:
+                        continue
+            return round(total_hours / count, 2) if count > 0 else 0
+        except Exception as e:
+            print(f"Error calculating average work hours: {e}")
+            return 0
+
     def log_system_action(self, action, entity_type):
         """
         entities = Employee, Admin, Feedback, AttendanceLog, SystemSettings
@@ -244,6 +293,9 @@ class SystemLogs:
                     (today,)
                 )
                 absent_count = cursor.fetchone()[0] if cursor else 0
+                
+                # Calculate average work hours for today
+                average_work_hours = self.get_average_work_hours(today)
             except Exception as e:
                 print(f"Error computing attendance counts for system logs: {e}")
 
@@ -261,18 +313,19 @@ class SystemLogs:
                         stopped_to_the_entity = ?,
                         present_count = ?, 
                         absent_count = ?, 
-                        late_count = ?
+                        late_count = ?,
+                        average_work_hours = ?
                     WHERE id = ?
                     ''',
-                    (current_time, entity_id, present_count, absent_count, late_count, existing_log[0])
+                    (current_time, entity_id, present_count, absent_count, late_count, average_work_hours, existing_log[0])
                 )
             else:
                 self.db.execute_query(
                     '''
-                    INSERT INTO system_logs (path, created_at, last_modified_at, entity_started, stopped_to_the_entity, present_count, absent_count, late_count)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO system_logs (path, created_at, last_modified_at, entity_started, stopped_to_the_entity, present_count, absent_count, late_count, average_work_hours)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''',
-                    (log_file, current_time, current_time, entity_id, entity_id, present_count, absent_count, late_count)
+                    (log_file, current_time, current_time, entity_id, entity_id, present_count, absent_count, late_count, average_work_hours)
                 )
 
         except Exception as e:
