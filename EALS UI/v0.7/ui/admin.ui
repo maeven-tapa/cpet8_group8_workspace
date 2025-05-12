@@ -413,7 +413,7 @@ border-radius:6px;</string>
                   <string notr="true">border: none;</string>
                  </property>
                  <property name="text">
-                  <string>title:</string>
+                  <string>Daily Employee Attendance</string>
                  </property>
                  <property name="indent">
                   <number>4</number>
@@ -421,7 +421,7 @@ border-radius:6px;</string>
                 </widget>
                </item>
                <item>
-                <widget class="QFrame" name="graph1_frame">
+                <widget class="QFrame" name="frame_17">
                  <property name="styleSheet">
                   <string notr="true">background-color: rgb(239, 239, 239);
 border-radius:6px;
@@ -433,6 +433,23 @@ color: #2C2C2C;</string>
                  <property name="frameShadow">
                   <enum>QFrame::Shadow::Raised</enum>
                  </property>
+                 <layout class="QGridLayout" name="gridLayout_83">
+                  <property name="leftMargin">
+                   <number>2</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>2</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>2</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>2</number>
+                  </property>
+                  <item row="0" column="0">
+                   <layout class="QGridLayout" name="chart_layout1"/>
+                  </item>
+                 </layout>
                 </widget>
                </item>
               </layout>
@@ -808,6 +825,27 @@ color: #2C2C2C;</string>
                     <property name="frameShadow">
                      <enum>QFrame::Shadow::Raised</enum>
                     </property>
+                    <layout class="QGridLayout" name="gridLayout_85">
+                     <property name="leftMargin">
+                      <number>2</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>2</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>2</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>2</number>
+                     </property>
+                     <item row="0" column="0">
+                      <layout class="QGridLayout" name="chart_layout2">
+                       <property name="sizeConstraint">
+                        <enum>QLayout::SizeConstraint::SetMinimumSize</enum>
+                       </property>
+                      </layout>
+                     </item>
+                    </layout>
                    </widget>
                   </item>
                  </layout>
@@ -854,6 +892,23 @@ color: #2C2C2C;</string>
                     <property name="frameShadow">
                      <enum>QFrame::Shadow::Raised</enum>
                     </property>
+                    <layout class="QGridLayout" name="gridLayout_86">
+                     <property name="leftMargin">
+                      <number>2</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>2</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>2</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>2</number>
+                     </property>
+                     <item row="0" column="0">
+                      <layout class="QGridLayout" name="chart_layout3"/>
+                     </item>
+                    </layout>
                    </widget>
                   </item>
                  </layout>

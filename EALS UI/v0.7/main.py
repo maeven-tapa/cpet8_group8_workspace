@@ -18,6 +18,7 @@ import argon2
 import secrets
 import string
 import chime
+from PySide6.QtCharts import QChart, QChartView, QAreaSeries, QLineSeries, QValueAxis, QCategoryAxis
 
 PASSWORD_HASHER = argon2.PasswordHasher()
 
@@ -1942,6 +1943,12 @@ class Admin:
         self.admin_ui.dashboard_nav_btn.setText("Next")
         self.admin_ui.dashboard_nav_btn.clicked.connect(self.handle_dashboard_nav)
         
+        self.chart_view = None
+        self.setup_attendance_area_chart()
+        # Add chart_view to chart_layout1 if it exists
+        if hasattr(self.admin_ui, "chart_layout1") and self.chart_view:
+            self.admin_ui.chart_layout1.addWidget(self.chart_view, 0, 0)
+        
     
 
     def handle_dashboard_nav(self):
@@ -3588,7 +3595,129 @@ class Admin:
             toast.setDuration(0) 
             toast.show()
             return False
-    
+        
+    def setup_attendance_area_chart(self):
+        # Prepare chart and series
+        self.chart = QChart()
+        self.present_series = QLineSeries()
+        self.absent_series = QLineSeries()
+        self.present_series.setName("Present")
+        self.absent_series.setName("Absent")
+
+        # Area series for present and absent
+        self.present_area = QAreaSeries(self.present_series)
+        self.present_area.setName("Present")
+        self.absent_area = QAreaSeries(self.absent_series)
+        self.absent_area.setName("Absent")
+        
+        # Replace the area series color setting section with:
+        self.present_area = QAreaSeries(self.present_series)
+        self.present_area.setName("Present")
+        self.present_area.setColor(QColor(128, 173, 246, 180))  # Added alpha value 180 for transparency
+        self.present_area.setBorderColor(QColor(128, 173, 246))  # Solid border color
+        self.present_area.setOpacity(0.6)  # Set opacity to 60%
+
+        self.absent_area = QAreaSeries(self.absent_series)
+        self.absent_area.setName("Absent")
+        self.absent_area.setColor(QColor(48, 9, 154, 180))  # Added alpha value 180 for transparency
+        self.absent_area.setBorderColor(QColor(48, 9, 154))  # Solid border color
+        self.absent_area.setOpacity(0.6)  # Set opacity to 60%
+
+        # Set chart background color
+        self.chart.setBackgroundBrush(QColor(239, 239, 239))
+
+        self.chart.addSeries(self.present_area)
+        self.chart.addSeries(self.absent_area)
+
+        # Axes
+        self.axis_x = QValueAxis()
+        self.axis_x.setTitleText("Day of Month")
+        self.axis_x.setLabelFormat("%d")
+        self.axis_y = QValueAxis()
+        self.axis_y.setTitleText("Count")
+        self.chart.addAxis(self.axis_x, Qt.AlignBottom)
+        self.chart.addAxis(self.axis_y, Qt.AlignLeft)
+        self.present_area.attachAxis(self.axis_x)
+        self.present_area.attachAxis(self.axis_y)
+        self.absent_area.attachAxis(self.axis_x)
+        self.absent_area.attachAxis(self.axis_y)
+
+        self.chart.legend().setVisible(True)
+        self.chart.legend().setAlignment(Qt.AlignBottom)
+
+        self.chart_view = QChartView(self.chart)
+        self.chart_view.setRenderHint(QPainter.Antialiasing)
+
+        self.update_attendance_area_chart()
+
+
+    def update_attendance_area_chart(self):
+        self.present_series.clear()
+        self.absent_series.clear()
+
+        try:
+            cursor = self.db.execute_query(
+                """
+                SELECT date(created_at) as log_date, present_count, absent_count
+                FROM system_logs
+                WHERE date(created_at) >= date('now', '-6 days')
+                ORDER BY date(created_at)
+                """
+            )
+            data = cursor.fetchall() if cursor else []
+            if not data:
+                return
+
+            dates = []
+            presents = []
+            absents = []
+            max_y = 1  
+
+            for row in data:
+                date_str, present, absent = row
+                try:
+                    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                    dates.append(date_obj.strftime("%d"))  # Store day number
+                    presents.append(int(present))
+                    absents.append(int(absent))
+                    max_y = max(max_y, int(present), int(absent))
+                except Exception:
+                    continue
+
+            if not dates:
+                return
+
+            # Reset the chart axes
+            self.chart.removeAxis(self.axis_x)
+            
+            # Create a new category axis
+            axis_x = QCategoryAxis()
+            axis_x.setTitleText("Day of Month")
+            axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue) 
+            self.axis_x = axis_x
+            
+            # Add series data with integer x-values
+            point_count = len(dates)
+            for i in range(point_count):
+                self.present_series.append(i, presents[i])
+                self.absent_series.append(i, absents[i])
+                # Add category label at each point
+                axis_x.append(dates[i], i)
+            
+            # Configure axes ranges
+            self.axis_x.setRange(0, point_count - 1)
+            self.axis_y.setRange(0, max_y)
+            self.axis_y.setTickCount(max_y + 1)  # Integer steps
+            self.axis_y.setLabelFormat("%d")
+            
+            # Add the axis to the chart and attach to series
+            self.chart.addAxis(self.axis_x, Qt.AlignBottom)
+            self.present_area.attachAxis(self.axis_x)
+            self.absent_area.attachAxis(self.axis_x)
+
+        except Exception as e:
+            print(f"Error updating attendance area chart: {e}")
+   
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     controller = EALS()
