@@ -41,7 +41,7 @@ QToolTip {
      <number>40</number>
     </property>
     <item row="0" column="0">
-     <widget class="QTabWidget" name="tabWidget">
+     <widget class="QTabWidget" name="hr_home_tabs">
       <property name="font">
        <font>
         <pointsize>13</pointsize>
@@ -3077,7 +3077,17 @@ QScrollBar::sub-page:vertical {
                         </item>
                         <item>
                          <property name="text">
+                          <string>Christmass Design</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
                           <string>Design 1</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Design 2</string>
                          </property>
                         </item>
                        </widget>
@@ -3151,6 +3161,9 @@ color: #2C2C2C;</string>
                   </item>
                   <item>
                    <widget class="QLineEdit" name="view_email_subject">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="styleSheet">
                      <string notr="true">QLineEdit {
     background-color: #ffffff;
@@ -3192,6 +3205,9 @@ QLineEdit:focus {
                   </item>
                   <item>
                    <widget class="QPlainTextEdit" name="view_email_message">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="styleSheet">
                      <string notr="true">QPlainTextEdit {
     background-color: white;
@@ -3241,6 +3257,9 @@ color: #2C2C2C;</string>
                      <layout class="QVBoxLayout" name="verticalLayout_16">
                       <item>
                        <widget class="QTableWidget" name="view_email_employee_list_tbl">
+                        <property name="enabled">
+                         <bool>false</bool>
+                        </property>
                         <property name="font">
                          <font>
                           <family>Segoe UI</family>
@@ -3350,6 +3369,9 @@ QToolTip {
                     </item>
                     <item row="0" column="1">
                      <widget class="QComboBox" name="view_email_employee_sort_box">
+                      <property name="enabled">
+                       <bool>true</bool>
+                      </property>
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -3492,6 +3514,9 @@ QLineEdit:focus {
                  </item>
                  <item row="0" column="1">
                   <widget class="QRadioButton" name="view_employee_choose_btn">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
                    <property name="font">
                     <font>
                      <family>Segoe UI</family>
@@ -3608,7 +3633,11 @@ color: #2C2C2C;</string>
                      </layout>
                     </item>
                     <item row="0" column="0">
-                     <widget class="QListWidget" name="view_attachments_list"/>
+                     <widget class="QListWidget" name="view_attachments_list">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
                     </item>
                    </layout>
                   </widget>
@@ -3631,6 +3660,9 @@ color: #2C2C2C;</string>
                      <layout class="QVBoxLayout" name="verticalLayout_37">
                       <item>
                        <widget class="QRadioButton" name="view_set_schedule_btn">
+                        <property name="enabled">
+                         <bool>false</bool>
+                        </property>
                         <property name="font">
                          <font>
                           <family>Segoe UI</family>
@@ -3680,6 +3712,9 @@ QRadioButton::indicator:checked:hover {
                       </item>
                       <item>
                        <widget class="QComboBox" name="view_schedule_frequency_box">
+                        <property name="enabled">
+                         <bool>false</bool>
+                        </property>
                         <property name="styleSheet">
                          <string notr="true">QComboBox {
     background-color: #ffffff;
@@ -3771,6 +3806,9 @@ QScrollBar::sub-page:vertical {
                  </item>
                  <item row="0" column="0">
                   <widget class="QRadioButton" name="view_employee_send_all_btn">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
                    <property name="font">
                     <font>
                      <family>Segoe UI</family>
@@ -3836,6 +3874,9 @@ color: #2C2C2C;</string>
                      <layout class="QVBoxLayout" name="verticalLayout_39">
                       <item>
                        <widget class="QRadioButton" name="view_set_theme_btn">
+                        <property name="enabled">
+                         <bool>false</bool>
+                        </property>
                         <property name="font">
                          <font>
                           <family>Segoe UI</family>

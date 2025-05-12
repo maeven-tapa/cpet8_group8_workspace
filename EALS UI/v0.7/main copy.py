@@ -8,7 +8,6 @@ import smtplib
 import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage  # Add this import
 from PySide6.QtWidgets import QApplication,QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit,QVBoxLayout, QPushButton, QRadioButton, QWidget, QHBoxLayout, QLabel, QListWidget, QListWidgetItem  # add QListWidget, QListWidgetItem
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QDate, QCoreApplication, QProcess, QTimer, QRegularExpression
@@ -196,6 +195,7 @@ class DatabaseConnection:
     def close(self):
         if self.connection:
             self.connection.close()
+
 
 class SystemLogs:
     def __init__(self, db):
@@ -457,7 +457,6 @@ class HR:
         self.hr_ui = self.loader.load("ui/hr.ui")
         self.hr_ui.setWindowIcon(QIcon('resources/logo.ico'))
         self.hr_ui.setWindowTitle("EALS - HR")
-        self.hr_ui.hr_home_tabs.setCurrentWidget(self.hr_ui.hr_dashboard)
         self.hr_ui.hr_employee_sc_pages.setCurrentWidget(self.hr_ui.hr_employee_dashboard_page)
         self.hr_ui.hr_employee_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.hr_ui.hr_employee_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -1268,9 +1267,6 @@ class Home:
                     if employee_data["is_hr"]:
                         if self.validate_hr_attendance(employee_data):
                             self.goto_hr_ui(employee_data)
-                            self.home_ui.home_id_box.clear() 
-                            self.home_ui.home_pass_box.clear()
-                            self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
                             self.show_success("Login Successful", "Welcome back, HR!")
                             self.system_logs.log_system_action("A user is logged in as HR", "Employee")
                     else:
@@ -4304,9 +4300,8 @@ class Announcement:
         self.hr_data = hr_data
         self.hr_ui = hr_ui
         self.attachments = []
-        
-        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_page)
 
+        # Connect UI elements
         self.hr_ui.employee_send_all_btn.toggled.connect(self.toggle_send_all)
         self.hr_ui.employee_choose_btn.toggled.connect(self.toggle_choose_employee)
         self.hr_ui.email_employee_search_box.textChanged.connect(self.filter_employee_table)
@@ -4315,17 +4310,6 @@ class Announcement:
         self.hr_ui.import_btn.clicked.connect(self.import_template)
         self.hr_ui.attach_btn.clicked.connect(self.attach_files)
         self.hr_ui.send_email_btn.clicked.connect(self.send_announcement_email)
-        self.hr_ui.email_view_btn.clicked.connect(self.view_selected_sched_email)
-        self.hr_ui.edit_email_btn.clicked.connect(self.edit_selected_sched_email)
-        self.hr_ui.delete_email_btn.clicked.connect(self.delete_selected_sched_email)
-        self.hr_ui.view_email_back_btn.clicked.connect(self.back_from_view_email)
-        self.hr_ui.edit_email_back_btn.clicked.connect(self.back_from_edit_email)
-        self.hr_ui.save_email_btn.clicked.connect(self.save_edited_email)
-
-        self.hr_ui.view_employee_send_all_btn.toggled.connect(self.toggle_view_send_all)
-        self.hr_ui.view_employee_choose_btn.toggled.connect(self.toggle_view_choose_employee)
-        self.hr_ui.edit_employee_send_all_btn.toggled.connect(self.toggle_edit_send_all)
-        self.hr_ui.edit_employee_choose_btn.toggled.connect(self.toggle_edit_choose_employee)
 
         self.radio_buttons = []  # Track radio buttons for single selection
 
@@ -4340,62 +4324,6 @@ class Announcement:
         # Ensure table is only enabled when choose is checked
         self.hr_ui.selectable_employee_list_tbl.setEnabled(self.hr_ui.employee_choose_btn.isChecked())
         self.hr_ui.employee_choose_btn.toggled.connect(self.toggle_choose_employee)
-
-    def toggle_view_send_all(self):
-        self.hr_ui.view_email_employee_list_tbl.setDisabled(self.hr_ui.view_employee_send_all_btn.isChecked())
-        if self.hr_ui.view_employee_send_all_btn.isChecked():
-            self.load_view_email_employee_table("All")
-
-    def toggle_view_choose_employee(self):
-        self.hr_ui.view_email_employee_list_tbl.setEnabled(self.hr_ui.view_employee_choose_btn.isChecked())
-        if self.hr_ui.view_employee_choose_btn.isChecked():
-            self.load_view_email_employee_table("Selected")
-
-    def toggle_edit_send_all(self):
-        self.hr_ui.edit_email_employee_list_tbl.setDisabled(self.hr_ui.edit_employee_send_all_btn.isChecked())
-        if self.hr_ui.edit_employee_send_all_btn.isChecked():
-            self.load_edit_email_employee_table("All")
-
-    def toggle_edit_choose_employee(self):
-        self.hr_ui.edit_email_employee_list_tbl.setEnabled(self.hr_ui.edit_employee_choose_btn.isChecked())
-        if self.hr_ui.edit_employee_choose_btn.isChecked():
-            self.load_edit_email_employee_table("Selected")
-
-    def load_view_email_employee_table(self, sending_type):
-        tbl = self.hr_ui.view_email_employee_list_tbl
-        tbl.setRowCount(0)
-        if sending_type == "All":
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
-        else:
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE employee_id = ?", (self.hr_data["employee_id"],))
-        employees = cursor.fetchall() if cursor else []
-        for emp in employees:
-            row = tbl.rowCount()
-            tbl.insertRow(row)
-            mi = f" {emp[3]}." if emp[3] else ""
-            name = f"{emp[2]}, {emp[1]}{mi}"
-            tbl.setItem(row, 0, QTableWidgetItem(name))
-            tbl.setItem(row, 1, QTableWidgetItem(emp[0]))
-            tbl.setItem(row, 2, QTableWidgetItem(f"{emp[4]} / {emp[5]}"))
-        tbl.resizeColumnsToContents()
-
-    def load_edit_email_employee_table(self, sending_type):
-        tbl = self.hr_ui.edit_email_employee_list_tbl
-        tbl.setRowCount(0)
-        if sending_type == "All":
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
-        else:
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE employee_id = ?", (self.hr_data["employee_id"],))
-        employees = cursor.fetchall() if cursor else []
-        for emp in employees:
-            row = tbl.rowCount()
-            tbl.insertRow(row)
-            mi = f" {emp[3]}." if emp[3] else ""
-            name = f"{emp[2]}, {emp[1]}{mi}"
-            tbl.setItem(row, 0, QTableWidgetItem(name))
-            tbl.setItem(row, 1, QTableWidgetItem(emp[0]))
-            tbl.setItem(row, 2, QTableWidgetItem(f"{emp[4]} / {emp[5]}"))
-        tbl.resizeColumnsToContents()
 
     def toggle_send_all(self):
         # If send all is checked, disable table
@@ -4413,9 +4341,11 @@ class Announcement:
             for radio in self.radio_buttons:
                 radio.setChecked(False)
 
+    # --- Scheduled Emails Table Logic ---
     def load_sched_email_table(self):
         tbl = self.hr_ui.sched_email_list_tbl
         tbl.setRowCount(0)
+        # Only announcements with schedule_enabled=1
         cursor = self.db.execute_query(
             "SELECT subject, created_at, schedule_frequency FROM announcements WHERE schedule_enabled = 1 ORDER BY created_at DESC"
         )
@@ -4426,7 +4356,7 @@ class Announcement:
             tbl.setItem(row, 0, QTableWidgetItem(entry[0]))  # Subject
             tbl.setItem(row, 1, QTableWidgetItem(str(entry[1])))  # Created at
             tbl.setItem(row, 2, QTableWidgetItem(str(entry[2])))  # Frequency
-
+        tbl.resizeColumnsToContents()
 
     def filter_sched_email_table(self):
         search_text = self.hr_ui.sched_email_search_box.text().lower()
@@ -4465,6 +4395,7 @@ class Announcement:
         tbl.resizeColumnsToContents()
 
     def load_employee_table(self):
+        # Load all employees into selectable_employee_list_tbl
         cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
         employees = cursor.fetchall() if cursor else []
         tbl = self.hr_ui.selectable_employee_list_tbl
@@ -4542,22 +4473,6 @@ class Announcement:
             self.hr_ui.selectable_employee_list_tbl.setItem(row, 3, QTableWidgetItem(f"{emp_data['department']} / {emp_data['position']}"))
         self.hr_ui.selectable_employee_list_tbl.resizeColumnsToContents()
 
-    def get_theme_images(self):
-
-        theme_map = {
-            "Default": ("default_theme_header.jpg", "default_theme_footer.jpg"),
-            "Christmass Design": ("xmass_theme_header.jpg", "xmass_theme_footer.jpg"),
-            "Design 1": ("theme1_header.jpg", "theme1_footer.jpg"),
-            "Design 2": ("theme2_header.jpg", "theme2_footer.jpg"),
-        }
-        theme = "Default"  
-        if self.hr_ui.set_theme_btn.isChecked():
-            theme = self.hr_ui.theme_design_box.currentText()
-        header, footer = theme_map.get(theme, theme_map["Default"])
-        header_path = os.path.join("resources", "theme_images", header)
-        footer_path = os.path.join("resources", "theme_images", footer)
-        return header_path, footer_path
-
     def attach_files(self):
         valid_exts = ('.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.zip')
         files, _ = QFileDialog.getOpenFileNames(self.hr_ui, "Select Attachments", "", 
@@ -4566,12 +4481,11 @@ class Announcement:
             valid_files = [f for f in files if os.path.splitext(f)[1].lower() in valid_exts]
             if len(valid_files) < len(files):
                 QMessageBox.warning(self.hr_ui, "Attachment Error", "Some files were not added because they are not supported by Gmail.")
-            for f in valid_files:
-                if f not in self.attachments:
-                    self.attachments.append(f)
+            self.attachments.extend([f for f in valid_files if f not in self.attachments])
             self.update_attachments_list()
 
     def update_attachments_list(self):
+        # Use QListWidget named attachments_list
         lw: QListWidget = self.hr_ui.attachments_list
         lw.clear()
         for file_path in self.attachments:
@@ -4595,11 +4509,6 @@ class Announcement:
 
     def remove_attachment(self, file_path):
         if file_path in self.attachments:
-            if os.path.commonpath([os.path.abspath(file_path), os.path.abspath("resources/email_files")]) == os.path.abspath("resources/email_files"):
-                try:
-                    os.remove(file_path)
-                except Exception:
-                    pass
             self.attachments.remove(file_path)
             self.update_attachments_list()
 
@@ -4655,19 +4564,12 @@ class Announcement:
         schedule_frequency = self.hr_ui.schedule_frequency_box.currentText() if schedule_enabled else None
         theme_enabled = self.hr_ui.set_theme_btn.isChecked()
         theme_type = self.hr_ui.theme_design_box.currentText() if theme_enabled else None
-        header_img, footer_img = self.get_theme_images()
-        def compose_html_body(message):
-            html_header = '<img src="cid:headerimg" style="display:block; margin:auto;"><br>' if os.path.exists(header_img) else ""
-            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto;">' if os.path.exists(footer_img) else ""
-            html_frame = (
-                '<div style="margin: 20px auto; padding: 20px; max-width: 600px; border: none; '
-                'border-radius: 8px; background-color: transparent; font-family: Arial, sans-serif;">'
-                f"{message}</div>"
-            )
-            return f"{html_header}{html_frame}{html_footer}"
-
+        files_path = ";".join(self.attachments)
+        attached_files_count = len(self.attachments)
         sending_type = "All" if self.hr_ui.employee_send_all_btn.isChecked() else "Selected"
         involved_employee = None
+
+        # Get recipients
         recipients = []
         if sending_type == "All":
             cursor = self.db.execute_query("SELECT email FROM Employee WHERE is_hr = 0 AND status = 'Active'")
@@ -4684,36 +4586,14 @@ class Announcement:
                         involved_employee = emp_id
                     break
 
+        # Save to database
         self.db.execute_query(
             '''INSERT INTO announcements (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, attached_files_count, files_path, created_by)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-            (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, 0, "", self.hr_data["employee_id"])
+            (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, attached_files_count, files_path, self.hr_data["employee_id"])
         )
-        # Get the last inserted announcement id
-        cursor = self.db.execute_query("SELECT last_insert_rowid()")
-        announcement_id = cursor.fetchone()[0] if cursor else None
-        email_files_dir = os.path.join("resources", "email_files", str(announcement_id))
-        if not os.path.exists(email_files_dir):
-            os.makedirs(email_files_dir)
-        new_attachment_paths = []
-        for f in self.attachments:
-            dest = os.path.join(email_files_dir, os.path.basename(f))
-            if not os.path.exists(dest):
-                try:
-                    shutil.copy(f, dest)
-                except Exception:
-                    continue
-            new_attachment_paths.append(dest)
-        # Update DB with new file paths and count
-        self.db.execute_query(
-            "UPDATE announcements SET attached_files_count = ?, files_path = ? WHERE id = ?",
-            (len(new_attachment_paths), ";".join(new_attachment_paths), announcement_id)
-        )
-        # Update self.attachments to point to the copied files
-        self.attachments = new_attachment_paths
-        self.update_attachments_list()
 
-        # --- EMAIL SENDING ---
+        # Send email
         sender_email = "eals.tupc@gmail.com"
         sender_password = "buwl tszg dghr exln"
         for recipient in recipients:
@@ -4722,29 +4602,7 @@ class Announcement:
                 msg["From"] = sender_email
                 msg["To"] = recipient
                 msg["Subject"] = subject
-
-                # Attach header image
-                if os.path.exists(header_img):
-                    print(f"Attaching header image: {header_img}")
-                    with open(header_img, "rb") as f:
-                        img = MIMEImage(f.read())
-                        img.add_header("Content-ID", "<headerimg>")
-                        img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
-                        msg.attach(img)
-
-                # Attach footer image
-                if os.path.exists(footer_img):
-                    print(f"Attaching footer image: {footer_img}")
-                    with open(footer_img, "rb") as f:
-                        img = MIMEImage(f.read())
-                        img.add_header("Content-ID", "<footerimg>")
-                        img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
-                        msg.attach(img)
-
-                # Compose and attach the HTML body
-                html_body = compose_html_body(message)
-                msg.attach(MIMEText(html_body, "html"))
-
+                msg.attach(MIMEText(message, "plain"))
                 # Attach files
                 for file_path in self.attachments:
                     try:
@@ -4759,13 +4617,12 @@ class Announcement:
                     except Exception as e:
                         print(f"Attachment error: {file_path}: {e}")
                         continue
-
-                # Send the email
                 with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                     server.login(sender_email, sender_password)
                     server.send_message(msg)
             except Exception as e:
                 print(f"Error sending announcement email to {recipient}: {e}")
+
 
         chime.theme('chime')
         chime.success()
@@ -4785,276 +4642,22 @@ class Announcement:
         self.hr_ui.email_message.clear()
         self.hr_ui.set_schedule_btn.setChecked(False)
         self.hr_ui.set_theme_btn.setChecked(False)
+        toast.applyPreset(ToastPreset.SUCCESS)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+
+        # --- Clear fields after send ---
+        self.hr_ui.email_subject.clear()
+        self.hr_ui.email_message.clear()
+        self.hr_ui.set_schedule_btn.setChecked(False)
+        self.hr_ui.set_theme_btn.setChecked(False)
         self.hr_ui.schedule_frequency_box.setCurrentIndex(0)
         self.hr_ui.theme_design_box.setCurrentIndex(0)
         for radio in self.radio_buttons:
             radio.setChecked(False)
         self.attachments.clear()
         self.update_attachments_list()
-        self.load_sched_email_table()
-
-    def get_selected_sched_email_row(self):
-        tbl = self.hr_ui.sched_email_list_tbl
-        selected = tbl.selectedIndexes()
-        if selected:
-            return selected[0].row()
-        return None
-
-    def get_sched_email_db_id_by_row(self, row):
-        # Get the announcement id for the selected row in sched_email_list_tbl
-        if row is None or row >= len(self.sched_email_entries):
-            return None
-        subject, created_at, _ = self.sched_email_entries[row]
-        cursor = self.db.execute_query(
-            "SELECT id FROM announcements WHERE subject = ? AND created_at = ? AND schedule_enabled = 1",
-            (subject, created_at)
-        )
-        result = cursor.fetchone() if cursor else None
-        return result[0] if result else None
-
-    def view_selected_sched_email(self):
-        row = self.get_selected_sched_email_row()
-        ann_id = self.get_sched_email_db_id_by_row(row)
-        if ann_id is None:
-            return
-        cursor = self.db.execute_query("SELECT * FROM announcements WHERE id = ?", (ann_id,))
-        ann = cursor.fetchone() if cursor else None
-        if not ann:
-            return
-        # Populate view page fields
-        self.hr_ui.view_email_subject.setText(ann[1])
-        self.hr_ui.view_email_message.setPlainText(ann[2])
-        self.hr_ui.view_set_schedule_btn.setChecked(bool(ann[5]))
-        if ann[5]:
-            self.hr_ui.view_schedule_frequency_box.setCurrentText(str(ann[6]))
-        else:
-            self.hr_ui.view_schedule_frequency_box.setCurrentIndex(0)
-        self.hr_ui.view_set_theme_btn.setChecked(bool(ann[7]))
-        if ann[7]:
-            self.hr_ui.view_theme_design_box.setCurrentText(ann[8] or "")
-        else:
-            self.hr_ui.view_theme_design_box.setCurrentIndex(0)
-        # Employee selection
-        if ann[3] == "All":
-            self.hr_ui.view_employee_send_all_btn.setChecked(True)
-            self.hr_ui.view_employee_choose_btn.setChecked(False)
-            self.hr_ui.view_email_employee_list_tbl.setDisabled(True)
-        else:
-            self.hr_ui.view_employee_send_all_btn.setChecked(False)
-            self.hr_ui.view_employee_choose_btn.setChecked(True)
-            self.hr_ui.view_email_employee_list_tbl.setEnabled(True)
-        # Populate employee table
-        self.populate_view_email_employee_table(ann[3], ann[4])
-        # Attachments
-        self.populate_view_attachments_list(ann[10])
-        # Switch page
-        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_view_page)
-
-    def populate_view_email_employee_table(self, sending_type, involved_employee):
-        tbl = self.hr_ui.view_email_employee_list_tbl
-        tbl.setRowCount(0)
-        if sending_type == "All":
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
-        else:
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE employee_id = ?", (involved_employee,))
-        employees = cursor.fetchall() if cursor else []
-        for emp in employees:
-            row = tbl.rowCount()
-            tbl.insertRow(row)
-            mi = f" {emp[3]}." if emp[3] else ""
-            name = f"{emp[2]}, {emp[1]}{mi}"
-            tbl.setItem(row, 0, QTableWidgetItem(name))
-            tbl.setItem(row, 1, QTableWidgetItem(emp[0]))
-            tbl.setItem(row, 2, QTableWidgetItem(f"{emp[4]} / {emp[5]}"))
-        tbl.resizeColumnsToContents()
-
-    def populate_view_attachments_list(self, files_path):
-        lw = self.hr_ui.view_attachments_list
-        lw.clear()
-        if not files_path:
-            return
-        files = files_path.split(";")
-        for file_path in files:
-            fname = os.path.basename(file_path)
-            item_widget = QWidget()
-            hbox = QHBoxLayout(item_widget)
-            hbox.setContentsMargins(0, 0, 0, 0)
-            label = QLabel(fname)
-            hbox.addWidget(label)
-            hbox.addStretch()
-            item_widget.setLayout(hbox)
-            item = QListWidgetItem()
-            item.setSizeHint(item_widget.sizeHint())
-            lw.addItem(item)
-            lw.setItemWidget(item, item_widget)
-
-    def back_from_view_email(self):
-        # Clear all view fields
-        self.hr_ui.view_email_subject.clear()
-        self.hr_ui.view_email_message.clear()
-        self.hr_ui.view_employee_send_all_btn.setChecked(False)
-        self.hr_ui.view_email_employee_list_tbl.setRowCount(0)
-        self.hr_ui.view_set_schedule_btn.setChecked(False)
-        self.hr_ui.view_schedule_frequency_box.setCurrentIndex(0)
-        self.hr_ui.view_set_theme_btn.setChecked(False)
-        self.hr_ui.view_theme_design_box.setCurrentIndex(0)
-        self.hr_ui.view_attachments_list.clear()
-        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_page)
-
-    def edit_selected_sched_email(self):
-        row = self.get_selected_sched_email_row()
-        ann_id = self.get_sched_email_db_id_by_row(row)
-        if ann_id is None:
-            return
-        self.editing_announcement_id = ann_id
-        cursor = self.db.execute_query("SELECT * FROM announcements WHERE id = ?", (ann_id,))
-        ann = cursor.fetchone() if cursor else None
-        if not ann:
-            return
-        # Populate edit page fields
-        self.hr_ui.edit_email_subject.setText(ann[1])
-        self.hr_ui.edit_email_message.setPlainText(ann[2])
-        self.hr_ui.edit_set_schedule_btn.setChecked(bool(ann[5]))
-        if ann[5]:
-            self.hr_ui.edit_schedule_frequency_box.setCurrentText(str(ann[6]))
-        else:
-            self.hr_ui.edit_schedule_frequency_box.setCurrentIndex(0)
-        self.hr_ui.edit_set_theme_btn.setChecked(bool(ann[7]))
-        if ann[7]:
-            self.hr_ui.edit_theme_design_box.setCurrentText(ann[8] or "")
-        else:
-            self.hr_ui.edit_theme_design_box.setCurrentIndex(0)
-        # Employee selection
-        if ann[3] == "All":
-            self.hr_ui.edit_employee_send_all_btn.setChecked(True)
-            self.hr_ui.edit_employee_choose_btn.setChecked(False)
-            self.hr_ui.edit_email_employee_list_tbl.setDisabled(True)
-        else:
-            self.hr_ui.edit_employee_send_all_btn.setChecked(False)
-            self.hr_ui.edit_employee_choose_btn.setChecked(True)
-            self.hr_ui.edit_email_employee_list_tbl.setEnabled(True)
-        # Populate employee table
-        self.populate_edit_email_employee_table(ann[3], ann[4])
-        # Attachments
-        self.edit_attachments = ann[10].split(";") if ann[10] else []
-        self.update_edit_attachments_list()
-        # Switch page
-        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_edit_page)
-
-    def populate_edit_email_employee_table(self, sending_type, involved_employee):
-        tbl = self.hr_ui.edit_email_employee_list_tbl
-        tbl.setRowCount(0)
-        if sending_type == "All":
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
-        else:
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE employee_id = ?", (involved_employee,))
-        employees = cursor.fetchall() if cursor else []
-        for emp in employees:
-            row = tbl.rowCount()
-            tbl.insertRow(row)
-            mi = f" {emp[3]}." if emp[3] else ""
-            name = f"{emp[2]}, {emp[1]}{mi}"
-            tbl.setItem(row, 0, QTableWidgetItem(name))
-            tbl.setItem(row, 1, QTableWidgetItem(emp[0]))
-            tbl.setItem(row, 2, QTableWidgetItem(f"{emp[4]} / {emp[5]}"))
-        tbl.resizeColumnsToContents()
-
-    def update_edit_attachments_list(self):
-        lw = self.hr_ui.edit_attachments_list
-        lw.clear()
-        for file_path in self.edit_attachments:
-            fname = os.path.basename(file_path)
-            item_widget = QWidget()
-            hbox = QHBoxLayout(item_widget)
-            hbox.setContentsMargins(0, 0, 0, 0)
-            label = QLabel(fname)
-            btn = QPushButton("✕")
-            btn.setFixedSize(20, 20)
-            btn.setStyleSheet("color: red; background: transparent; border: none; font-weight: bold;")
-            btn.clicked.connect(lambda _, f=file_path: self.remove_edit_attachment(f))
-            hbox.addWidget(label)
-            hbox.addWidget(btn)
-            hbox.addStretch()
-            item_widget.setLayout(hbox)
-            item = QListWidgetItem()
-            item.setSizeHint(item_widget.sizeHint())
-            lw.addItem(item)
-            lw.setItemWidget(item, item_widget)
-
-    def remove_edit_attachment(self, file_path):
-        if file_path in self.edit_attachments:
-            # If file is in resources/email_files, delete it
-            if os.path.commonpath([os.path.abspath(file_path), os.path.abspath("resources/email_files")]) == os.path.abspath("resources/email_files"):
-                try:
-                    os.remove(file_path)
-                except Exception:
-                    pass
-            self.edit_attachments.remove(file_path)
-            self.update_edit_attachments_list()
-
-    def back_from_edit_email(self):
-        self.hr_ui.edit_email_subject.clear()
-        self.hr_ui.edit_email_message.clear()
-        self.hr_ui.edit_employee_send_all_btn.setChecked(False)
-        self.hr_ui.edit_email_employee_list_tbl.setRowCount(0)
-        self.hr_ui.edit_set_schedule_btn.setChecked(False)
-        self.hr_ui.edit_schedule_frequency_box.setCurrentIndex(0)
-        self.hr_ui.edit_set_theme_btn.setChecked(False)
-        self.hr_ui.edit_theme_design_box.setCurrentIndex(0)
-        self.hr_ui.edit_attachments_list.clear()
-        self.edit_attachments = []
-        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_page)
-
-    def save_edited_email(self):
-        ann_id = getattr(self, "editing_announcement_id", None)
-        if not ann_id:
-            return
-        subject = self.hr_ui.edit_email_subject.text()
-        message = self.hr_ui.edit_email_message.toPlainText()
-        schedule_enabled = self.hr_ui.edit_set_schedule_btn.isChecked()
-        schedule_frequency = self.hr_ui.edit_schedule_frequency_box.currentText() if schedule_enabled else None
-        theme_enabled = self.hr_ui.edit_set_theme_btn.isChecked()
-        theme_type = self.hr_ui.edit_theme_design_box.currentText() if theme_enabled else None
-        sending_type = "All" if self.hr_ui.edit_employee_send_all_btn.isChecked() else "Selected"
-        involved_employee = None
-        if sending_type == "Selected":
-            tbl = self.hr_ui.edit_email_employee_list_tbl
-            if tbl.rowCount() > 0:
-                involved_employee = tbl.item(0, 1).text()
-        # Save attachments (already handled in self.edit_attachments)
-        files_path = ";".join(self.edit_attachments)
-        self.db.execute_query(
-            '''UPDATE announcements SET subject=?, message=?, sending_type=?, involved_employee=?, schedule_enabled=?, schedule_frequency=?, theme_enabled=?, theme_type=?, attached_files_count=?, files_path=? WHERE id=?''',
-            (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, len(self.edit_attachments), files_path, ann_id)
-        )
-        self.back_from_edit_email()
-        self.load_sched_email_table()
-
-    def delete_selected_sched_email(self):
-        row = self.get_selected_sched_email_row()
-        ann_id = self.get_sched_email_db_id_by_row(row)
-        if ann_id is None:
-            return
-        # Get files_path to delete attachments
-        cursor = self.db.execute_query("SELECT files_path FROM announcements WHERE id = ?", (ann_id,))
-        result = cursor.fetchone() if cursor else None
-        if result and result[0]:
-            files = result[0].split(";")
-            for file_path in files:
-                try:
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-                except Exception:
-                    pass
-            # Remove the folder if empty
-            folder = os.path.dirname(files[0])
-            try:
-                if os.path.exists(folder) and not os.listdir(folder):
-                    os.rmdir(folder)
-            except Exception:
-                pass
-        # Delete announcement from DB
-        self.db.execute_query("DELETE FROM announcements WHERE id = ?", (ann_id,))
         self.load_sched_email_table()
 
 if __name__ == "__main__":
