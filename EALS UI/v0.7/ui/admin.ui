@@ -741,7 +741,7 @@ color: #2C2C2C;</string>
                      <item row="1" column="0">
                       <widget class="QLabel" name="label_40">
                        <property name="text">
-                        <string>Total Present Today</string>
+                        <string>Ave. Overtime Hours</string>
                        </property>
                        <property name="alignment">
                         <set>Qt::AlignmentFlag::AlignHCenter|Qt::AlignmentFlag::AlignTop</set>
@@ -805,7 +805,7 @@ border-radius:6px;</string>
                      <string notr="true">border: none;</string>
                     </property>
                     <property name="text">
-                     <string>title:</string>
+                     <string>Average Work Hours (Last 7 Days)</string>
                     </property>
                     <property name="indent">
                      <number>4</number>
@@ -1021,7 +1021,7 @@ border-radius:6px;
 color: #2C2C2C;</string>
                  </property>
                  <property name="text">
-                  <string>0/0</string>
+                  <string>0</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -1313,7 +1313,7 @@ border-radius:6px;
 color: #2C2C2C;</string>
                  </property>
                  <property name="text">
-                  <string>0/0</string>
+                  <string>0</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignmentFlag::AlignCenter</set>

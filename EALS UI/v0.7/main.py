@@ -3702,7 +3702,6 @@ class Admin:
 
         self.avg_chart.addSeries(self.bar_series)
         self.avg_chart.addSeries(self.line_series)
-        self.avg_chart.setTitle("Average Work Hours (Last 7 Days)")
         self.avg_chart.setBackgroundBrush(QColor(239, 239, 239))
 
         self.avg_axis_x = QCategoryAxis()
@@ -3732,9 +3731,6 @@ class Admin:
     def update_avg_work_hours_line_chart(self):
         self.bar_set.remove(0, self.bar_set.count())
         self.line_series.clear()
-        # self.avg_axis_x.clear()  # Remove this line
-
-        # Remove and recreate the X axis to clear categories
         self.avg_chart.removeAxis(self.avg_axis_x)
         self.avg_axis_x = QCategoryAxis()
         self.avg_axis_x.setTitleText("Day")
@@ -3769,15 +3765,14 @@ class Admin:
             # Add bar values
             for val in hours:
                 self.bar_set << val
+                
+            self.bar_set.setColor(QColor(112, 205, 152))
 
-            # Calculate average
             avg_val = sum(hours) / len(hours) if hours else 0
 
-            # Add straight line for average
             for i in range(len(days)):
                 self.line_series.append(i, avg_val)
 
-            # Set X axis categories
             for i, label in enumerate(days):
                 self.avg_axis_x.append(label, i)
 
@@ -3789,7 +3784,7 @@ class Admin:
             self.avg_axis_y.setTickCount(min(13, int(max_hour + 2)))
         except Exception as e:
             print(f"Error updating avg work hours line chart: {e}")
-# ...existing code...
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
