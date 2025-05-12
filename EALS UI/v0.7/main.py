@@ -1581,34 +1581,41 @@ class Home:
             message["To"] = recipient_email
             message["Subject"] = f"EALS Attendance Record: {remarks}"
 
-            # Get default header and footer images
             header_img = os.path.join("resources", "theme_images", "default_theme_header.jpg")
             footer_img = os.path.join("resources", "theme_images", "default_theme_footer.jpg")
 
             formatted_time = current_time.strftime("%B %d, %Y at %I:%M:%S %p")
-            body = (
-                f"Dear {employee_data['first_name']} {employee_data['last_name']},\n\n"
-                f"This email confirms that you have {remarks.lower()}ed on {formatted_time}.\n\n"
-                f"Details:\n"
-                f"Employee ID: {employee_data['employee_id']}\n"
-                f"Department: {employee_data['department']}\n"
-                f"Position: {employee_data['position']}\n"
-                f"Schedule: {employee_data['schedule']}\n\n"
-                f"This is a system-generated email. Please do not reply.\n\n"
-                f"Best regards,\nEALS System"
-            )
 
-            # Create HTML structure
-            html_header = '<img src="cid:headerimg" style="display:block; margin:auto;"><br>' if os.path.exists(header_img) else ""
-            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto;">' if os.path.exists(footer_img) else ""
-            html_frame = (
-                '<div style="margin: 20px auto; padding: 20px; max-width: 600px; border: none; '
-                'border-radius: 8px; background-color: transparent; font-family: Arial, sans-serif;">'
-                f"{body}</div>"
-            )
-            html_body = f"{html_header}{html_frame}{html_footer}"
+            html_content = f"""
+                <div style="margin: 20px auto; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
+                    <div style="background-color: #4285f4; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h2 style="margin: 0; text-align: center;">Attendance Record</h2>
+                    </div>
+                    <div style="background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <img src="cid:profileimg" style="width: 150px; height: 150px; border-radius: 75px; object-fit: cover; margin: 0 auto;">
+                        </div>
+                        <p style="color: #202124; font-size: 16px;">Dear {employee_data['first_name']} {employee_data['last_name']},</p>
+                        
+                        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <p style="color: #666666; margin: 5px 0;">This email confirms that you have <strong>{remarks.lower()}ed</strong> on {formatted_time}.</p>
+                        </div>
 
-            # Attach header image if exists
+                        <div style="background-color: #e8f0fe; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <h3 style="color: #1967d2; margin-top: 0;">Attendance Details:</h3>
+                            <p style="color: #666666; margin: 5px 0;">Employee ID: <strong>{employee_data['employee_id']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Department: <strong>{employee_data['department']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Position: <strong>{employee_data['position']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Schedule: <strong>{employee_data['schedule']}</strong></p>
+                        </div>
+
+                        <p style="color: #666666; font-style: italic;">This is a system-generated email. Please do not reply.</p>
+                        <br>
+                        <p style="color: #666666; margin-bottom: 0;">Best regards,<br>EALS System</p>
+                    </div>
+                </div>
+            """
+
             if os.path.exists(header_img):
                 with open(header_img, "rb") as f:
                     img = MIMEImage(f.read())
@@ -1616,7 +1623,13 @@ class Home:
                     img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
                     message.attach(img)
 
-            # Attach footer image if exists
+            if os.path.exists(employee_data['profile_picture']):
+                with open(employee_data['profile_picture'], "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<profileimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(employee_data['profile_picture']))
+                    message.attach(img)
+
             if os.path.exists(footer_img):
                 with open(footer_img, "rb") as f:
                     img = MIMEImage(f.read())
@@ -1624,8 +1637,11 @@ class Home:
                     img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
                     message.attach(img)
 
-            # Attach HTML body
-            message.attach(MIMEText(html_body, "html"))
+            html_header = '<img src="cid:headerimg" style="display:block; margin:auto; width:100%;"><br>' if os.path.exists(header_img) else ""
+            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto; width:100%;">' if os.path.exists(footer_img) else ""
+            
+            html_content = f"{html_header}{html_content}{html_footer}"
+            message.attach(MIMEText(html_content, "html"))
 
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.login(sender_email, sender_password)
@@ -1644,6 +1660,7 @@ class Home:
 
             self.system_logs.log_system_action("A user logged.", "AttendanceLog")
             remarks = self.employee_data.get("remarks", "Clock In")
+            is_late = self.employee_data.get("is_late", False)
             self.db.execute_query(
                 "INSERT INTO attendance_logs (employee_id, date, time, remarks, is_late) VALUES (?, ?, ?, ?, ?)", 
                 (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), remarks, is_late)
@@ -3496,24 +3513,71 @@ class Admin:
             message = MIMEMultipart()
             message["From"] = sender_email
             message["To"] = recipient_email
-            message["Subject"] = "EALS - Registration Successful"
+            message["Subject"] = "EALS - Welcome and Account Details"
 
-            body = (
-                f"Dear {employee_data['first_name']} {employee_data['last_name']},\n\n"
-                f"Your employee account has been successfully registered.\n\n"
-                f"Here are your details:\n"
-                f"Employee ID: {employee_data['employee_id']}\n"
-                f"Department: {employee_data['department']}\n"
-                f"Position: {employee_data['position']}\n"
-                f"Schedule: {employee_data['schedule']}\n"
-                f"Email: {employee_data['email']}\n"
-                f"Status: {employee_data['status']}\n\n"
-                f"Your default password is your surname in ALL CAPS: {employee_data['last_name'].upper()}\n"
-                f"Please change your password upon your first login for security purposes.\n\n"
-                f"This is a system-generated email. Please do not reply.\n\n"
-                f"Best regards,\nEALS System"
-            )
-            message.attach(MIMEText(body, "plain"))
+            header_img = os.path.join("resources", "theme_images", "default_theme_header.jpg")
+            footer_img = os.path.join("resources", "theme_images", "default_theme_footer.jpg")
+
+            html_content = f"""
+                <div style="margin: 20px auto; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
+                    <div style="background-color: #4285f4; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h2 style="margin: 0; text-align: center;">Welcome to EALS</h2>
+                    </div>
+                    <div style="background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <img src="cid:profileimg" style="width: 150px; height: 150px; border-radius: 75px; object-fit: cover; margin: 0 auto;">
+                        </div>
+                        <p style="color: #202124; font-size: 16px;">Dear {employee_data['first_name']} {employee_data['last_name']},</p>
+                        <p style="color: #666666;">Welcome to EALS! Your employee account has been successfully registered.</p>
+                        
+                        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <h3 style="color: #202124; margin-top: 0;">Account Details:</h3>
+                            <p style="color: #666666; margin: 5px 0;">Employee ID: <strong>{employee_data['employee_id']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Department: <strong>{employee_data['department']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Position: <strong>{employee_data['position']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Schedule: <strong>{employee_data['schedule']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Email: <strong>{employee_data['email']}</strong></p>
+                        </div>
+
+                        <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <p style="color: #e65100; margin: 0;"><strong>Important:</strong></p>
+                            <p style="color: #ff6f00; margin: 5px 0;">Your default password is your surname in ALL CAPS: <strong>{employee_data['last_name'].upper()}</strong></p>
+                            <p style="color: #666666;">Please change your password upon your first login for security purposes.</p>
+                        </div>
+
+                        <p style="color: #666666;">This is a system-generated email. Please do not reply.</p>
+                        <br>
+                        <p style="color: #666666; margin-bottom: 0;">Best regards,<br>EALS System</p>
+                    </div>
+                </div>
+            """
+
+            if os.path.exists(header_img):
+                with open(header_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<headerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
+                    message.attach(img)
+
+            if os.path.exists(employee_data['profile_picture']):
+                with open(employee_data['profile_picture'], "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<profileimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(employee_data['profile_picture']))
+                    message.attach(img)
+
+            if os.path.exists(footer_img):
+                with open(footer_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<footerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
+                    message.attach(img)
+
+            html_header = '<img src="cid:headerimg" style="display:block; margin:auto; width:100%;"><br>' if os.path.exists(header_img) else ""
+            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto; width:100%;">' if os.path.exists(footer_img) else ""
+            
+            html_content = f"{html_header}{html_content}{html_footer}"
+            message.attach(MIMEText(html_content, "html"))
 
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.login(sender_email, sender_password)
