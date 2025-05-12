@@ -8,14 +8,18 @@ import smtplib
 import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from PySide6.QtWidgets import QApplication,QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit
+from PySide6.QtWidgets import QApplication,QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit,QVBoxLayout, QPushButton, QRadioButton, QWidget, QHBoxLayout, QLabel, QListWidget, QListWidgetItem  # add QListWidget, QListWidgetItem
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QDate, QCoreApplication, QProcess, QTimer, QRegularExpression
-from PySide6.QtGui import QPixmap, QRegularExpressionValidator, QIcon
+from PySide6.QtGui import QPixmap, QRegularExpressionValidator, QIcon, QColor, QPainter
 from datetime import datetime, timedelta
+from pyqttoast import Toast, ToastPreset, ToastPosition
 import argon2
 import secrets
 import string
+import chime
+from PySide6.QtCharts import QChart, QChartView, QAreaSeries, QLineSeries, QValueAxis, QCategoryAxis, QBarSeries, QBarSet, QPieSeries
+import json  # For template saving/loading
 
 PASSWORD_HASHER = argon2.PasswordHasher()
 
@@ -64,6 +68,9 @@ class DatabaseConnection:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_modified_by VARCHAR(20),
                     last_modified_at TIMESTAMP,
+                    attedance_count CHAR(1),
+                    late_count CHAR(2),
+                    absent_count CHAR(2),
                     FOREIGN KEY (created_by) REFERENCES Admin(admin_id),
                     FOREIGN KEY (last_modified_by) REFERENCES Admin(admin_id)
                 );
@@ -74,13 +81,31 @@ class DatabaseConnection:
                     date DATE NOT NULL,
                     time TIME NOT NULL,
                     remarks VARCHAR(10) NOT NULL,
+                    is_late BOOLEAN,
                     FOREIGN KEY (employee_id) REFERENCES Employee(employee_id)
                 );
 
                 CREATE TABLE IF NOT EXISTS feedback (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    title VARCHAR(100) NOT NULL,
+                    title VARCHAR(50) NOT NULL,
                     message TEXT NOT NULL, 
+                    created_by VARCHAR(20) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (created_by) REFERENCES Employee(employee_id)
+                );
+                
+                CREATE TABLE IF NOT EXISTS announcements (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    subject VARCHAR(100) NOT NULL,
+                    message TEXT NOT NULL,
+                    sending_type VARCHAR(20) NOT NULL,
+                    involved_employee VARCHAR(20),
+                    schedule_enabled BOOLEAN DEFAULT FALSE,
+                    schedule_frequency INTEGER,
+                    theme_enabled BOOLEAN DEFAULT FALSE,
+                    theme_type VARCHAR(50),
+                    attached_files_count INTEGER,
+                    files_path TEXT,
                     created_by VARCHAR(20) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (created_by) REFERENCES Employee(employee_id)
@@ -109,6 +134,10 @@ class DatabaseConnection:
                     last_modified_at TIMESTAMP,
                     entity_started VARCHAR(20), -- ID of the entity that initiated the action
                     stopped_to_the_entity VARCHAR(20), -- ID of the entity where the action stopped
+                    present_count INTEGER DEFAULT 0,
+                    absent_count INTEGER DEFAULT 0,
+                    late_count INTEGER DEFAULT 0,
+                    average_work_hours REAL DEFAULT 0, -- Added column
                     FOREIGN KEY (entity_started) REFERENCES Employee(employee_id),
                     FOREIGN KEY (entity_started) REFERENCES Admin(admin_id),
                     FOREIGN KEY (entity_started) REFERENCES Feedback(id),
@@ -172,6 +201,54 @@ class SystemLogs:
     def __init__(self, db):
         self.db = db
 
+    def get_average_work_hours(self, date_str):
+        """
+        Calculate the average work hours for all employees for a given date.
+        Only considers employees (is_hr = 0) who have both a Clock In and Clock Out on that date.
+        """
+        try:
+            cursor = self.db.execute_query(
+                '''
+                SELECT employee_id FROM attendance_logs
+                WHERE date = ? AND remarks = 'Clock In'
+                AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)
+                ''', (date_str,)
+            )
+            employee_ids = [row[0] for row in cursor.fetchall()] if cursor else []
+            total_hours = 0
+            count = 0
+            for emp_id in employee_ids:
+                # Get Clock In and Clock Out times for this employee on this date
+                cur = self.db.execute_query(
+                    '''
+                    SELECT time, remarks FROM attendance_logs
+                    WHERE employee_id = ? AND date = ?
+                    ORDER BY time ASC
+                    ''', (emp_id, date_str)
+                )
+                logs = cur.fetchall() if cur else []
+                clock_in_time = None
+                clock_out_time = None
+                for log in logs:
+                    if log[1] == "Clock In" and not clock_in_time:
+                        clock_in_time = log[0]
+                    elif log[1] == "Clock Out":
+                        clock_out_time = log[0]
+                if clock_in_time and clock_out_time:
+                    try:
+                        t1 = datetime.strptime(f"{date_str} {clock_in_time}", "%Y-%m-%d %H:%M:%S")
+                        t2 = datetime.strptime(f"{date_str} {clock_out_time}", "%Y-%m-%d %H:%M:%S")
+                        hours = (t2 - t1).total_seconds() / 3600
+                        if hours > 0:
+                            total_hours += hours
+                            count += 1
+                    except Exception:
+                        continue
+            return round(total_hours / count, 2) if count > 0 else 0
+        except Exception as e:
+            print(f"Error calculating average work hours: {e}")
+            return 0
+
     def log_system_action(self, action, entity_type):
         """
         entities = Employee, Admin, Feedback, AttendanceLog, SystemSettings
@@ -210,8 +287,38 @@ class SystemLogs:
                 entity_id = entity_type
 
             today = datetime.now().strftime('%Y-%m-%d')
+            present_count = 0
+            absent_count = 0
+            late_count = 0
+            try:
+                # Present: employees who have attendance log today
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
+                    (today,)
+                )
+                present_count = cursor.fetchone()[0] if cursor else 0
+
+                # Late: employees who have is_late=1 today
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs WHERE date = ? AND is_late = 1 AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
+                    (today,)
+                )
+                late_count = cursor.fetchone()[0] if cursor else 0
+
+                # Absent: active employees with no attendance log today
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND employee_id NOT IN (SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)",
+                    (today,)
+                )
+                absent_count = cursor.fetchone()[0] if cursor else 0
+                
+                # Calculate average work hours for today
+                average_work_hours = self.get_average_work_hours(today)
+            except Exception as e:
+                print(f"Error computing attendance counts for system logs: {e}")
+
             cursor = self.db.execute_query(
-                "SELECT id FROM system_logs WHERE DATE(created_at) = ?",
+                "SELECT id FROM system_logs WHERE date(created_at) = ?",
                 (today,)
             )
             existing_log = cursor.fetchone()
@@ -221,18 +328,22 @@ class SystemLogs:
                     '''
                     UPDATE system_logs
                     SET last_modified_at = ?, 
-                        stopped_to_the_entity = ?
+                        stopped_to_the_entity = ?,
+                        present_count = ?, 
+                        absent_count = ?, 
+                        late_count = ?,
+                        average_work_hours = ?
                     WHERE id = ?
                     ''',
-                    (current_time, entity_id, existing_log[0])
+                    (current_time, entity_id, present_count, absent_count, late_count, average_work_hours, existing_log[0])
                 )
             else:
                 self.db.execute_query(
                     '''
-                    INSERT INTO system_logs (path, created_at, last_modified_at, entity_started, stopped_to_the_entity)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO system_logs (path, created_at, last_modified_at, entity_started, stopped_to_the_entity, present_count, absent_count, late_count, average_work_hours)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''',
-                    (log_file, current_time, current_time, entity_id, entity_id)
+                    (log_file, current_time, current_time, entity_id, entity_id, present_count, absent_count, late_count, average_work_hours)
                 )
 
         except Exception as e:
@@ -283,24 +394,59 @@ class Feedback:
         title = self.feedback_ui.feedback_title_box.text().strip()
         message = self.feedback_ui.feedback_box.toPlainText().strip()
         
-        if not title or not message:
-            QMessageBox.warning(None, "Invalid Input", "Please enter both title and message.")
+        # Validate title length
+        if len(title) < 5 or len(title) > 50:
+            self.show_error("Invalid Title", "Title must be between 5 and 50 characters long.")
             return
             
+        # Validate message length
+        if len(message) < 20 or len(message) > 500:
+            self.show_error("Invalid Message", "Message must be between 20 and 500 characters long.")
+            return
+                
         try:
             self.db.execute_query('''
                 INSERT INTO feedback (title, message, created_by)
                 VALUES (?, ?, ?)
             ''', (title, message, self.hr_data["employee_id"]))
+            
             self.feedback_ui.feedback_title_box.clear()
             self.feedback_ui.feedback_box.clear()
             self.feedback_ui.close()
             self.system_logs.log_system_action(f"HR submitted feedback: {title}", "Employee")
-            QMessageBox.information(None, "Success", "Feedback submitted successfully.")
+            self.show_success( "Success", "Feedback submitted successfully.")
             
         except sqlite3.Error as e:
             print(f"Database error while saving feedback: {e}")
-            QMessageBox.critical(None, "Error", "Failed to save feedback. Please try again.")
+            self.show_error("Error", "Failed to save feedback. Please try again.")
+            
+    def show_success(self, title, message):
+        chime.theme('chime')
+        chime.success()
+        toast = Toast(self.feedback_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)  # Duration in milliseconds
+        toast.setOffset(25, 35)  
+        toast.setBorderRadius(6)  
+        toast.applyPreset(ToastPreset.SUCCESS)  
+        toast.setBackgroundColor(QColor('#FFFFFF')) 
+        toast.setPosition(ToastPosition.TOP_RIGHT)  
+        toast.show() 
+            
+    def show_error(self, title, message):
+        chime.theme('big-sur')
+        chime.warning()
+        toast = Toast(self.feedback_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)  # Duration in milliseconds
+        toast.setOffset(25, 35)  
+        toast.setBorderRadius(6)  
+        toast.applyPreset(ToastPreset.ERROR)  
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPosition(ToastPosition.TOP_RIGHT)  
+        toast.show()  
 
 class HR:
     def __init__(self, db, hr_data):
@@ -334,6 +480,276 @@ class HR:
         self.load_hr_employee_table()
         self.load_hr_attendance_logs_table()
         self.update_date_today()
+        self.check_net()
+
+        self.hr_ui.dashboard_nav_btn.clicked.connect(self.handle_hr_dashboard_nav)
+        self.hr_ui.hr_dashboard_pages.setCurrentWidget(self.hr_ui.db_page_1)
+        self.hr_ui.dashboard_nav_btn.setText("Next")
+
+        # --- HR CHARTS SETUP ---
+        self.chart_view = None
+        self.setup_attendance_area_chart()
+        if hasattr(self.hr_ui, "chart_layout1") and self.chart_view:
+            self.hr_ui.chart_layout1.addWidget(self.chart_view, 0, 0)
+
+        self.avg_work_hours_chart_view = None
+        self.setup_avg_work_hours_line_chart()
+        if hasattr(self.hr_ui, "chart_layout2") and self.avg_work_hours_chart_view:
+            self.hr_ui.chart_layout2.addWidget(self.avg_work_hours_chart_view, 0, 0)
+
+        self.pie_chart_view = None
+        self.setup_attendance_pie_chart()
+        if hasattr(self.hr_ui, "chart_layout3") and self.pie_chart_view:
+            self.hr_ui.chart_layout3.addWidget(self.pie_chart_view, 0, 0)
+        # --- END HR CHARTS SETUP ---
+
+        self.announcement = Announcement(db, hr_data, self.hr_ui)
+
+    # --- HR CHARTS LOGIC (copied and adapted from Admin) ---
+    def setup_attendance_area_chart(self):
+        self.chart = QChart()
+        self.present_series = QLineSeries()
+        self.absent_series = QLineSeries()
+        self.present_series.setName("Present")
+        self.absent_series.setName("Absent")
+
+        self.present_area = QAreaSeries(self.present_series)
+        self.present_area.setName("Present")
+        self.present_area.setColor(QColor(128, 173, 246, 180))
+        self.present_area.setBorderColor(QColor(128, 173, 246))
+        self.present_area.setOpacity(0.6)
+
+        self.absent_area = QAreaSeries(self.absent_series)
+        self.absent_area.setName("Absent")
+        self.absent_area.setColor(QColor(48, 9, 154, 180))
+        self.absent_area.setBorderColor(QColor(48, 9, 154))
+        self.absent_area.setOpacity(0.6)
+
+        self.chart.setBackgroundBrush(QColor(239, 239, 239))
+
+        self.chart.addSeries(self.present_area)
+        self.chart.addSeries(self.absent_area)
+
+        self.axis_x = QValueAxis()
+        self.axis_x.setTitleText("Day of Month")
+        self.axis_x.setLabelFormat("%d")
+        self.axis_y = QValueAxis()
+        self.axis_y.setTitleText("Count")
+        self.chart.addAxis(self.axis_x, Qt.AlignBottom)
+        self.chart.addAxis(self.axis_y, Qt.AlignLeft)
+        self.present_area.attachAxis(self.axis_x)
+        self.present_area.attachAxis(self.axis_y)
+        self.absent_area.attachAxis(self.axis_x)
+        self.absent_area.attachAxis(self.axis_y)
+
+        self.chart.legend().setVisible(True)
+        self.chart.legend().setAlignment(Qt.AlignBottom)
+
+        self.chart_view = QChartView(self.chart)
+        self.chart_view.setRenderHint(QPainter.Antialiasing)
+
+        self.update_attendance_area_chart()
+
+    def update_attendance_area_chart(self):
+        self.present_series.clear()
+        self.absent_series.clear()
+        try:
+            cursor = self.db.execute_query(
+                """
+                SELECT date(created_at) as log_date, present_count, absent_count
+                FROM system_logs
+                WHERE date(created_at) >= date('now', '-6 days')
+                ORDER BY date(created_at)
+                """
+            )
+            data = cursor.fetchall() if cursor else []
+            if not data:
+                return
+
+            dates = []
+            presents = []
+            absents = []
+            max_y = 1
+
+            for row in data:
+                date_str, present, absent = row
+                try:
+                    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                    dates.append(date_obj.strftime("%d"))
+                    presents.append(int(present))
+                    absents.append(int(absent))
+                    max_y = max(max_y, int(present), int(absent))
+                except Exception:
+                    continue
+
+            if not dates:
+                return
+
+            self.chart.removeAxis(self.axis_x)
+            axis_x = QCategoryAxis()
+            axis_x.setTitleText("Day of Month")
+            axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+            self.axis_x = axis_x
+
+            point_count = len(dates)
+            for i in range(point_count):
+                self.present_series.append(i, presents[i])
+                self.absent_series.append(i, absents[i])
+                axis_x.append(dates[i], i)
+
+            self.axis_x.setRange(0, point_count - 1)
+            self.axis_y.setRange(0, max_y)
+            self.axis_y.setTickCount(max_y + 1)
+            self.axis_y.setLabelFormat("%d")
+
+            self.chart.addAxis(self.axis_x, Qt.AlignBottom)
+            self.present_area.attachAxis(self.axis_x)
+            self.absent_area.attachAxis(self.axis_x)
+        except Exception as e:
+            print(f"Error updating HR attendance area chart: {e}")
+
+    def setup_avg_work_hours_line_chart(self):
+        self.avg_chart = QChart()
+        self.bar_series = QBarSeries()
+        self.line_series = QLineSeries()
+        self.bar_set = QBarSet("Actual")
+        self.bar_series.append(self.bar_set)
+        self.line_series.setName("Average")
+
+        pen = self.line_series.pen()
+        pen.setWidth(3)
+        pen.setColor(QColor(255, 140, 0))
+        self.line_series.setPen(pen)
+
+        self.avg_chart.addSeries(self.bar_series)
+        self.avg_chart.addSeries(self.line_series)
+        self.avg_chart.setBackgroundBrush(QColor(239, 239, 239))
+
+        self.avg_axis_x = QCategoryAxis()
+        self.avg_axis_x.setTitleText("Day")
+        self.avg_axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+
+        self.avg_axis_y = QValueAxis()
+        self.avg_axis_y.setTitleText("Hours")
+        self.avg_axis_y.setLabelFormat("%.1f")
+        self.avg_axis_y.setRange(0, 12)
+
+        self.avg_chart.addAxis(self.avg_axis_x, Qt.AlignBottom)
+        self.avg_chart.addAxis(self.avg_axis_y, Qt.AlignLeft)
+        self.bar_series.attachAxis(self.avg_axis_x)
+        self.bar_series.attachAxis(self.avg_axis_y)
+        self.line_series.attachAxis(self.avg_axis_x)
+        self.line_series.attachAxis(self.avg_axis_y)
+
+        self.avg_chart.legend().setVisible(True)
+        self.avg_chart.legend().setAlignment(Qt.AlignBottom)
+
+        self.avg_work_hours_chart_view = QChartView(self.avg_chart)
+        self.avg_work_hours_chart_view.setRenderHint(QPainter.Antialiasing)
+
+        self.update_avg_work_hours_line_chart()
+
+    def update_avg_work_hours_line_chart(self):
+        self.bar_set.remove(0, self.bar_set.count())
+        self.line_series.clear()
+        self.avg_chart.removeAxis(self.avg_axis_x)
+        self.avg_axis_x = QCategoryAxis()
+        self.avg_axis_x.setTitleText("Day")
+        self.avg_axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+
+        try:
+            cursor = self.db.execute_query(
+                """
+                SELECT date(created_at) as log_date, average_work_hours
+                FROM system_logs
+                WHERE date(created_at) >= date('now', '-6 days')
+                ORDER BY date(created_at)
+                """
+            )
+            data = cursor.fetchall() if cursor else []
+            if not data:
+                return
+
+            days = []
+            hours = []
+            max_hour = 1
+
+            for idx, row in enumerate(data):
+                date_str, avg_hours = row
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                day_label = date_obj.strftime("%a")
+                days.append(day_label)
+                hours_val = float(avg_hours) if avg_hours is not None else 0
+                hours.append(hours_val)
+                max_hour = max(max_hour, hours_val)
+
+            for val in hours:
+                self.bar_set << val
+
+            color = QColor(112, 205, 152)
+            color.setAlphaF(0.6)
+            self.bar_set.setColor(color)
+
+            avg_val = sum(hours) / len(hours) if hours else 0
+
+            for i in range(len(days)):
+                self.line_series.append(i, avg_val)
+
+            for i, label in enumerate(days):
+                self.avg_axis_x.append(label, i)
+
+            self.avg_axis_x.setRange(0, len(days) - 1)
+            self.avg_chart.addAxis(self.avg_axis_x, Qt.AlignBottom)
+            self.bar_series.attachAxis(self.avg_axis_x)
+            self.line_series.attachAxis(self.avg_axis_x)
+            self.avg_axis_y.setRange(0, max(8, int(max_hour + 1)))
+            self.avg_axis_y.setTickCount(min(13, int(max_hour + 2)))
+        except Exception as e:
+            print(f"Error updating HR avg work hours line chart: {e}")
+
+    def setup_attendance_pie_chart(self):
+        self.pie_chart = QChart()
+        self.pie_series = QPieSeries()
+        self.pie_chart.addSeries(self.pie_series)
+        self.pie_chart.setBackgroundBrush(QColor(239, 239, 239))
+        self.pie_chart.legend().setVisible(True)
+        self.pie_chart.legend().setAlignment(Qt.AlignBottom)
+        self.pie_chart_view = QChartView(self.pie_chart)
+        self.pie_chart_view.setRenderHint(QPainter.Antialiasing)
+        self.update_attendance_pie_chart()
+
+    def update_attendance_pie_chart(self):
+        self.pie_series.clear()
+        try:
+            today_date = datetime.now().strftime("%Y-%m-%d")
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
+                (today_date,)
+            )
+            present = cursor.fetchone()[0] if cursor else 0
+
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND employee_id NOT IN (SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)",
+                (today_date,)
+            )
+            absent = cursor.fetchone()[0] if cursor else 0
+
+            total = present + absent
+            if total == 0:
+                self.pie_series.append("No Data", 1)
+                self.pie_series.slices()[0].setColor(QColor(200, 200, 200))
+                self.pie_series.slices()[0].setLabelVisible(True)
+            else:
+                present_pct = (present / total) * 100
+                absent_pct = (absent / total) * 100
+                present_slice = self.pie_series.append(f"Present ({present_pct:.1f}%)", present)
+                absent_slice = self.pie_series.append(f"Absent ({absent_pct:.1f}%)", absent)
+                present_slice.setColor(QColor(255, 174, 53))
+                absent_slice.setColor(QColor(240, 86, 68))
+                present_slice.setLabelVisible(True)
+                absent_slice.setLabelVisible(True)
+        except Exception as e:
+            print(f"Error updating HR attendance pie chart: {e}")
 
     def show_feedback_form(self):
         self.system_logs.log_system_action("HR opened feedback form", "Employee")
@@ -358,7 +774,7 @@ class HR:
 
             cursor = self.db.execute_query(
                 "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs "
-                "WHERE date = ? AND remarks = 'late' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
+                "WHERE date = ? AND is_late = 1 AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
                 (today_date,)
             )
             late_employees = cursor.fetchone()[0] if cursor else 0
@@ -370,11 +786,96 @@ class HR:
             )
             absent_employees = cursor.fetchone()[0] if cursor else 0
 
+            # --- NEW: Shift and overtime labels (copied from Admin) ---
+            # Morning shift
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '6am to 2pm'"
+            )
+            morning_total = cursor.fetchone()[0] if cursor else 0
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
+                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
+                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '6am to 2pm' AND a.date = ? AND a.remarks = 'Clock In'",
+                (today_date,)
+            )
+            morning_present = cursor.fetchone()[0] if cursor else 0
+
+            # Afternoon shift
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '2pm to 10pm'"
+            )
+            afternoon_total = cursor.fetchone()[0] if cursor else 0
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
+                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
+                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '2pm to 10pm' AND a.date = ? AND a.remarks = 'Clock In'",
+                (today_date,)
+            )
+            afternoon_present = cursor.fetchone()[0] if cursor else 0
+
+            # Night shift
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '10pm to 6am'"
+            )
+            night_total = cursor.fetchone()[0] if cursor else 0
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
+                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
+                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '10pm to 6am' AND a.date = ? AND a.remarks = 'Clock In'",
+                (today_date,)
+            )
+            night_present = cursor.fetchone()[0] if cursor else 0
+
+            # --- NEW: Average overtime calculation ---
+            cursor = self.db.execute_query(
+                "SELECT employee_id FROM attendance_logs WHERE date = ? AND remarks = 'Clock In' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
+                (today_date,)
+            )
+            employee_ids = [row[0] for row in cursor.fetchall()] if cursor else []
+            total_overtime = 0
+            overtime_count = 0
+            for emp_id in employee_ids:
+                cur = self.db.execute_query(
+                    "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ? ORDER BY time ASC",
+                    (emp_id, today_date)
+                )
+                logs = cur.fetchall() if cur else []
+                clock_in_time = None
+                clock_out_time = None
+                for log in logs:
+                    if log[1] == "Clock In" and not clock_in_time:
+                        clock_in_time = log[0]
+                    elif log[1] == "Clock Out":
+                        clock_out_time = log[0]
+                if clock_in_time and clock_out_time:
+                    try:
+                        t1 = datetime.strptime(f"{today_date} {clock_in_time}", "%Y-%m-%d %H:%M:%S")
+                        t2 = datetime.strptime(f"{today_date} {clock_out_time}", "%Y-%m-%d %H:%M:%S")
+                        worked_hours = (t2 - t1).total_seconds() / 3600
+                        overtime = worked_hours - 8
+                        if overtime > 0:
+                            total_overtime += overtime
+                            overtime_count += 1
+                    except Exception:
+                        continue
+            ave_overtime = round(total_overtime / overtime_count, 2) if overtime_count > 0 else 0
+
+            # --- Set HR dashboard labels ---
             self.hr_ui.hr_total_employee_lbl.setText(f"{total_employees}/{total_employees}")
             self.hr_ui.hr_active_employee_lbl.setText(str(active_employees))
             self.hr_ui.hr_logged_employee_lbl.setText(str(logged_employees))
             self.hr_ui.hr_late_employee_lbl.setText(str(late_employees))
             self.hr_ui.hr_absent_employee_lbl.setText(str(absent_employees))
+
+            # --- Set new shift and overtime labels ---
+            if hasattr(self.hr_ui, "morning_shift_lbl"):
+                self.hr_ui.morning_shift_lbl.setText(f"{morning_present}/{morning_total}")
+            if hasattr(self.hr_ui, "afternoon_shift_lbl"):
+                self.hr_ui.afternoon_shift_lbl.setText(f"{afternoon_present}/{afternoon_total}")
+            if hasattr(self.hr_ui, "night_shift_lbl"):
+                self.hr_ui.night_shift_lbl.setText(f"{night_present}/{night_total}")
+            if hasattr(self.hr_ui, "ave_overtime_lbl"):
+                self.hr_ui.ave_overtime_lbl.setText(str(ave_overtime))
 
         except sqlite3.Error as e:
             print(f"Database error while updating HR dashboard labels: {e}")
@@ -400,7 +901,8 @@ class HR:
                     "middle_initial": employee[3],
                     "department": employee[6],
                     "position": employee[7],
-                    "status": employee[10]
+                    "status": employee[10],
+                    "profile_picture": employee[13]
                 }
                 self.hr_employees.append(employee_data)
                 self.add_hr_employee_to_table(employee_data)
@@ -479,6 +981,15 @@ class HR:
         self.hr_ui.hr_view_employee_position_box.setText(employee_data["position"])
         self.hr_ui.hr_view_employee_accountid.setText(employee_data["employee_id"])
         self.load_hr_employee_attendance_logs(employee_data["employee_id"])
+        self.display_picture(self.hr_ui.hr_view_employee_picture, employee_data['profile_picture'])
+        
+    def display_picture(self, label, picture_path):
+        if (picture_path and os.path.exists(picture_path)):
+            pixmap = QPixmap(picture_path)
+            pixmap = pixmap.scaled(170, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            label.setPixmap(pixmap)
+        else:
+            label.setPixmap(QPixmap())
 
     def goto_hr_dashboard(self):
         self.system_logs.log_system_action("Going back to the HR Employee dashboard.", "Employee")
@@ -604,6 +1115,34 @@ class HR:
         table.setItem(row_position, 2, remarks_item)
 
         table.resizeColumnsToContents()
+        
+    def check_net(self):
+        try:
+            socket.create_connection(("8.8.8.8", 53), timeout=5)
+            return True
+        except OSError:
+            toast = Toast(self.admin_ui)
+            toast.setTitle("No Internet Connection")
+            toast.setText("Please check your internet connection and try again.")
+            toast.setOffset(40, 45)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.ERROR)
+            toast.setBackgroundColor(QColor('#ffb7b6'))
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.setShowDurationBar(False)
+            toast.setDuration(0) 
+            toast.show()
+            return False
+
+    def handle_hr_dashboard_nav(self):
+
+        current_widget = self.hr_ui.hr_dashboard_pages.currentWidget()
+        if current_widget == self.hr_ui.db_page_1:
+            self.hr_ui.hr_dashboard_pages.setCurrentWidget(self.hr_ui.db_page_2)
+            self.hr_ui.dashboard_nav_btn.setText("Back")
+        else:
+            self.hr_ui.hr_dashboard_pages.setCurrentWidget(self.hr_ui.db_page_1)
+            self.hr_ui.dashboard_nav_btn.setText("Next")
 
 class Home:
     password_changed = False
@@ -674,12 +1213,14 @@ class Home:
                     Home.password_changed = password_changed
                     if password_changed:
                         self.system_logs.log_system_action("The password is already changed, going to the admin UI.", "Admin")
+                        self.show_success("Login Successful", "Welcome back, Admin!")
                         self.goto_admin_ui()
                     else:
                         self.system_logs.log_system_action("The password is not changed executing Change Password Prompt", "Admin")
                         self.goto_change_pass()
                     self.home_ui.home_id_box.clear() 
-                    self.home_ui.home_pass_box.clear() 
+                    self.home_ui.home_pass_box.clear()
+                    self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
                     return
                 except argon2.exceptions.VerifyMismatchError:
                     Home.failed_attempts += 1
@@ -694,6 +1235,11 @@ class Home:
             employee_result = cursor.fetchone() if cursor else None
 
             if employee_result:
+                if employee_result[10] == "Inactive":
+                    self.show_error("Invalid credentials", "Please enter valid employee ID and password")
+                    self.system_logs.log_system_action("An inactive employee attempted to log in.", "Employee")
+                    return
+                    
                 employee_data = {
                     "employee_id": employee_result[0],
                     "first_name": employee_result[1],
@@ -707,6 +1253,7 @@ class Home:
                     "is_hr": employee_result[9],
                     "password_changed": employee_result[12],
                     "profile_picture": employee_result[13],
+                    "email": employee_result[14],
                 }
                 
                 db_password = employee_result[11]
@@ -720,6 +1267,7 @@ class Home:
                     if employee_data["is_hr"]:
                         if self.validate_hr_attendance(employee_data):
                             self.goto_hr_ui(employee_data)
+                            self.show_success("Login Successful", "Welcome back, HR!")
                             self.system_logs.log_system_action("A user is logged in as HR", "Employee")
                     else:
                         self.employee_data = employee_data
@@ -735,9 +1283,6 @@ class Home:
         except sqlite3.Error as e:
             print(f"Database error during login: {e}")
 
-        self.home_ui.home_id_box.clear()
-        self.home_ui.home_pass_box.clear()
-        
     def prompt_password_change(self):
         dialog = QMessageBox()
         dialog.setIcon(QMessageBox.Warning)
@@ -844,28 +1389,15 @@ class Home:
                 (hashed_password, self.admin_id)
             )
 
-            success_msg = QMessageBox()
-            success_msg.setIcon(QMessageBox.Information)
             self.system_logs.log_system_action("Admin password changed successfully.", "Admin")
-            success_msg.setText("Password Changed Successfully")
-            success_msg.setInformativeText("Your password has been updated. Please use the new password for future logins.")
-            success_msg.setWindowTitle("Success")
-            success_msg.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-            success_msg.exec()
+            self.show_success("Password Changed Successfully", "Your password has been updated. Please use the new password for future logins.")
 
             self.admin_change_pass_ui.close()
 
         except sqlite3.Error as e:
-            # Log and display error
             self.system_logs.log_system_action(f"Database error during admin password change: {e}", "Admin")
             print(f"Database error during password change: {e}")
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Database Error")
-            error_msg.setInformativeText("An error occurred while changing the password. Please try again.")
-            error_msg.setWindowTitle("Error")
-            error_msg.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-            error_msg.exec()
+            self.show_error("Database Error", "An error occurred while changing the password. Please try again.")
             
     def validate_attendance(self):
         if not self.employee_data:
@@ -873,15 +1405,65 @@ class Home:
 
         current_time = datetime.now()
         current_date = current_time.strftime("%Y-%m-%d")
+        current_hour = current_time.hour
 
         cursor = self.db.execute_query(
-            "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?", 
+            "SELECT attedance_count FROM Employee WHERE employee_id = ?",
+            (self.employee_data["employee_id"],)
+        )
+        if cursor:
+            result = cursor.fetchone()
+            attendance_count = int(result[0]) if result and result[0] else 0
+        else:
+            attendance_count = 0
+
+        if self.employee_data["schedule"] == "10pm to 6am":
+            if current_hour >= 22:
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND date = ? AND time >= '22:00:00'",
+                    (self.employee_data["employee_id"], current_date)
+                )
+                night_logs = cursor.fetchone()[0] if cursor else 0
+                if night_logs >= 2:
+                    self.show_warning("Attendance Error", "You have already completed your attendance for tonight's shift.")
+                    return False
+            elif current_hour < 6:
+                previous_date = (current_time - timedelta(days=1)).strftime("%Y-%m-%d")
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND date = ? AND time >= '22:00:00'",
+                    (self.employee_data["employee_id"], previous_date)
+                )
+                previous_night_logs = cursor.fetchone()[0] if cursor else 0
+                
+                cursor = self.db.execute_query(
+                    "SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND date = ? AND time <= '06:00:00'",
+                    (self.employee_data["employee_id"], current_date)
+                )
+                early_morning_logs = cursor.fetchone()[0] if cursor else 0
+                
+                total_logs = previous_night_logs + early_morning_logs
+                if total_logs >= 2:
+                    self.show_warning("Attendance Error", "You have already completed your attendance for this shift.")
+                    return False
+        else:
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM attendance_logs WHERE employee_id = ? AND date = ?",
+                (self.employee_data["employee_id"], current_date)
+            )
+            attendance_count = cursor.fetchone()[0] if cursor else 0
+            
+            if attendance_count >= 2:
+                self.show_warning("Attendance Error", "You have already logged your attendance twice today.")
+                return False
+
+        cursor = self.db.execute_query(
+            "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ?",
             (self.employee_data["employee_id"], current_date)
         )
         attendance = cursor.fetchone() if cursor else None
 
         if attendance:
-            log_time_str = attendance[0]  # Time as a string
+            log_time_str = attendance[0]
             log_time = datetime.strptime(f"{current_date} {log_time_str}", "%Y-%m-%d %H:%M:%S")
 
             if attendance[1] == "Clock In" and (current_time - log_time).total_seconds() < 8 * 3600:
@@ -895,15 +1477,48 @@ class Home:
 
                 response = dialog.exec()
                 if response == QMessageBox.No:
-                    return False  
+                    return False
             self.employee_data["remarks"] = "Clock Out"
         else:
             schedule_start, schedule_end = self.parse_schedule(self.employee_data["schedule"])
             current_hour = current_time.hour
             if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
-                self.show_error("Invalid Login", "You cannot log in outside your scheduled shift.")
+                self.show_warning("Invalid Login", "You cannot log in outside your scheduled shift.")
                 return False
+
+            if self.employee_data["schedule"] == "10pm to 6am":
+                if current_hour < 6:
+                    scheduled_date = (current_time - timedelta(days=1)).date()
+                else:
+                    scheduled_date = current_time.date()
+                scheduled_time = datetime.combine(scheduled_date, datetime.min.time()).replace(hour=22, minute=0, second=0, microsecond=0)
+            else:
+                scheduled_time = current_time.replace(hour=schedule_start, minute=0, second=0, microsecond=0)
+                    
+            late_threshold = scheduled_time + timedelta(minutes=15)
+            is_late = current_time > late_threshold
+
             self.employee_data["remarks"] = "Clock In"
+            self.employee_data["is_late"] = is_late
+            self.employee_data["was_late"] = is_late
+
+            if is_late:
+                cursor = self.db.execute_query(
+                    "SELECT late_count FROM Employee WHERE employee_id = ?",
+                    (self.employee_data["employee_id"],)
+                )
+                late_count = int(cursor.fetchone()[0] or 0) if cursor else 0
+                late_count += 1
+                self.db.execute_query(
+                    "UPDATE Employee SET late_count = ? WHERE employee_id = ?",
+                    (late_count, self.employee_data["employee_id"])
+                )
+
+        new_count = attendance_count + 1
+        self.db.execute_query(
+            "UPDATE Employee SET attedance_count = ? WHERE employee_id = ?",
+            (new_count, self.employee_data["employee_id"])
+        )
 
         return True
 
@@ -919,9 +1534,13 @@ class Home:
 
     def goto_bio1(self):
         if self.employee_data:
-            self.home_ui.bio1_employee_pic.setFixedSize(900, 600)
-            self.home_ui.bio1_employee_pic.setPixmap(QPixmap(self.employee_data["profile_picture"]).scaled(
-                self.home_ui.bio1_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            def update_picture():
+                pixmap = QPixmap(self.employee_data["profile_picture"])
+                pixmap = pixmap.scaled(self.home_ui.bio1_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.home_ui.bio1_employee_pic.setPixmap(pixmap)
+
+            QTimer.singleShot(0, update_picture)
+
             self.home_ui.bio1_employee_name.setText(f"<b>Name:</b> {self.employee_data['first_name']} {self.employee_data['last_name']}")
             self.home_ui.bio1_employee_department.setText(f"<b>Department:</b> {self.employee_data['department']}")
             self.home_ui.bio1_employee_position.setText(f"<b>Position:</b> {self.employee_data['position']}")
@@ -932,9 +1551,13 @@ class Home:
 
     def goto_bio2(self):
         if self.employee_data:
-            self.home_ui.bio2_employee_pic.setFixedSize(900, 600)
-            self.home_ui.bio2_employee_pic.setPixmap(QPixmap(self.employee_data["profile_picture"]).scaled(
-                self.home_ui.bio2_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            def update_picture():
+                pixmap = QPixmap(self.employee_data["profile_picture"])
+                pixmap = pixmap.scaled(self.home_ui.bio2_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.home_ui.bio2_employee_pic.setPixmap(pixmap)
+
+            QTimer.singleShot(0, update_picture)
+
             self.home_ui.bio2_employee_name.setText(f"<b>Name:</b> {self.employee_data['first_name']} {self.employee_data['last_name']}")
             self.home_ui.bio2_employee_department.setText(f"<b>Department:</b> {self.employee_data['department']}")
             self.home_ui.bio2_employee_position.setText(f"<b>Position:</b> {self.employee_data['position']}")
@@ -943,71 +1566,160 @@ class Home:
         bio2_page = self.home_ui.main_page.indexOf(self.home_ui.bio2_page)
         self.home_ui.main_page.setCurrentIndex(bio2_page)
 
+    def send_attendance_email(self, employee_data, current_time, remarks):
+        try:
+            sender_email = "eals.tupc@gmail.com"
+            sender_password = "buwl tszg dghr exln"  
+            recipient_email = employee_data["email"]
+
+            message = MIMEMultipart()
+            message["From"] = sender_email
+            message["To"] = recipient_email
+            message["Subject"] = f"EALS Attendance Record: {remarks}"
+
+            formatted_time = current_time.strftime("%B %d, %Y at %I:%M:%S %p")
+            body = (
+                f"Dear {employee_data['first_name']} {employee_data['last_name']},\n\n"
+                f"This email confirms that you have {remarks.lower()}ed on {formatted_time}.\n\n"
+                f"Details:\n"
+                f"Employee ID: {employee_data['employee_id']}\n"
+                f"Department: {employee_data['department']}\n"
+                f"Position: {employee_data['position']}\n"
+                f"Schedule: {employee_data['schedule']}\n\n"
+                f"This is a system-generated email. Please do not reply.\n\n"
+                f"Best regards,\nEALS System"
+            )
+            message.attach(MIMEText(body, "plain"))
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                server.login(sender_email, sender_password)
+                server.send_message(message)
+
+            self.system_logs.log_system_action(f"Attendance email sent to {recipient_email}", "Employee")
+            return True
+        except Exception as e:
+            print(f"Error sending attendance email: {e}")
+            return False
+
     def goto_result_prompt(self):
         if self.employee_data:
             current_time = datetime.now()
             current_date = current_time.strftime("%Y-%m-%d")
 
-            # Log attendance
             self.system_logs.log_system_action("A user logged.", "AttendanceLog")
+            remarks = self.employee_data.get("remarks", "Clock In")
             self.db.execute_query(
-                "INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)", 
-                (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), self.employee_data.get("remarks", "Clock In"))
+                "INSERT INTO attendance_logs (employee_id, date, time, remarks, is_late) VALUES (?, ?, ?, ?, ?)", 
+                (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), remarks, is_late)
             )
 
-            hour = current_time.hour
-            if 5 <= hour < 12:
-                greeting = "Good Morning"
-            elif 12 <= hour < 18:
-                greeting = "Good Afternoon"
-            else:
-                greeting = "Good Evening"
-            self.home_ui.result_greetings_lbl.setText(f"{greeting}, {self.employee_data['first_name']}!")
+            if self.check_internet_connection():
+                self.show_success("Email Notification", "Attendance email notification is being sent.")
+                threading.Thread(
+                    target=lambda: self.send_attendance_email(self.employee_data, current_time, remarks),
+                    daemon=True
+                ).start()
+            
+            if self.employee_data:
+                current_time = datetime.now()
+                current_date = current_time.strftime("%Y-%m-%d")
 
-            # Set a random motivational or system message
-            messages = [
-                "You worked 2 hours extra from your scheduled hours! Great job!",
-                "Keep up the excellent work!",
-                "Your dedication is appreciated!",
-                "You are making a difference every day!",
-                "Thank you for your hard work and commitment!"
-            ]
-            random_message = random.choice(messages)
-            self.home_ui.result_message_lbl.setText(random_message)
+                hour = current_time.hour
+                if 5 <= hour < 12:
+                    greeting = "Good Morning"
+                elif 12 <= hour < 18:
+                    greeting = "Good Afternoon"
+                else:
+                    greeting = "Good Evening"
+                self.home_ui.result_greetings_lbl.setText(f"{greeting}, {self.employee_data['first_name']}!")
 
-            try:
+                messages = [
+                    "Keep up the excellent work!",
+                    "Your dedication is appreciated!",
+                    "You are making a difference every day!",
+                    "Thank you for your hard work and commitment!"
+                ]
                 cursor = self.db.execute_query(
-                    "SELECT remarks, date, time FROM attendance_logs WHERE employee_id = ?", 
+                    "SELECT is_late FROM attendance_logs WHERE employee_id = ? ORDER BY date DESC, time DESC LIMIT 1",
                     (self.employee_data["employee_id"],)
+                )
+                was_late = False
+                if cursor:
+                    result = cursor.fetchone()
+                    was_late = bool(result[0]) if result and result[0] is not None else False
+                if was_late:
+                    messages.insert(0, "You were late for your shift today. Please be punctual next time.")
+                    
+                cursor = self.db.execute_query("SELECT date, time, remarks FROM attendance_logsWHERE employee_id = ?ORDER BY date DESC, time DESCLIMIT 10",
+                (self.employee_data["employee_id"],)
                 )
                 logs = cursor.fetchall() if cursor else []
 
-                self.home_ui.result_employee_attendance_tbl.setRowCount(0)
+                clock_in_time = None
+                clock_out_time = None
+
                 for log in logs:
-                    row_position = self.home_ui.result_employee_attendance_tbl.rowCount()
-                    self.home_ui.result_employee_attendance_tbl.insertRow(row_position)
+                    if log[2] == "Clock Out" and not clock_out_time:
+                        clock_out_time = datetime.strptime(f"{log[0]} {log[1]}", "%Y-%m-%d %H:%M:%S")
+                    elif log[2] == "Clock In" and not clock_in_time:
+                        clock_in_time = datetime.strptime(f"{log[0]} {log[1]}", "%Y-%m-%d %H:%M:%S")
+                    if clock_in_time and clock_out_time:
+                        break
 
-                    remarks_item = QTableWidgetItem(log[0])
-                    date_item = QTableWidgetItem(log[1])
-                    time_item = QTableWidgetItem(log[2])
+                if clock_in_time and clock_out_time:
+                    worked_hours = (clock_out_time - clock_in_time).total_seconds() / 3600
+                    if worked_hours > 8:
+                        overtime_hours = worked_hours - 8
+                        messages.insert(0, f"You worked {overtime_hours:.2f} hours extra from your scheduled hours! Great job!")
+                    elif worked_hours >= 7.5:
+                        messages.append("Almost a full shift! Keep up the consistency!")
+                    elif worked_hours < 7:
+                        messages.append("Try to complete your full shift next time. You can do it!")
 
-                    remarks_item.setFlags(remarks_item.flags() & ~Qt.ItemIsEditable)
-                    date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
-                    time_item.setFlags(time_item.flags() & ~Qt.ItemIsEditable)
+                messages.extend([
+                    "Your reliability is valued by the team!",
+                    "Every extra effort counts. Thank you!",
+                    "Your positive attitude makes a difference!",
+                ])
+                    
+                random_message = random.choice(messages)
+                self.home_ui.result_message_lbl.setText(random_message)
 
-                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 0, remarks_item)
-                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 1, date_item)
-                    self.home_ui.result_employee_attendance_tbl.setItem(row_position, 2, time_item)
+                try:
+                    cursor = self.db.execute_query(
+                        "SELECT remarks, date, time FROM attendance_logs WHERE employee_id = ?", 
+                        (self.employee_data["employee_id"],)
+                    )
+                    logs = cursor.fetchall() if cursor else []
 
-                self.home_ui.result_employee_attendance_tbl.resizeColumnsToContents()
-            except sqlite3.Error as e:
-                print(f"Database error while loading attendance logs: {e}")
+                    self.home_ui.result_employee_attendance_tbl.setRowCount(0)
+                    for log in logs:
+                        row_position = self.home_ui.result_employee_attendance_tbl.rowCount()
+                        self.home_ui.result_employee_attendance_tbl.insertRow(row_position)
 
-        result_prompt = self.home_ui.main_page.indexOf(self.home_ui.result_page)
-        self.home_ui.main_page.setCurrentIndex(result_prompt)
+                        remarks_item = QTableWidgetItem(log[0])
+                        date_item = QTableWidgetItem(log[1])
+                        time_item = QTableWidgetItem(log[2])
 
-        # Automatically return to the home page after 5 seconds
-        threading.Timer(5.0, lambda: self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)).start()
+                        remarks_item.setFlags(remarks_item.flags() & ~Qt.ItemIsEditable)
+                        date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
+                        time_item.setFlags(time_item.flags() & ~Qt.ItemIsEditable)
+
+                        self.home_ui.result_employee_attendance_tbl.setItem(row_position, 0, remarks_item)
+                        self.home_ui.result_employee_attendance_tbl.setItem(row_position, 1, date_item)
+                        self.home_ui.result_employee_attendance_tbl.setItem(row_position, 2, time_item)
+
+                    self.home_ui.result_employee_attendance_tbl.resizeColumnsToContents()
+                except sqlite3.Error as e:
+                    print(f"Database error while loading attendance logs: {e}")
+
+            result_prompt = self.home_ui.main_page.indexOf(self.home_ui.result_page)
+            self.home_ui.main_page.setCurrentIndex(result_prompt)
+            self.home_ui.home_id_box.clear() 
+            self.home_ui.home_pass_box.clear()
+            self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
+
+            QTimer.singleShot(5000, lambda: self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page))
 
     def parse_schedule(self, schedule):
         
@@ -1040,13 +1752,49 @@ class Home:
         else:  
             return current_hour >= start_hour or current_hour < end_hour
 
+    def show_success(self, title, message):
+        chime.theme('chime')
+        chime.success()
+        toast = Toast(self.home_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)
+        toast.setOffset(30, 70)
+        toast.setBorderRadius(6) 
+        toast.applyPreset(ToastPreset.SUCCESS)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPositionRelativeToWidget(self.home_ui.home_page)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+
     def show_error(self, title, message):
-        error_msg = QMessageBox()
-        error_msg.setIcon(QMessageBox.Critical)
-        error_msg.setText(title)
-        error_msg.setInformativeText(message)
-        error_msg.setWindowTitle("Error")
-        error_msg.exec()
+        chime.theme('big-sur')
+        chime.warning()
+        toast = Toast(self.home_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)
+        toast.setOffset(30, 70)
+        toast.setBorderRadius(6) 
+        toast.applyPreset(ToastPreset.ERROR)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPositionRelativeToWidget(self.home_ui.home_page)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+        
+    def show_warning(self, title, message):
+        chime.warning()
+        toast = Toast(self.home_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)
+        toast.setOffset(30, 70)
+        toast.setBorderRadius(6) 
+        toast.applyPreset(ToastPreset.WARNING)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPositionRelativeToWidget(self.home_ui.home_page)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
     
     def goto_change_pass(self):
         self.changepass = ChangePassword(self.db, self.admin_id)
@@ -1068,13 +1816,7 @@ class Home:
 
     def goto_forgot_password(self):
         if not self.check_internet_connection():
-            QMessageBox.warning(
-                None,
-                "No Internet Connection",
-                "The Forgot Password feature requires an active internet connection. Please check your connection and try again.",
-                QMessageBox.Ok
-            )
-            return
+            return  
 
         self.forgot_password = ForgotPassword(self.db)
         self.forgot_password.forgot_pass_ui.show()
@@ -1085,6 +1827,18 @@ class Home:
             socket.create_connection(("8.8.8.8", 53), timeout=5)
             return True
         except OSError:
+            toast = Toast(self.home_ui)
+            toast.setTitle("No Internet Connection")
+            toast.setText("Please check your internet connection and try again.")
+            toast.setOffset(30, 70)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.ERROR)
+            toast.setBackgroundColor(QColor('#ffb7b6'))
+            toast.setPositionRelativeToWidget(self.home_ui.home_page)
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.setShowDurationBar(False)
+            toast.setDuration(0)
+            toast.show()
             return False
 
     def check_initial_setup(self):
@@ -1105,12 +1859,15 @@ class Home:
     def goto_home_page(self):
         self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
 
+    def send_email_notif(self):
+        pass
+    
 class ChangePassword:
     def __init__(self, db, user_id, user_type="admin"):
         self.db = db
         self.system_logs = SystemLogs(db)
         self.user_id = user_id
-        self.user_type = user_type  # "admin" or "employee"
+        self.user_type = user_type  
         self.loader = QUiLoader()
         self.change_pass_ui = self.loader.load("ui/change_pass.ui")
         
@@ -1118,7 +1875,6 @@ class ChangePassword:
         self.np_visible = False
         self.changepass_visible = False
         
-        # Update UI elements based on user type
         if user_type == "admin":
             self.change_pass_ui.setWindowTitle("Change Admin Password")
             self.system_logs.log_system_action("The admin change password prompt has been loaded.", "Admin")
@@ -1127,13 +1883,18 @@ class ChangePassword:
             self.system_logs.log_system_action("The employee change password prompt has been loaded.", "Employee")
             
         self.change_pass_ui.change_pass_note.setText("For security purposes, please enter your current password below, then choose a new password and confirm it. Make sure your new password is at least 8 characters long.")
-        self.change_pass_ui.change_pass_note.setStyleSheet("color: black")
+        self.change_pass_ui.change_pass_note.setStyleSheet("color: black; border: none;")
         self.change_pass_ui.cp_visibility_btn.clicked.connect(self.toggle_cp_visibility)
         self.change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
         self.change_pass_ui.changepass_visibility_btn.clicked.connect(self.toggle_changepass_visibility)
         self.change_pass_ui.admin_change_pass_btn.clicked.connect(self.validate_and_change_password)
+        self.change_pass_ui.admin_change_cancel_btn.clicked.connect(self.cancel_change_password)
         self.change_pass_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         self.change_pass_ui.setWindowModality(Qt.ApplicationModal)
+
+    def cancel_change_password(self):
+        self.system_logs.log_system_action(f"Password change cancelled by {self.user_type}.", "Admin" if self.user_type == "admin" else "Employee")
+        self.change_pass_ui.close()
 
     def toggle_cp_visibility(self):
         if self.cp_visible:
@@ -1162,7 +1923,6 @@ class ChangePassword:
         current_password = self.change_pass_ui.change_pass_cp_box.text()
 
         try:
-            # Query the appropriate table based on user type
             if self.user_type == "admin":
                 table = "Admin"
                 id_field = "admin_id"
@@ -1177,6 +1937,7 @@ class ChangePassword:
             result = cursor.fetchone()
 
             if not result:
+                chime.warning()
                 self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
@@ -1184,45 +1945,50 @@ class ChangePassword:
             try:
                 PASSWORD_HASHER.verify(result[0], current_password)
             except argon2.exceptions.VerifyMismatchError:
+                chime.warning()
                 self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
 
             if not current_password or not new_password or not confirm_password:
+                chime.warning()
                 self.change_pass_ui.change_pass_note.setText("All password fields are required.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
 
             if new_password != confirm_password:
+                chime.warning()
                 self.change_pass_ui.change_pass_note.setText("The new password and confirmation password do not match.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
 
             if len(new_password) < 8:
+                chime.warning()
                 self.change_pass_ui.change_pass_note.setText("Your new password must be at least 8 characters long.")
                 self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
 
-            # Hash the new password
             hashed_password = PASSWORD_HASHER.hash(new_password)
 
-            # Update password in appropriate table
             self.db.execute_query(
                 "UPDATE {} SET password = ?, password_changed = TRUE WHERE {} = ?".format(table, id_field),
                 (hashed_password, self.user_id)
             )
 
-            success_msg = QMessageBox()
-            success_msg.setIcon(QMessageBox.Information)
-            self.system_logs.log_system_action(
-                f"The {self.user_type} password has been changed.", 
-                "Admin" if self.user_type == "admin" else "Employee"
-            )
-            success_msg.setText("Password Changed Successfully")
-            success_msg.setInformativeText("Your password has been updated. Please use the new password for future logins.")
-            success_msg.setWindowTitle("Success")
-            success_msg.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-            success_msg.exec()
+            self.system_logs.log_system_action(f"The {self.user_type} password has been changed.", "Admin" if self.user_type == "admin" else "Employee")
+            chime.theme('chime')
+            chime.success()
+            toast = Toast(self.change_pass_ui)
+            toast.setTitle("Password Changed Successfully")
+            toast.setText("Your password has been updated. Please use the new password for future logins.")
+            toast.setDuration(2000)
+            toast.setOffset(30, 70) 
+            toast.setBorderRadius(6) 
+            toast.applyPreset(ToastPreset.SUCCESS)  
+            toast.setBackgroundColor(QColor('#FFFFFF')) 
+            toast.setPosition(ToastPosition.TOP_RIGHT) 
+            toast.show()
+
 
             self.change_pass_ui.close()
 
@@ -1254,20 +2020,17 @@ class ForgotPassword:
         self.setup_pin_inputs()
     
     def setup_pin_inputs(self):
-        # Set maxLength for all PIN boxes
         self.forgot_pass_ui.pin_1.setMaxLength(1)
         self.forgot_pass_ui.pin_2.setMaxLength(1)
         self.forgot_pass_ui.pin_3.setMaxLength(1)
         self.forgot_pass_ui.pin_4.setMaxLength(1)
         
-        # Set validators to only accept numbers
         validator = QRegularExpressionValidator(QRegularExpression("[0-9]"))
         self.forgot_pass_ui.pin_1.setValidator(validator)
         self.forgot_pass_ui.pin_2.setValidator(validator)
         self.forgot_pass_ui.pin_3.setValidator(validator)
         self.forgot_pass_ui.pin_4.setValidator(validator)
         
-        # Connect text changed signals for automatic focus movement
         self.forgot_pass_ui.pin_1.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_1, self.forgot_pass_ui.pin_2))
         self.forgot_pass_ui.pin_2.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_2, self.forgot_pass_ui.pin_3))
         self.forgot_pass_ui.pin_3.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_3, self.forgot_pass_ui.pin_4))
@@ -1290,7 +2053,6 @@ class ForgotPassword:
         birthday = self.forgot_pass_ui.forgot_pass_birthday_box.date().toString("yyyy-MM-dd")
         email = self.forgot_pass_ui.forgot_pass_email_box.text().strip()
 
-        # Check for missing fields
         if not account_id or not birthday or not email:
             missing_fields = []
             if not account_id:
@@ -1325,19 +2087,34 @@ class ForgotPassword:
                 "email": employee[14]
             }
             
-            # Generate and send verification code
             self.verification_code = ''.join([str(secrets.randbelow(10)) for _ in range(4)])
             self.system_logs.log_system_action(
                 f"Password reset verification code generated for employee {account_id}", 
                 "Employee"
             )
             
-            self.send_verification_email(self.current_employee["email"], self.verification_code)
 
-            # Switch to verification page
+            chime.theme('chime')
+            chime.success()
+            toast = Toast(self.forgot_pass_ui)
+            toast.setTitle("Email Sent")
+            toast.setText(f"A verification code has been sent to {email}.")
+            toast.setDuration(2000)
+            toast.setOffset(30, 70)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.SUCCESS)
+            toast.setBackgroundColor(QColor('#FFFFFF'))
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.show()
+            
+            threading.Thread(
+                target=lambda: self.send_verification_email(self.current_employee["email"], self.verification_code),
+                daemon=True
+            ).start()
+
+
             self.forgot_pass_ui.fp_stackedWidget.setCurrentWidget(self.forgot_pass_ui.fp_page_2)
             
-            # Clear pin boxes and set focus to first box
             self.forgot_pass_ui.pin_1.clear()
             self.forgot_pass_ui.pin_2.clear()
             self.forgot_pass_ui.pin_3.clear()
@@ -1351,11 +2128,9 @@ class ForgotPassword:
             
     def send_verification_email(self, email, code):
         try:
-            # Replace with your email credentials
-            sender_email = "eals.tupc@gmail.com"  # TODO: Replace with actual sender email
-            sender_password = "buwl tszg dghr exln"  # TODO: Replace with actual sender password
+            sender_email = "eals.tupc@gmail.com"  
+            sender_password = "buwl tszg dghr exln"  
 
-            # Create the email message
             message = MIMEMultipart()
             message["From"] = sender_email
             message["To"] = email
@@ -1369,7 +2144,6 @@ class ForgotPassword:
             )
             message.attach(MIMEText(body, "plain"))
 
-            # Send the email using SMTP
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.login(sender_email, sender_password)
                 server.send_message(message)
@@ -1381,7 +2155,6 @@ class ForgotPassword:
             return False
 
     def verify_code(self):
-        # Collect the entered verification code
         entered_code = ''.join([
             self.forgot_pass_ui.pin_1.text(),
             self.forgot_pass_ui.pin_2.text(),
@@ -1400,10 +2173,8 @@ class ForgotPassword:
             self.change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
             self.change_pass_ui.cp_visibility_btn.clicked.connect(self.toggle_cp_visibility)
             self.forgot_pass_ui.close()
-            # Show the change password UI
             self.change_pass_ui.show()
         else:
-            # Display warning on fp_page2_note
             self.forgot_pass_ui.fp_page2_note.setText("Warning: The verification code you entered is incorrect. Please try again.")
             self.forgot_pass_ui.fp_page2_note.setStyleSheet("color: black; background-color: yellow;")
             
@@ -1426,31 +2197,46 @@ class ForgotPassword:
         confirm_password = self.change_pass_ui.change_pass_confirm_box.text()
 
         if not new_password or not confirm_password:
+            chime.warning()
             self.change_pass_ui.change_pass_note.setText("Note: All fields are required.")
             self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
             return
 
         if new_password != confirm_password:
+            chime.warning()
             self.change_pass_ui.change_pass_note.setText("Note: Passwords do not match.")
             self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
             return
 
         if len(new_password) < 8:
+            chime.warning()
             self.change_pass_ui.change_pass_note.setText("Note: Password must be at least 8 characters long.")
             self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
             return
 
         try:
-            # Hash the new password
             hashed_password = PASSWORD_HASHER.hash(new_password)
 
-            # Update the password in the database
             self.db.execute_query(
                 "UPDATE Employee SET password = ?, password_changed = TRUE WHERE employee_id = ?",
                 (hashed_password, self.current_employee["employee_id"])
             )
             self.change_pass_ui.close()
-            QMessageBox.information(None, "Success", "Password changed successfully.")
+            
+            
+            chime.theme('chime')
+            chime.success()
+            toast = Toast(self.forgot_pass_ui)
+            toast.setTitle("Success")
+            toast.setText("Password changed successfully.")
+            toast.setDuration(2000)
+            toast.setOffset(30, 70)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.SUCCESS)
+            toast.setBackgroundColor(QColor('#FFFFFF'))
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.show()
+
         except sqlite3.Error as e:
             print(f"Database error during password change: {e}")
             QMessageBox.critical(None, "Error", "Failed to change password. Please try again.")
@@ -1547,6 +2333,36 @@ class Admin:
         self.start_backup_scheduler()
         self.load_backup_table()
         self.load_backup_configuration()
+        self.check_net()
+        
+        self.admin_ui.dashboard_pages.setCurrentWidget(self.admin_ui.db_page_1)
+        self.admin_ui.dashboard_nav_btn.setText("Next")
+        self.admin_ui.dashboard_nav_btn.clicked.connect(self.handle_dashboard_nav)
+        
+        self.chart_view = None
+        self.setup_attendance_area_chart()
+        if hasattr(self.admin_ui, "chart_layout1") and self.chart_view:
+            self.admin_ui.chart_layout1.addWidget(self.chart_view, 0, 0)
+
+        self.avg_work_hours_chart_view = None
+        self.setup_avg_work_hours_line_chart()
+        if hasattr(self.admin_ui, "chart_layout2") and self.avg_work_hours_chart_view:
+            self.admin_ui.chart_layout2.addWidget(self.avg_work_hours_chart_view, 0, 0)
+        
+        # --- PIE CHART SETUP ---
+        self.pie_chart_view = None
+        self.setup_attendance_pie_chart()
+        if hasattr(self.admin_ui, "chart_layout3") and self.pie_chart_view:
+            self.admin_ui.chart_layout3.addWidget(self.pie_chart_view, 0, 0)
+
+    def handle_dashboard_nav(self):
+        current_widget = self.admin_ui.dashboard_pages.currentWidget()
+        if current_widget == self.admin_ui.db_page_1:
+            self.admin_ui.dashboard_pages.setCurrentWidget(self.admin_ui.db_page_2)
+            self.admin_ui.dashboard_nav_btn.setText("Back")
+        else:
+            self.admin_ui.dashboard_pages.setCurrentWidget(self.admin_ui.db_page_1)
+            self.admin_ui.dashboard_nav_btn.setText("Next")
         
     def get_current_admin(self):
         try:
@@ -1558,7 +2374,6 @@ class Admin:
             return None
 
     def load_system_logs(self):
-        """Load all log files into the system_log_list QComboBox."""
         log_dir = "resources/logs"
         self.admin_ui.system_log_list.clear()
 
@@ -1567,6 +2382,24 @@ class Admin:
 
         log_files = [f for f in os.listdir(log_dir) if os.path.isfile(os.path.join(log_dir, f))]
         self.admin_ui.system_log_list.addItems(log_files)
+
+        try:
+            cursor = self.db.execute_query(
+                "SELECT created_at, present_count, absent_count, late_count FROM system_logs ORDER BY created_at DESC"
+            )
+            logs = cursor.fetchall() if cursor else []
+            if hasattr(self.admin_ui, "system_log_summary_tbl"):
+                tbl = self.admin_ui.system_log_summary_tbl
+                tbl.setRowCount(0)
+                for log in logs:
+                    row = tbl.rowCount()
+                    tbl.insertRow(row)
+                    for col, val in enumerate(log):
+                        item = QTableWidgetItem(str(val))
+                        item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                        tbl.setItem(row, col, item)
+        except Exception as e:
+            print(f"Error loading system log summary: {e}")
 
     def display_selected_log(self):
         self.system_logs.log_system_action("A log file has been displayed.", "SystemSettings")
@@ -1578,6 +2411,18 @@ class Admin:
             try:
                 with open(log_path, "r") as file:
                     content = file.read()
+                    cursor = self.db.execute_query(
+                        "SELECT present_count, absent_count, late_count FROM system_logs WHERE path = ? ORDER BY created_at DESC LIMIT 1",
+                        (log_path,)
+                    )
+                    summary = cursor.fetchone() if cursor else None
+                    if summary:
+                        content += (
+                            f"\n\n--- Attendance Summary ---\n"
+                            f"Present: {summary[0]}\n"
+                            f"Absent: {summary[1]}\n"
+                            f"Late: {summary[2]}"
+                        )
                     self.admin_ui.system_log_browser.setText(content)
             except Exception as e:
                 print(f"Error reading log file {log_path}: {e}")
@@ -1642,8 +2487,7 @@ class Admin:
         self.system_logs.log_system_action("Goes to the employee HR page.", "Employee")
         employee_hr_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_hr_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_hr_page)
-        self.load_employee_table()
-        self.load_hr_table()
+
 
     def goto_employee_edit(self):
         self.system_logs.log_system_action("A selected employee is being edited.", "Employee")
@@ -1748,12 +2592,7 @@ class Admin:
             self.display_hr_view(self.hr_employees[row])
             view_page = self.admin_ui.hr_view_page
         else:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Warning)
-            error_msg.setText("No Selection")
-            error_msg.setInformativeText("Please select an employee to view.")
-            error_msg.setWindowTitle("View Error")
-            error_msg.exec()
+            self.show_error("Viewing Error", "No employee selected for viewing.")
             return
             
         page_index = self.admin_ui.admin_employee_sc_pages.indexOf(view_page)
@@ -1787,7 +2626,6 @@ class Admin:
         self.admin_ui.view_employee_department_box.setText(employee_data["department"])
         self.admin_ui.view_employee_position_box.setText(employee_data["position"])
         self.admin_ui.view_employee_accountid.setText(employee_data["employee_id"])
-        # Use get() method with a default empty string for email
         self.admin_ui.view_employee_email.setText(employee_data.get("email", ""))
         
         if employee_data["schedule"] == "6am to 2pm":
@@ -1868,12 +2706,7 @@ class Admin:
 
         else:
             self.system_logs.log_system_action("Invalid selection has been made. (No employee has been selected)", "Employee")
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Warning)
-            error_msg.setText("No Selection")
-            error_msg.setInformativeText("Please select an employee to edit.")
-            error_msg.setWindowTitle("Edit Error")
-            error_msg.exec()
+            self.show_error("Edit Error", "No employee selected for editing.")
 
     def load_employee_to_edit_form(self, employee_data):
         self.system_logs.log_system_action("Loading employee data to edit page.", "Employee")
@@ -1978,19 +2811,36 @@ class Admin:
         id_no = self.admin_ui.edit_employee_id_no.currentText()
         email = self.admin_ui.edit_employee_email.text().strip()
 
+        if not first_name:
+            self.show_error("Validation Error", "First Name is required")
+            return False, "First Name is required"
+        if not all(part.isalpha() for part in first_name.split()):
+            self.show_error("Validation Error", "Valid First Name (letters only, multiple names allowed)")
+            return False, "Valid First Name (letters only, multiple names allowed)"
+
+        if not last_name:
+            self.show_error("Validation Error", "Last Name is required")
+            return False, "Last Name is required"
+        if not all(part.isalpha() for part in last_name.split()):
+            self.show_error("Validation Error", "Valid Last Name (letters only, multiple names allowed)")
+            return False, "Valid Last Name (letters only, multiple names allowed)"
+
+        if mi and (len(mi) > 1 or not mi.isalpha()):
+            self.show_error("Validation Error", "Valid Middle Initial (single letter only)")
+            return False, "Valid Middle Initial (single letter only)"
+
+        if not id_pref:
+            self.show_error("Validation Error", "ID Prefix is required")
+            return False, "ID Prefix is required"
+
         gender = None
         if self.admin_ui.edit_employee_male.isChecked():
             gender = "Male"
         elif self.admin_ui.edit_employee_female.isChecked():
             gender = "Female"
-
-        is_hr = self.admin_ui.edit_is_hr_yes.isChecked()
-
-        department = self.admin_ui.edit_employee_department_box.currentText()
-        position = self.admin_ui.edit_employee_position_box.currentText()
-        if is_hr:
-            department = "Human Resources"
-            position = "HR Staff"
+        if not gender:
+            self.show_error("Validation Error", "Please select a Gender")
+            return False, "Please select a Gender"
 
         schedule = None
         if self.admin_ui.edit_employee_sched_1.isChecked():
@@ -1999,36 +2849,37 @@ class Admin:
             schedule = "2pm to 10pm"
         elif self.admin_ui.edit_employee_sched_3.isChecked():
             schedule = "10pm to 6am"
-
-        missing_fields = []
-
-        # Validate first name and last name
-        if not first_name or not all(part.isalpha() for part in first_name.split()):
-            missing_fields.append("Valid First Name (letters only, multiple names allowed)")
-        if not last_name or not last_name.isalpha():
-            missing_fields.append("Valid Last Name (letters only)")
-
-        if not id_pref:
-            missing_fields.append("ID Prefix")
-        if not gender:
-            missing_fields.append("Gender")
         if not schedule:
-            missing_fields.append("Schedule")
-        if not email or "@" not in email or "." not in email.split("@")[-1]:
-            missing_fields.append("Valid Email Address")
+            self.show_error("Validation Error", "Please select a Schedule")
+            return False, "Please select a Schedule"
 
-        # Validate birthday (must be at least 18 years old)
+        if not email:
+            self.show_error("Validation Error", "Email Address is required")
+            return False, "Email Address is required"
+        if "@" not in email or "." not in email.split("@")[1]:
+            self.show_error("Validation Error", "Valid Email Address (must contain @ and domain)")
+            return False, "Valid Email Address (must contain @ and domain)"
+
         birthday = self.admin_ui.edit_employee_birthday_edit.date().toString("yyyy-MM-dd")
         try:
             birthday_date = datetime.strptime(birthday, "%Y-%m-%d")
             today = datetime.now()
             age = today.year - birthday_date.year - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
             if age < 18:
-                return False, "Employee must be at least 18 years old."
+                self.show_error("Validation Error", "Employee must be at least 18 years old")
+                return False, "Employee must be at least 18 years old"
         except ValueError:
-            return False, "Invalid Birthday format."
+            self.show_error("Validation Error", "Invalid Birthday format")
+            return False, "Invalid Birthday format"
 
-        # Check if the employee ID already exists (excluding the current employee)
+        is_hr = self.admin_ui.edit_is_hr_yes.isChecked()
+        department = self.admin_ui.edit_employee_department_box.currentText()
+        position = self.admin_ui.edit_employee_position_box.currentText()
+        
+        if is_hr:
+            department = "Human Resources"
+            position = "HR Staff"
+
         employee_id = f"{id_pref}-{id_year}-{id_no}"
         try:
             cursor = self.db.execute_query(
@@ -2036,21 +2887,19 @@ class Admin:
                 (employee_id, self.current_employee_data["employee_id"])
             )
             if cursor.fetchone():
-                return False, f"Employee ID {employee_id} already exists in the database."
+                self.show_error("Validation Error", f"Employee ID {employee_id} already exists in the database")
+                return False, f"Employee ID {employee_id} already exists in the database"
 
-            # Check if the name already exists (excluding the current employee)
             cursor = self.db.execute_query(
                 "SELECT first_name, last_name FROM Employee WHERE first_name = ? AND last_name = ? AND employee_id != ?",
                 (first_name, last_name, self.current_employee_data["employee_id"])
             )
             if cursor.fetchone():
-                return False, f"An employee with the name {first_name} {last_name} already exists in the database."
+                self.show_error("Validation Error", f"An employee with the name {first_name} {last_name} already exists")
+                return False, f"An employee with the name {first_name} {last_name} already exists"
         except sqlite3.Error as e:
-            print(f"Database error during validation: {e}")
-            return False, "An error occurred while validating the data. Please try again."
-
-        if missing_fields:
-            return False, f"Please fill in the following required fields: {', '.join(missing_fields)}"
+            self.show_error("Database Error", "An error occurred while validating the data")
+            return False, "Database error during validation"
 
         status = "Active"
         if self.selected_employee_type == "employee":
@@ -2075,29 +2924,19 @@ class Admin:
             "is_hr": is_hr,
             "status": status,
             "profile_picture": self.current_employee_data.get('profile_picture', ''),
-            "email": email  # Add email to the employee_data dictionary
+            "email": email
         }
 
         return True, employee_data
 
     def save_edited_employee(self):
         if self.selected_employee_index is None or self.selected_employee_type is None:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Edit Error")
-            error_msg.setInformativeText("No employee selected for editing.")
-            error_msg.setWindowTitle("Edit Error")
-            error_msg.exec()
+            self.show_error("Edit Error", "No employee selected for editing.")
             return
 
         valid, result = self.validate_edited_employee_data()
         if not valid:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Validation Error")
-            error_msg.setInformativeText(result)
-            error_msg.setWindowTitle("Edit Error")
-            error_msg.exec()
+            self.show_error("Edit Error", "Validation Error.")
             return
 
         try:
@@ -2122,17 +2961,12 @@ class Admin:
                 result['first_name'], result['last_name'], result['middle_initial'], result['birthday'],
                 result['gender'], result['department'], result['position'], result['schedule'],
                 result['is_hr'], result['status'], result['profile_picture'],
-                result['email'], current_admin, current_time,  # Add modification tracking
+                result['email'], current_admin, current_time,  
                 result['employee_id']
             ))
 
             self.system_logs.log_system_action(f"Employee {result['employee_id']} was modified by {current_admin}", "Employee")
-            success_msg = QMessageBox()
-            success_msg.setIcon(QMessageBox.Information)
-            success_msg.setText("Employee Updated")
-            success_msg.setInformativeText(f"Employee {result['first_name']} {result['last_name']} has been updated.")
-            success_msg.setWindowTitle("Edit Success")
-            success_msg.exec()
+            self.show_success("Employee Updated", f"Employee {result['first_name']} {result['last_name']} has been updated.")
 
             self.load_employee_table()
             self.load_hr_table()
@@ -2140,21 +2974,11 @@ class Admin:
 
         except sqlite3.Error as e:
             print(f"Database error while updating employee: {e}")
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Database Error")
-            error_msg.setInformativeText("Failed to update employee record.")
-            error_msg.setWindowTitle("Edit Error")
-            error_msg.exec()
+            self.show_error("Edit Error", "Failed to update employee record.")
 
     def toggle_employee_status(self):
         if self.selected_employee_index is None or self.selected_employee_type is None:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Status Update Error")
-            error_msg.setInformativeText("No employee selected.")
-            error_msg.setWindowTitle("Status Error")
-            error_msg.exec()
+            self.show_error("Status Update Error", "FNo employee is determined.")
             return
 
         try:
@@ -2183,18 +3007,11 @@ class Admin:
             else:
                 self.admin_ui.employee_edit_deactivate.setText("Activate")
                 
-            success_msg = QMessageBox()
-            success_msg.setIcon(QMessageBox.Information)
-            success_msg.setText("Status Updated")
-            success_msg.setInformativeText(f"Employee {employee['first_name']} {employee['last_name']} has been {new_status.lower()}.")
-            success_msg.setWindowTitle("Status Update")
-            success_msg.exec()
+            self.show_success("Status Updated", f"Employee {employee['first_name']} {employee['last_name']} has been {new_status.lower()}.")
 
         except sqlite3.Error as e:
             print(f"Database error while updating status: {e}")
             self.show_error("Database Error", "Failed to update employee status.")
-
-
 
     def validate_employee_data(self):
         first_name = self.admin_ui.employee_first_name.text().strip()
@@ -2206,20 +3023,36 @@ class Admin:
         profile_picture = self.current_employee_data.get('profile_picture', '')
         email = self.admin_ui.employee_email.text().strip()
 
+        if not first_name:
+            self.show_error("Validation Error", "First Name is required")
+            return False, "First Name is required"
+        if not all(part.isalpha() for part in first_name.split()):
+            self.show_error("Validation Error", "Valid First Name (letters only, multiple names allowed)")
+            return False, "Valid First Name (letters only, multiple names allowed)"
+
+        if not last_name:
+            self.show_error("Validation Error", "Last Name is required")
+            return False, "Last Name is required"
+        if not all(part.isalpha() for part in last_name.split()):
+            self.show_error("Validation Error", "Valid Last Name (letters only, multiple names allowed)")
+            return False, "Valid Last Name (letters only, multiple names allowed)"
+
+        if mi and (len(mi) > 1 or not mi.isalpha()):
+            self.show_error("Validation Error", "Valid Middle Initial (single letter only)")
+            return False, "Valid Middle Initial (single letter only)"
+
+        if not id_pref:
+            self.show_error("Validation Error", "ID Prefix is required")
+            return False, "ID Prefix is required"
+
         gender = None
         if self.admin_ui.employee_male.isChecked():
             gender = "Male"
         elif self.admin_ui.employee_female.isChecked():
             gender = "Female"
-
-        is_hr = self.admin_ui.is_hr_yes.isChecked()
-
-        department = self.admin_ui.employee_department_box.currentText()
-        position = self.admin_ui.employee_position_box.currentText()
-
-        if is_hr:
-            department = "Human Resources"
-            position = "HR Staff"
+        if not gender:
+            self.show_error("Validation Error", "Please select a Gender")
+            return False, "Please select a Gender"
 
         schedule = None
         if self.admin_ui.employee_sched_1.isChecked():
@@ -2228,59 +3061,59 @@ class Admin:
             schedule = "2pm to 10pm"
         elif self.admin_ui.employee_sched_3.isChecked():
             schedule = "10pm to 6am"
-
-        missing_fields = []
-
-        # Validate first name and last name
-        if not first_name or not all(part.isalpha() for part in first_name.split()):
-            missing_fields.append("Valid First Name (letters only, multiple names allowed)")
-        if not last_name or not all(part.isalpha() for part in last_name.split()):
-            missing_fields.append("Valid Last Name (letters only, multiple names allowed)")
-
-        if not id_pref:
-            missing_fields.append("ID Prefix")
-        if not gender:
-            missing_fields.append("Gender")
         if not schedule:
-            missing_fields.append("Schedule")
-        if not profile_picture:
-            missing_fields.append("Profile Picture")
-        if not email or "@" not in email or "." not in email.split("@")[-1]:
-            missing_fields.append("Valid Email Address")
+            self.show_error("Validation Error", "Please select a Schedule")
+            return False, "Please select a Schedule"
 
-        # Validate birthday (must be at least 18 years old)
+        if not profile_picture:
+            self.show_error("Validation Error", "Profile Picture is required")
+            return False, "Profile Picture is required"
+
+        if not email:
+            self.show_error("Validation Error", "Email Address is required")
+            return False, "Email Address is required"
+        if "@" not in email or "." not in email.split("@")[1]:
+            self.show_error("Validation Error", "Valid Email Address (must contain @ and domain)")
+            return False, "Valid Email Address (must contain @ and domain)"
+
         birthday = self.admin_ui.employee_birthday_edit.date().toString("yyyy-MM-dd")
         try:
             birthday_date = datetime.strptime(birthday, "%Y-%m-%d")
             today = datetime.now()
             age = today.year - birthday_date.year - ((today.month, today.day) < (birthday_date.month, birthday_date.day))
             if age < 18:
-                return False, "Employee must be at least 18 years old."
+                self.show_error("Validation Error", "Employee must be at least 18 years old")
+                return False, "Employee must be at least 18 years old"
         except ValueError:
-            return False, "Invalid Birthday format."
+            self.show_error("Validation Error", "Invalid Birthday format")
+            return False, "Invalid Birthday format"
 
+        is_hr = self.admin_ui.is_hr_yes.isChecked()
+        department = self.admin_ui.employee_department_box.currentText()
+        position = self.admin_ui.employee_position_box.currentText()
 
-        # Check if the employee ID already exists
+        if is_hr:
+            department = "Human Resources"
+            position = "HR Staff"
+
         employee_id = f"{id_pref}-{id_year}-{id_no}"
         try:
             cursor = self.db.execute_query("SELECT employee_id FROM Employee WHERE employee_id = ?", (employee_id,))
             if cursor.fetchone():
-                return False, f"Employee ID {employee_id} already exists in the database."
+                self.show_error("Validation Error", f"Employee ID {employee_id} already exists in the database")
+                return False, f"Employee ID {employee_id} already exists in the database"
 
-            # Check if the name already exists
             cursor = self.db.execute_query(
                 "SELECT first_name, last_name FROM Employee WHERE first_name = ? AND last_name = ?",
                 (first_name, last_name)
             )
             if cursor.fetchone():
-                return False, f"An employee with the name {first_name} {last_name} already exists in the database."
+                self.show_error("Validation Error", f"An employee with the name {first_name} {last_name} already exists")
+                return False, f"An employee with the name {first_name} {last_name} already exists"
         except sqlite3.Error as e:
-            print(f"Database error during validation: {e}")
-            return False, "An error occurred while validating the data. Please try again."
+            self.show_error("Database Error", "An error occurred while validating the data")
+            return False, "Database error during validation"
 
-        if missing_fields:
-            return False, f"Please fill in the following required fields: {', '.join(missing_fields)}"
-        
         password = ' '.join(word.upper() for word in last_name.split())
         hashed_password = PASSWORD_HASHER.hash(password)
 
@@ -2297,7 +3130,7 @@ class Admin:
             "schedule": schedule,
             "is_hr": is_hr,
             "status": "Active",
-            "password_changed": False,  # Add this line
+            "password_changed": False,
             "profile_picture": profile_picture,
             "email": email
         }
@@ -2326,7 +3159,7 @@ class Admin:
                     "is_hr": employee[9],
                     "status": employee[10],
                     "password": employee[11],
-                    "password_changed": employee[12],  # Add this line
+                    "password_changed": employee[12],  
                     "profile_picture": employee[13],
                     "email": employee[14]
                 }
@@ -2360,7 +3193,7 @@ class Admin:
                     "is_hr": hr_employee[9],
                     "status": hr_employee[10],
                     "password": hr_employee[11],
-                    "password_changed": hr_employee[12],  # Add this line
+                    "password_changed": hr_employee[12],  
                     "profile_picture": hr_employee[13],
                     "email": hr_employee[14]
                 }
@@ -2392,7 +3225,6 @@ class Admin:
         self.admin_ui.employee_list_tbl.setItem(row_position, 2, dept_pos_item)
         self.admin_ui.employee_list_tbl.setItem(row_position, 3, status_item)
         
-        self.admin_ui.employee_list_tbl.resizeColumnsToContents()
 
     def add_hr_to_table(self, hr_data):
         row_position = self.admin_ui.hr_list_tbl.rowCount()
@@ -2412,14 +3244,12 @@ class Admin:
         self.admin_ui.hr_list_tbl.setItem(row_position, 1, id_item)
         self.admin_ui.hr_list_tbl.setItem(row_position, 2, status_item)
         
-        self.admin_ui.hr_list_tbl.resizeColumnsToContents()
-        
     def handle_delete_employee(self):
         employee_selected = self.admin_ui.employee_list_tbl.selectedIndexes()
         hr_selected = self.admin_ui.hr_list_tbl.selectedIndexes()
         
         if not employee_selected and not hr_selected:
-            QMessageBox.warning(None, "Delete Error", "Please select an employee to delete.")
+            self.show_error("Delete Error", "Please select an employee to delete.")
             return
 
         if employee_selected:
@@ -2458,9 +3288,8 @@ class Admin:
                     f"{employee_type} {employee_data['employee_id']} has been deleted by {self.get_current_admin()}", 
                     "Employee"
                 )
-
-                QMessageBox.information(None, "Delete Success", 
-                    f"{employee_type} {employee_data['first_name']} {employee_data['last_name']} has been deleted.")
+                
+                self.show_success("Delete Success", f"{employee_type} {employee_data['first_name']} {employee_data['last_name']} has been deleted.")
 
                 self.load_employee_table()
                 self.load_hr_table()
@@ -2513,7 +3342,6 @@ class Admin:
             result = cursor.fetchone() if cursor else None
 
             if result:
-                # Update existing employee
                 self.db.execute_query('''
                     UPDATE Employee
                     SET first_name = ?, last_name = ?, middle_initial = ?, birthday = ?, gender = ?,
@@ -2530,7 +3358,6 @@ class Admin:
                 ))
                 self.system_logs.log_system_action(f"Employee {employee_data['employee_id']} modified by {current_admin}", "Employee")
             else:
-                # Insert new employee
                 self.db.execute_query('''
                     INSERT INTO Employee (
                         employee_id, first_name, last_name, middle_initial, birthday, gender,
@@ -2558,13 +3385,6 @@ class Admin:
         if valid:
             self.current_employee_data = result
             self.goto_employee_enroll_2()
-        else:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Validation Error")
-            error_msg.setInformativeText(result)
-            error_msg.setWindowTitle("Enrollment Error")
-            error_msg.exec()
 
     def finalize_employee_enrollment(self):
         if hasattr(self, 'current_employee_data'):
@@ -2577,32 +3397,54 @@ class Admin:
             
             if success:
                 self.system_logs.log_system_action("A new employee has been enrolled.", "Employee")
-                success_msg = QMessageBox()
-                success_msg.setIcon(QMessageBox.Information)
-                success_msg.setText("Employee Enrolled Successfully")
                 employee_type = "HR Employee" if self.current_employee_data.get('is_hr', False) else "Employee"
-                success_msg.setInformativeText(f"{employee_type} {self.current_employee_data['first_name']} {self.current_employee_data['last_name']} has been enrolled.")
-                success_msg.setWindowTitle("Enrollment Success")
-                success_msg.exec()
+                self.show_success("Enrollment Success", f"{employee_type} {self.current_employee_data['first_name']} {self.current_employee_data['last_name']} has been enrolled.")
+                threading.Thread(target=lambda: self.send_welcome_email(self.current_employee_data), daemon=True).start()
                 self.clear_employee_enrollment_fields()
                 self.goto_employee_hr()
                 self.load_employee_table()
                 self.load_hr_table()
             else:
                 self.system_logs.log_system_action("Failed to save employee data.", "Employee")
-                error_msg = QMessageBox()
-                error_msg.setIcon(QMessageBox.Critical)
-                error_msg.setText("Enrollment Error")
-                error_msg.setInformativeText("Failed to save employee data. Please try again.")
-                error_msg.setWindowTitle("Enrollment Error")
-                error_msg.exec()
+                self.show_error("Enrollment Error", "Failed to save employee data. Please try again.")
         else:
-            error_msg = QMessageBox()
-            error_msg.setIcon(QMessageBox.Critical)
-            error_msg.setText("Process Error")
-            error_msg.setInformativeText("No employee data found. Please restart the enrollment process.")
-            error_msg.setWindowTitle("Enrollment Error")
-            error_msg.exec()
+            self.show_error("Process Error", "No employee data found. Please restart the enrollment process.")
+
+    def send_welcome_email(self, employee_data):
+        try:
+            sender_email = "eals.tupc@gmail.com"
+            sender_password = "buwl tszg dghr exln" 
+            recipient_email = employee_data["email"]
+
+            message = MIMEMultipart()
+            message["From"] = sender_email
+            message["To"] = recipient_email
+            message["Subject"] = "EALS - Registration Successful"
+
+            body = (
+                f"Dear {employee_data['first_name']} {employee_data['last_name']},\n\n"
+                f"Your employee account has been successfully registered.\n\n"
+                f"Here are your details:\n"
+                f"Employee ID: {employee_data['employee_id']}\n"
+                f"Department: {employee_data['department']}\n"
+                f"Position: {employee_data['position']}\n"
+                f"Schedule: {employee_data['schedule']}\n"
+                f"Email: {employee_data['email']}\n"
+                f"Status: {employee_data['status']}\n\n"
+                f"Your default password is your surname in ALL CAPS: {employee_data['last_name'].upper()}\n"
+                f"Please change your password upon your first login for security purposes.\n\n"
+                f"This is a system-generated email. Please do not reply.\n\n"
+                f"Best regards,\nEALS System"
+            )
+            message.attach(MIMEText(body, "plain"))
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                server.login(sender_email, sender_password)
+                server.send_message(message)
+
+            self.system_logs.log_system_action(f"Welcome email sent to {recipient_email}", "Employee")
+        except Exception as e:
+            print(f"Error sending welcome email: {e}")
 
     def toggle_hr_fields(self):
         is_hr = self.admin_ui.is_hr_yes.isChecked()
@@ -2630,7 +3472,7 @@ class Admin:
 
             cursor = self.db.execute_query(
                 "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs "
-                "WHERE date = ? AND remarks = 'late' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
+                "WHERE date = ? AND is_late = 1 AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
                 (today_date,)
             )
             late_employees = cursor.fetchone()[0] if cursor else 0
@@ -2642,12 +3484,94 @@ class Admin:
             )
             absent_employees = cursor.fetchone()[0] if cursor else 0
 
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '6am to 2pm'"
+            )
+            morning_total = cursor.fetchone()[0] if cursor else 0
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
+                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
+                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '6am to 2pm' AND a.date = ? AND a.remarks = 'Clock In'",
+                (today_date,)
+            )
+            morning_present = cursor.fetchone()[0] if cursor else 0
+
+            # Afternoon shift
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '2pm to 10pm'"
+            )
+            afternoon_total = cursor.fetchone()[0] if cursor else 0
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
+                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
+                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '2pm to 10pm' AND a.date = ? AND a.remarks = 'Clock In'",
+                (today_date,)
+            )
+            afternoon_present = cursor.fetchone()[0] if cursor else 0
+
+            # Night shift
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '10pm to 6am'"
+            )
+            night_total = cursor.fetchone()[0] if cursor else 0
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
+                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
+                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '10pm to 6am' AND a.date = ? AND a.remarks = 'Clock In'",
+                (today_date,)
+            )
+            night_present = cursor.fetchone()[0] if cursor else 0
+
+            # --- NEW: Average overtime calculation ---
+            cursor = self.db.execute_query(
+                "SELECT employee_id FROM attendance_logs WHERE date = ? AND remarks = 'Clock In' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
+                (today_date,)
+            )
+            employee_ids = [row[0] for row in cursor.fetchall()] if cursor else []
+            total_overtime = 0
+            overtime_count = 0
+            for emp_id in employee_ids:
+                cur = self.db.execute_query(
+                    "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ? ORDER BY time ASC",
+                    (emp_id, today_date)
+                )
+                logs = cur.fetchall() if cur else []
+                clock_in_time = None
+                clock_out_time = None
+                for log in logs:
+                    if log[1] == "Clock In" and not clock_in_time:
+                        clock_in_time = log[0]
+                    elif log[1] == "Clock Out":
+                        clock_out_time = log[0]
+                if clock_in_time and clock_out_time:
+                    try:
+                        t1 = datetime.strptime(f"{today_date} {clock_in_time}", "%Y-%m-%d %H:%M:%S")
+                        t2 = datetime.strptime(f"{today_date} {clock_out_time}", "%Y-%m-%d %H:%M:%S")
+                        worked_hours = (t2 - t1).total_seconds() / 3600
+                        overtime = worked_hours - 8
+                        if overtime > 0:
+                            total_overtime += overtime
+                            overtime_count += 1
+                    except Exception:
+                        continue
+            ave_overtime = round(total_overtime / overtime_count, 2) if overtime_count > 0 else 0
+
             self.system_logs.log_system_action("Dashboard labels have been updated.", "SystemSettings")
             self.admin_ui.total_employee_lbl.setText(f"{total_employees}/{total_employees}")
             self.admin_ui.active_employee_lbl.setText(str(active_employees))
             self.admin_ui.logged_employee_lbl.setText(str(logged_employees))
             self.admin_ui.late_employee_lbl.setText(str(late_employees))
             self.admin_ui.absent_employee_lbl.setText(str(absent_employees))
+
+            # --- Set new shift and overtime labels ---
+            if hasattr(self.admin_ui, "morning_shift_lbl"):
+                self.admin_ui.morning_shift_lbl.setText(f"{morning_present}/{morning_total}")
+            if hasattr(self.admin_ui, "afternoon_shift_lbl"):
+                self.admin_ui.afternoon_shift_lbl.setText(f"{afternoon_present}/{afternoon_total}")
+            if hasattr(self.admin_ui, "night_shift_lbl"):
+                self.admin_ui.night_shift_lbl.setText(f"{night_present}/{night_total}")
+            if hasattr(self.admin_ui, "ave_overtime_lbl"):
+                self.admin_ui.ave_overtime_lbl.setText(str(ave_overtime))
 
         except sqlite3.Error as e:
             print(f"Database error while updating dashboard labels: {e}")
@@ -2691,12 +3615,15 @@ class Admin:
             self.current_employee_data['profile_picture'] = file_path
 
     def display_picture(self, label, picture_path):
-        if (picture_path and os.path.exists(picture_path)) or picture_path.startswith(":/"):
-            pixmap = QPixmap(picture_path)
-            pixmap = pixmap.scaled(170, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            label.setPixmap(pixmap)
-        else:
-            label.setPixmap(QPixmap())
+        def update_picture():
+            if picture_path and os.path.exists(picture_path):
+                pixmap = QPixmap(picture_path)
+                pixmap = pixmap.scaled(label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                label.setPixmap(pixmap)
+            else:
+                label.clear()
+
+        QTimer.singleShot(0, update_picture)
 
     def clear_employee_enrollment_fields(self):
         self.admin_ui.enroll_employee_picture.clear()
@@ -2716,7 +3643,6 @@ class Admin:
         self.admin_ui.employee_sched_1.setChecked(False)
         self.admin_ui.employee_sched_2.setChecked(False)
         self.admin_ui.employee_sched_3.setChecked(False)
-
 
     def load_attendance_logs_table(self):
 
@@ -2920,17 +3846,11 @@ class Admin:
             self.start_backup_scheduler()
 
         except sqlite3.Error as e:
-            error_msg = f"Database error during backup configuration: {e}"
-            print(error_msg)
-            self.system_logs.log_system_action(error_msg, "SystemSettings")
-            QMessageBox.critical(None, "Database Error", 
-                "An error occurred while saving the backup configuration.")
+            self.system_logs.log_system_action(f"Database error during backup configuration: {e}", "SystemSettings")
+            self.show_error("Database Error", "An error occurred while saving the backup configuration.")
         except Exception as e:
-            error_msg = f"Error during backup process: {e}"
-            print(error_msg)
-            self.system_logs.log_system_action(error_msg, "SystemSettings")
-            QMessageBox.critical(None, "Backup Error", 
-                "An unexpected error occurred during the backup process.")
+            self.system_logs.log_system_action(f"Error during backup process: {e}", "SystemSettings")
+            self.show_error("Backup Error", "An unexpected error occurred during the backup process.")
             
     def load_backup_table(self):
         backup_dir = "resources/backups"
@@ -2944,16 +3864,12 @@ class Admin:
             row_position = self.admin_ui.backup_tbl.rowCount()
             self.admin_ui.backup_tbl.insertRow(row_position)
 
-            # File Name
             file_name_item = QTableWidgetItem(backup_file)
             file_name_item.setFlags(file_name_item.flags() & ~Qt.ItemIsEditable)
             self.admin_ui.backup_tbl.setItem(row_position, 0, file_name_item)
 
-            # Date (Extracted from file name)
             try:
-                # Ensure the file name matches the expected format: backup_YYYYMMDD_HHMMSS.db
                 if backup_file.startswith("backup_") and backup_file.endswith(".db"):
-                    # Extract the full timestamp part between "backup_" and ".db"
                     timestamp_part = backup_file[len("backup_"):].split(".")[0]
                     backup_date = datetime.strptime(timestamp_part, "%Y%m%d_%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
                 else:
@@ -2968,7 +3884,7 @@ class Admin:
     def restore_backup(self):
         selected_rows = self.admin_ui.backup_tbl.selectedIndexes()
         if not selected_rows:
-            QMessageBox.warning(None, "Restore Error", "Please select a backup to restore.")
+            self.show_error("Restore Error", "Please select a backup to restore.")
             return
 
         row = selected_rows[0].row()
@@ -2976,11 +3892,9 @@ class Admin:
         backup_path = os.path.join("resources/backups", backup_file)
 
         try:
-            # Copy the selected backup file to overwrite the current database
             shutil.copy(backup_path, self.db.db_name)
             QMessageBox.information(None, "Restore", "Database restored successfully. The application will now restart.")
 
-            # Restart the application
             QProcess.startDetached(sys.executable, sys.argv)
             QCoreApplication.quit()
         except Exception as e:
@@ -3025,7 +3939,7 @@ class Admin:
             elif retention_unit == "Weeks":
                 threshold = now - timedelta(weeks=retention_frequency)
             elif retention_unit == "Months":
-                threshold = now - timedelta(days=retention_frequency * 30)  # Approximate months as 30 days
+                threshold = now - timedelta(days=retention_frequency * 30)  
             else:
                 return
 
@@ -3043,12 +3957,11 @@ class Admin:
         except Exception as e:
             print(f"Error during retention handling: {e}")
             
-            
     def start_backup_scheduler(self):
         self.backup_timer = QTimer()
         self.backup_timer.timeout.connect(self.scheduled_backup)
 
-        self.backup_timer.start(3600000)  # 1 hour in milliseconds
+        self.backup_timer.start(3600000)  
 
     def load_backup_configuration(self):
         try:
@@ -3056,7 +3969,6 @@ class Admin:
             config = cursor.fetchone()
 
             if not config:
-                # No configuration found, set default values
                 self.admin_ui.backup_basic_btn.setChecked(True)
                 self.admin_ui.backup_basic_box.setCurrentIndex(0)
                 self.admin_ui.backup_custom_number.clear()
@@ -3068,7 +3980,6 @@ class Admin:
 
             backup_type, backup_frequency, backup_unit, retention_enabled, retention_frequency, retention_unit = config
 
-            # Set backup type
             if backup_type == "Basic":
                 self.admin_ui.backup_basic_btn.setChecked(True)
                 self.admin_ui.backup_basic_box.setCurrentText(backup_unit)
@@ -3084,6 +3995,670 @@ class Admin:
 
         except sqlite3.Error as e:
             print(f"Database error while loading backup configuration: {e}")
+
+    def show_success(self, title, message):
+        chime.theme('chime')
+        chime.success()
+        toast = Toast(self.admin_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)  
+        toast.setOffset(25, 35)  
+        toast.setBorderRadius(6)  
+        toast.applyPreset(ToastPreset.SUCCESS)  
+        toast.setBackgroundColor(QColor('#FFFFFF')) 
+        toast.setPositionRelativeToWidget(self.admin_ui.home_tabs)
+        toast.setPosition(ToastPosition.TOP_RIGHT)  
+        toast.show() 
+
+    def show_error(self, title, message):
+        chime.theme('big-sur')
+        chime.warning()
+        toast = Toast(self.admin_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)  
+        toast.setOffset(25, 35)  
+        toast.setBorderRadius(6)  
+        toast.applyPreset(ToastPreset.ERROR)  
+        toast.setBackgroundColor(QColor('#FFFFFF'))  
+        toast.setPositionRelativeToWidget(self.admin_ui.home_tabs)
+        toast.setPosition(ToastPosition.TOP_RIGHT)  
+        toast.show()  
+        
+    def check_net(self):
+        try:
+            socket.create_connection(("8.8.8.8", 53), timeout=5)
+            return True
+        except OSError:
+            toast = Toast(self.admin_ui)
+            toast.setTitle("No Internet Connection")
+            toast.setText("Please check your internet connection and try again.")
+            toast.setOffset(40, 45)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.ERROR)
+            toast.setBackgroundColor(QColor('#ffb7b6'))
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.setShowDurationBar(False)
+            toast.setDuration(0) 
+            toast.show()
+            return False
+        
+    def setup_attendance_area_chart(self):
+        self.chart = QChart()
+        self.present_series = QLineSeries()
+        self.absent_series = QLineSeries()
+        self.present_series.setName("Present")
+        self.absent_series.setName("Absent")
+
+        self.present_area = QAreaSeries(self.present_series)
+        self.present_area.setName("Present")
+        self.present_area.setColor(QColor(128, 173, 246, 180))  
+        self.present_area.setBorderColor(QColor(128, 173, 246))  
+        self.present_area.setOpacity(0.6)  
+
+        self.absent_area = QAreaSeries(self.absent_series)
+        self.absent_area.setName("Absent")
+        self.absent_area.setColor(QColor(48, 9, 154, 180))  
+        self.absent_area.setBorderColor(QColor(48, 9, 154))  
+        self.absent_area.setOpacity(0.6)  
+
+        self.chart.setBackgroundBrush(QColor(239, 239, 239))
+
+        self.chart.addSeries(self.present_area)
+        self.chart.addSeries(self.absent_area)
+
+        self.axis_x = QValueAxis()
+        self.axis_x.setTitleText("Day of Month")
+        self.axis_x.setLabelFormat("%d")
+        self.axis_y = QValueAxis()
+        self.axis_y.setTitleText("Count")
+        self.chart.addAxis(self.axis_x, Qt.AlignBottom)
+        self.chart.addAxis(self.axis_y, Qt.AlignLeft)
+        self.present_area.attachAxis(self.axis_x)
+        self.present_area.attachAxis(self.axis_y)
+        self.absent_area.attachAxis(self.axis_x)
+        self.absent_area.attachAxis(self.axis_y)
+
+        self.chart.legend().setVisible(True)
+        self.chart.legend().setAlignment(Qt.AlignBottom)
+
+        self.chart_view = QChartView(self.chart)
+        self.chart_view.setRenderHint(QPainter.Antialiasing)
+
+        self.update_attendance_area_chart()
+
+
+    def update_attendance_area_chart(self):
+        self.present_series.clear()
+        self.absent_series.clear()
+
+        try:
+            cursor = self.db.execute_query(
+                """
+                SELECT date(created_at) as log_date, present_count, absent_count
+                FROM system_logs
+                WHERE date(created_at) >= date('now', '-6 days')
+                ORDER BY date(created_at)
+                """
+            )
+            data = cursor.fetchall() if cursor else []
+            if not data:
+                return
+
+            dates = []
+            presents = []
+            absents = []
+            max_y = 1  
+
+            for row in data:
+                date_str, present, absent = row
+                try:
+                    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                    dates.append(date_obj.strftime("%d"))  
+                    presents.append(int(present))
+                    absents.append(int(absent))
+                    max_y = max(max_y, int(present), int(absent))
+                except Exception:
+                    continue
+
+            if not dates:
+                return
+
+            self.chart.removeAxis(self.axis_x)
+            
+            axis_x = QCategoryAxis()
+            axis_x.setTitleText("Day of Month")
+            axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue) 
+            self.axis_x = axis_x
+            
+            point_count = len(dates)
+            for i in range(point_count):
+                self.present_series.append(i, presents[i])
+                self.absent_series.append(i, absents[i])
+                axis_x.append(dates[i], i)
+            
+            self.axis_x.setRange(0, point_count - 1)
+            self.axis_y.setRange(0, max_y)
+            self.axis_y.setTickCount(max_y + 1)  
+            self.axis_y.setLabelFormat("%d")
+            
+            self.chart.addAxis(self.axis_x, Qt.AlignBottom)
+            self.present_area.attachAxis(self.axis_x)
+            self.absent_area.attachAxis(self.axis_x)
+
+        except Exception as e:
+            print(f"Error updating attendance area chart: {e}")
+   
+    def setup_avg_work_hours_line_chart(self):
+        self.avg_chart = QChart()
+        self.bar_series = QBarSeries()
+        self.line_series = QLineSeries()
+        self.bar_set = QBarSet("Actual")
+        self.bar_series.append(self.bar_set)
+        self.line_series.setName("Average")
+
+        pen = self.line_series.pen()
+        pen.setWidth(3)
+        pen.setColor(QColor(255, 140, 0))
+        self.line_series.setPen(pen)
+
+        self.avg_chart.addSeries(self.bar_series)
+        self.avg_chart.addSeries(self.line_series)
+        self.avg_chart.setBackgroundBrush(QColor(239, 239, 239))
+
+        self.avg_axis_x = QCategoryAxis()
+        self.avg_axis_x.setTitleText("Day")
+        self.avg_axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+
+        self.avg_axis_y = QValueAxis()
+        self.avg_axis_y.setTitleText("Hours")
+        self.avg_axis_y.setLabelFormat("%.1f")
+        self.avg_axis_y.setRange(0, 12)
+
+        self.avg_chart.addAxis(self.avg_axis_x, Qt.AlignBottom)
+        self.avg_chart.addAxis(self.avg_axis_y, Qt.AlignLeft)
+        self.bar_series.attachAxis(self.avg_axis_x)
+        self.bar_series.attachAxis(self.avg_axis_y)
+        self.line_series.attachAxis(self.avg_axis_x)
+        self.line_series.attachAxis(self.avg_axis_y)
+
+        self.avg_chart.legend().setVisible(True)
+        self.avg_chart.legend().setAlignment(Qt.AlignBottom)
+
+        self.avg_work_hours_chart_view = QChartView(self.avg_chart)
+        self.avg_work_hours_chart_view.setRenderHint(QPainter.Antialiasing)
+
+        self.update_avg_work_hours_line_chart()
+
+    def update_avg_work_hours_line_chart(self):
+        self.bar_set.remove(0, self.bar_set.count())
+        self.line_series.clear()
+        self.avg_chart.removeAxis(self.avg_axis_x)
+        self.avg_axis_x = QCategoryAxis()
+        self.avg_axis_x.setTitleText("Day")
+        self.avg_axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+
+        try:
+            cursor = self.db.execute_query(
+                """
+                SELECT date(created_at) as log_date, average_work_hours
+                FROM system_logs
+                WHERE date(created_at) >= date('now', '-6 days')
+                ORDER BY date(created_at)
+                """
+            )
+            data = cursor.fetchall() if cursor else []
+            if not data:
+                return
+
+            days = []
+            hours = []
+            max_hour = 1
+
+            for idx, row in enumerate(data):
+                date_str, avg_hours = row
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                day_label = date_obj.strftime("%a")
+                days.append(day_label)
+                hours_val = float(avg_hours) if avg_hours is not None else 0
+                hours.append(hours_val)
+                max_hour = max(max_hour, hours_val)
+
+            # Add bar values
+            for val in hours:
+                self.bar_set << val
+                
+            color = QColor(112, 205, 152)
+            color.setAlphaF(0.6)  # 0.6 opacity
+            self.bar_set.setColor(color)
+
+            avg_val = sum(hours) / len(hours) if hours else 0
+
+            for i in range(len(days)):
+                self.line_series.append(i, avg_val)
+
+            for i, label in enumerate(days):
+                self.avg_axis_x.append(label, i)
+
+            self.avg_axis_x.setRange(0, len(days) - 1)
+            self.avg_chart.addAxis(self.avg_axis_x, Qt.AlignBottom)
+            self.bar_series.attachAxis(self.avg_axis_x)
+            self.line_series.attachAxis(self.avg_axis_x)
+            self.avg_axis_y.setRange(0, max(8, int(max_hour + 1)))
+            self.avg_axis_y.setTickCount(min(13, int(max_hour + 2)))
+        except Exception as e:
+            print(f"Error updating avg work hours line chart: {e}")
+
+    def setup_attendance_pie_chart(self):
+        self.pie_chart = QChart()
+        self.pie_series = QPieSeries()
+        self.pie_chart.addSeries(self.pie_series)
+        self.pie_chart.setBackgroundBrush(QColor(239, 239, 239))
+        self.pie_chart.legend().setVisible(True)
+        self.pie_chart.legend().setAlignment(Qt.AlignBottom)
+        self.pie_chart_view = QChartView(self.pie_chart)
+        self.pie_chart_view.setRenderHint(QPainter.Antialiasing)
+        self.update_attendance_pie_chart()
+
+    def update_attendance_pie_chart(self):
+        self.pie_series.clear()
+        try:
+            today_date = datetime.now().strftime("%Y-%m-%d")
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
+                (today_date,)
+            )
+            present = cursor.fetchone()[0] if cursor else 0
+
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND employee_id NOT IN (SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)",
+                (today_date,)
+            )
+            absent = cursor.fetchone()[0] if cursor else 0
+
+            total = present + absent
+            if total == 0:
+                self.pie_series.append("No Data", 1)
+                self.pie_series.slices()[0].setColor(QColor(200, 200, 200))
+                self.pie_series.slices()[0].setLabelVisible(True)
+            else:
+                present_pct = (present / total) * 100
+                absent_pct = (absent / total) * 100
+                present_slice = self.pie_series.append(f"Present ({present_pct:.1f}%)", present)
+                absent_slice = self.pie_series.append(f"Absent ({absent_pct:.1f}%)", absent)
+                present_slice.setColor(QColor(255, 174, 53))
+                absent_slice.setColor(QColor(240, 86, 68))
+                present_slice.setLabelVisible(True)
+                absent_slice.setLabelVisible(True)
+        except Exception as e:
+            print(f"Error updating attendance pie chart: {e}")
+
+class Announcement:
+    def __init__(self, db, hr_data, hr_ui):
+        self.db = db
+        self.hr_data = hr_data
+        self.hr_ui = hr_ui
+        self.attachments = []
+
+        # Connect UI elements
+        self.hr_ui.employee_send_all_btn.toggled.connect(self.toggle_send_all)
+        self.hr_ui.employee_choose_btn.toggled.connect(self.toggle_choose_employee)
+        self.hr_ui.email_employee_search_box.textChanged.connect(self.filter_employee_table)
+        self.hr_ui.email_employee_sort_box.currentIndexChanged.connect(self.sort_employee_table)
+        self.hr_ui.save_as_template_btn.clicked.connect(self.save_as_template)
+        self.hr_ui.import_btn.clicked.connect(self.import_template)
+        self.hr_ui.attach_btn.clicked.connect(self.attach_files)
+        self.hr_ui.send_email_btn.clicked.connect(self.send_announcement_email)
+
+        self.radio_buttons = []  # Track radio buttons for single selection
+
+        self.load_employee_table()
+        self.toggle_send_all()  # Set initial state
+
+        # --- Scheduled emails UI connections ---
+        self.hr_ui.sched_email_search_box.textChanged.connect(self.filter_sched_email_table)
+        self.hr_ui.sched_email_sort_box.currentIndexChanged.connect(self.sort_sched_email_table)
+        self.load_sched_email_table()
+
+        # Ensure table is only enabled when choose is checked
+        self.hr_ui.selectable_employee_list_tbl.setEnabled(self.hr_ui.employee_choose_btn.isChecked())
+        self.hr_ui.employee_choose_btn.toggled.connect(self.toggle_choose_employee)
+
+    def toggle_send_all(self):
+        # If send all is checked, disable table
+        self.hr_ui.selectable_employee_list_tbl.setDisabled(self.hr_ui.employee_send_all_btn.isChecked())
+        # If send all is checked, also unselect all radios
+        if self.hr_ui.employee_send_all_btn.isChecked():
+            for radio in self.radio_buttons:
+                radio.setChecked(False)
+
+    def toggle_choose_employee(self):
+        # Only enable table if choose is checked
+        enabled = self.hr_ui.employee_choose_btn.isChecked()
+        self.hr_ui.selectable_employee_list_tbl.setEnabled(enabled)
+        if not enabled:
+            for radio in self.radio_buttons:
+                radio.setChecked(False)
+
+    # --- Scheduled Emails Table Logic ---
+    def load_sched_email_table(self):
+        tbl = self.hr_ui.sched_email_list_tbl
+        tbl.setRowCount(0)
+        # Only announcements with schedule_enabled=1
+        cursor = self.db.execute_query(
+            "SELECT subject, created_at, schedule_frequency FROM announcements WHERE schedule_enabled = 1 ORDER BY created_at DESC"
+        )
+        self.sched_email_entries = cursor.fetchall() if cursor else []
+        for entry in self.sched_email_entries:
+            row = tbl.rowCount()
+            tbl.insertRow(row)
+            tbl.setItem(row, 0, QTableWidgetItem(entry[0]))  # Subject
+            tbl.setItem(row, 1, QTableWidgetItem(str(entry[1])))  # Created at
+            tbl.setItem(row, 2, QTableWidgetItem(str(entry[2])))  # Frequency
+        tbl.resizeColumnsToContents()
+
+    def filter_sched_email_table(self):
+        search_text = self.hr_ui.sched_email_search_box.text().lower()
+        tbl = self.hr_ui.sched_email_list_tbl
+        for row in range(tbl.rowCount()):
+            show = False
+            for col in range(tbl.columnCount()):
+                item = tbl.item(row, col)
+                if item and search_text in item.text().lower():
+                    show = True
+                    break
+            tbl.setRowHidden(row, not show)
+
+    def sort_sched_email_table(self):
+        sort_option = self.hr_ui.sched_email_sort_box.currentText()
+        tbl = self.hr_ui.sched_email_list_tbl
+        # Gather all rows
+        rows = []
+        for row in range(tbl.rowCount()):
+            row_data = [tbl.item(row, col).text() if tbl.item(row, col) else "" for col in range(tbl.columnCount())]
+            rows.append(row_data)
+        # Sort
+        if sort_option == "By Subject:":
+            rows.sort(key=lambda x: x[0].lower())
+        elif sort_option == "By Created Date:":
+            rows.sort(key=lambda x: x[1], reverse=True)
+        elif sort_option == "By Frequency:":
+            rows.sort(key=lambda x: x[2].lower())
+        # Repopulate
+        tbl.setRowCount(0)
+        for row_data in rows:
+            row = tbl.rowCount()
+            tbl.insertRow(row)
+            for col, val in enumerate(row_data):
+                tbl.setItem(row, col, QTableWidgetItem(val))
+        tbl.resizeColumnsToContents()
+
+    def load_employee_table(self):
+        # Load all employees into selectable_employee_list_tbl
+        cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
+        employees = cursor.fetchall() if cursor else []
+        tbl = self.hr_ui.selectable_employee_list_tbl
+        tbl.setRowCount(0)
+        self.employee_list = []
+        self.radio_buttons = []
+        for emp in employees:
+            emp_data = {
+                "employee_id": emp[0],
+                "first_name": emp[1],
+                "last_name": emp[2],
+                "middle_initial": emp[3],
+                "department": emp[4],
+                "position": emp[5]
+            }
+            self.employee_list.append(emp_data)
+            row = tbl.rowCount()
+            tbl.insertRow(row)
+            # Add radio button for selection
+            radio = QRadioButton()
+            radio.setStyleSheet("background-color: white;")  # Set white background
+            radio.toggled.connect(lambda checked, r=row: self.handle_radio_selected(r, checked))
+            self.radio_buttons.append(radio)
+            tbl.setCellWidget(row, 0, radio)
+            # Name
+            mi = f" {emp_data['middle_initial']}." if emp_data['middle_initial'] else ""
+            name = f"{emp_data['last_name']}, {emp_data['first_name']}{mi}"
+            tbl.setItem(row, 1, QTableWidgetItem(name))
+            tbl.setItem(row, 2, QTableWidgetItem(emp_data['employee_id']))
+            tbl.setItem(row, 3, QTableWidgetItem(f"{emp_data['department']} / {emp_data['position']}"))
+        tbl.resizeColumnsToContents()
+
+    def handle_radio_selected(self, row, checked):
+        if checked:
+            # Uncheck all other radios
+            for idx, radio in enumerate(self.radio_buttons):
+                if idx != row:
+                    radio.setChecked(False)
+
+    def filter_employee_table(self):
+        search_text = self.hr_ui.email_employee_search_box.text().lower()
+        tbl = self.hr_ui.selectable_employee_list_tbl
+        for row in range(tbl.rowCount()):
+            show = False
+            for col in range(1, tbl.columnCount()):
+                item = tbl.item(row, col)
+                if item and search_text in item.text().lower():
+                    show = True
+                    break
+            tbl.setRowHidden(row, not show)
+
+    def sort_employee_table(self):
+        sort_option = self.hr_ui.email_employee_sort_box.currentText()
+        if sort_option == "By Name:":
+            self.employee_list.sort(key=lambda x: (x["last_name"].lower(), x["first_name"].lower()))
+        elif sort_option == "By Account ID:":
+            self.employee_list.sort(key=lambda x: x["employee_id"])
+        elif sort_option == "By Department:":
+            self.employee_list.sort(key=lambda x: x["department"].lower())
+        # Re-populate table
+        self.hr_ui.selectable_employee_list_tbl.setRowCount(0)
+        self.radio_buttons = []
+        for emp_data in self.employee_list:
+            row = self.hr_ui.selectable_employee_list_tbl.rowCount()
+            self.hr_ui.selectable_employee_list_tbl.insertRow(row)
+            radio = QRadioButton()
+            radio.setStyleSheet("background-color: white;")  # Set white background
+            radio.toggled.connect(lambda checked, r=row: self.handle_radio_selected(r, checked))
+            self.radio_buttons.append(radio)
+            self.hr_ui.selectable_employee_list_tbl.setCellWidget(row, 0, radio)
+            mi = f" {emp_data['middle_initial']}." if emp_data['middle_initial'] else ""
+            name = f"{emp_data['last_name']}, {emp_data['first_name']}{mi}"
+            self.hr_ui.selectable_employee_list_tbl.setItem(row, 1, QTableWidgetItem(name))
+            self.hr_ui.selectable_employee_list_tbl.setItem(row, 2, QTableWidgetItem(emp_data['employee_id']))
+            self.hr_ui.selectable_employee_list_tbl.setItem(row, 3, QTableWidgetItem(f"{emp_data['department']} / {emp_data['position']}"))
+        self.hr_ui.selectable_employee_list_tbl.resizeColumnsToContents()
+
+    def attach_files(self):
+        valid_exts = ('.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.zip')
+        files, _ = QFileDialog.getOpenFileNames(self.hr_ui, "Select Attachments", "", 
+            "Allowed Files (*.pdf *.jpg *.jpeg *.png *.doc *.docx *.xls *.xlsx *.txt *.csv *.zip)")
+        if files:
+            valid_files = [f for f in files if os.path.splitext(f)[1].lower() in valid_exts]
+            if len(valid_files) < len(files):
+                QMessageBox.warning(self.hr_ui, "Attachment Error", "Some files were not added because they are not supported by Gmail.")
+            self.attachments.extend([f for f in valid_files if f not in self.attachments])
+            self.update_attachments_list()
+
+    def update_attachments_list(self):
+        # Use QListWidget named attachments_list
+        lw: QListWidget = self.hr_ui.attachments_list
+        lw.clear()
+        for file_path in self.attachments:
+            fname = os.path.basename(file_path)
+            item_widget = QWidget()
+            hbox = QHBoxLayout(item_widget)
+            hbox.setContentsMargins(0, 0, 0, 0)
+            label = QLabel(fname)
+            btn = QPushButton("✕")
+            btn.setFixedSize(20, 20)
+            btn.setStyleSheet("color: red; background: transparent; border: none; font-weight: bold;")
+            btn.clicked.connect(lambda _, f=file_path: self.remove_attachment(f))
+            hbox.addWidget(label)
+            hbox.addWidget(btn)
+            hbox.addStretch()
+            item_widget.setLayout(hbox)
+            item = QListWidgetItem()
+            item.setSizeHint(item_widget.sizeHint())
+            lw.addItem(item)
+            lw.setItemWidget(item, item_widget)
+
+    def remove_attachment(self, file_path):
+        if file_path in self.attachments:
+            self.attachments.remove(file_path)
+            self.update_attachments_list()
+
+    def save_as_template(self):
+        # Save current announcement as a template (JSON)
+        template_dir = "resources/email_templates"
+        if not os.path.exists(template_dir):
+            os.makedirs(template_dir)
+        subject = self.hr_ui.email_subject.text()
+        message = self.hr_ui.email_message.toPlainText()
+        schedule = self.hr_ui.set_schedule_btn.isChecked()
+        schedule_freq = self.hr_ui.schedule_frequency_box.currentText() if schedule else ""
+        theme = self.hr_ui.set_theme_btn.isChecked()
+        theme_type = self.hr_ui.theme_design_box.currentText() if theme else ""
+        template = {
+            "subject": subject,
+            "message": message,
+            "schedule": schedule,
+            "schedule_frequency": schedule_freq,
+            "theme": theme,
+            "theme_type": theme_type
+        }
+        fname, _ = QFileDialog.getSaveFileName(self.hr_ui, "Save Template", template_dir, "JSON Files (*.json)")
+        if fname:
+            with open(fname, "w", encoding="utf-8") as f:
+                json.dump(template, f)
+
+
+    def import_template(self):
+        template_dir = "resources/email_templates"
+        fname, _ = QFileDialog.getOpenFileName(self.hr_ui, "Import Template", template_dir, "JSON Files (*.json)")
+        if fname:
+            with open(fname, "r", encoding="utf-8") as f:
+                template = json.load(f)
+            self.hr_ui.email_subject.setText(template.get("subject", ""))
+            self.hr_ui.email_message.setPlainText(template.get("message", ""))
+            if template.get("schedule", False):
+                self.hr_ui.set_schedule_btn.setChecked(True)
+                self.hr_ui.schedule_frequency_box.setCurrentText(template.get("schedule_frequency", "Daily"))
+            else:
+                self.hr_ui.set_schedule_btn.setChecked(False)
+            if template.get("theme", False):
+                self.hr_ui.set_theme_btn.setChecked(True)
+                self.hr_ui.theme_design_box.setCurrentText(template.get("theme_type", ""))
+            else:
+                self.hr_ui.set_theme_btn.setChecked(False)
+
+
+    def send_announcement_email(self):
+        subject = self.hr_ui.email_subject.text()
+        message = self.hr_ui.email_message.toPlainText()
+        schedule_enabled = self.hr_ui.set_schedule_btn.isChecked()
+        schedule_frequency = self.hr_ui.schedule_frequency_box.currentText() if schedule_enabled else None
+        theme_enabled = self.hr_ui.set_theme_btn.isChecked()
+        theme_type = self.hr_ui.theme_design_box.currentText() if theme_enabled else None
+        files_path = ";".join(self.attachments)
+        attached_files_count = len(self.attachments)
+        sending_type = "All" if self.hr_ui.employee_send_all_btn.isChecked() else "Selected"
+        involved_employee = None
+
+        # Get recipients
+        recipients = []
+        if sending_type == "All":
+            cursor = self.db.execute_query("SELECT email FROM Employee WHERE is_hr = 0 AND status = 'Active'")
+            recipients = [row[0] for row in cursor.fetchall()] if cursor else []
+        else:
+            tbl = self.hr_ui.selectable_employee_list_tbl
+            for row, radio in enumerate(self.radio_buttons):
+                if radio.isChecked():
+                    emp_id = tbl.item(row, 2).text()
+                    cursor = self.db.execute_query("SELECT email FROM Employee WHERE employee_id = ?", (emp_id,))
+                    result = cursor.fetchone()
+                    if result:
+                        recipients.append(result[0])
+                        involved_employee = emp_id
+                    break
+
+        # Save to database
+        self.db.execute_query(
+            '''INSERT INTO announcements (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, attached_files_count, files_path, created_by)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, attached_files_count, files_path, self.hr_data["employee_id"])
+        )
+
+        # Send email
+        sender_email = "eals.tupc@gmail.com"
+        sender_password = "buwl tszg dghr exln"
+        for recipient in recipients:
+            try:
+                msg = MIMEMultipart()
+                msg["From"] = sender_email
+                msg["To"] = recipient
+                msg["Subject"] = subject
+                msg.attach(MIMEText(message, "plain"))
+                # Attach files
+                for file_path in self.attachments:
+                    try:
+                        with open(file_path, "rb") as f:
+                            from email.mime.base import MIMEBase
+                            from email import encoders
+                            part = MIMEBase("application", "octet-stream")
+                            part.setPayload(f.read())
+                            encoders.encode_base64(part)
+                            part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(file_path)}")
+                            msg.attach(part)
+                    except Exception as e:
+                        print(f"Attachment error: {file_path}: {e}")
+                        continue
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                    server.login(sender_email, sender_password)
+                    server.send_message(msg)
+            except Exception as e:
+                print(f"Error sending announcement email to {recipient}: {e}")
+
+
+        chime.theme('chime')
+        chime.success()
+        toast = Toast(self.hr_ui)
+        toast.setTitle("Announcement Sent")
+        toast.setText("Announcement email(s) sent successfully.")
+        toast.setDuration(2000)
+        toast.setOffset(25, 35)
+        toast.setBorderRadius(6)
+        toast.applyPreset(ToastPreset.SUCCESS)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+
+        # --- Clear fields after send ---
+        self.hr_ui.email_subject.clear()
+        self.hr_ui.email_message.clear()
+        self.hr_ui.set_schedule_btn.setChecked(False)
+        self.hr_ui.set_theme_btn.setChecked(False)
+        toast.applyPreset(ToastPreset.SUCCESS)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+
+        # --- Clear fields after send ---
+        self.hr_ui.email_subject.clear()
+        self.hr_ui.email_message.clear()
+        self.hr_ui.set_schedule_btn.setChecked(False)
+        self.hr_ui.set_theme_btn.setChecked(False)
+        self.hr_ui.schedule_frequency_box.setCurrentIndex(0)
+        self.hr_ui.theme_design_box.setCurrentIndex(0)
+        for radio in self.radio_buttons:
+            radio.setChecked(False)
+        self.attachments.clear()
+        self.update_attachments_list()
+        self.load_sched_email_table()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
