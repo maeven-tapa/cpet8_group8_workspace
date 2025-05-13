@@ -2085,7 +2085,7 @@ border-radius:6px;
               <string notr="true">border: none;</string>
              </property>
              <property name="currentIndex">
-              <number>1</number>
+              <number>0</number>
              </property>
              <widget class="QWidget" name="email_page">
               <layout class="QGridLayout" name="gridLayout_19" columnstretch="1,1">
