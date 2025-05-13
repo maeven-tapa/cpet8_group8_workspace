@@ -373,7 +373,7 @@ class Feedback:
         self.hr_data = hr_data
         self.loader = QUiLoader()
         self.feedback_ui = self.loader.load("ui/feedback.ui")
-        self.feedback_ui.setWindowTitle("Change Admin Password")
+        self.feedback_ui.setWindowTitle("Send Feedback")
         self.feedback_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         self.feedback_ui.setWindowModality(Qt.ApplicationModal)
         
