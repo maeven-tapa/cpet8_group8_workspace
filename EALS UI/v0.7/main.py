@@ -464,6 +464,10 @@ class HR:
         self.update_date_today()
         self.check_net()
 
+        self.hr_ui.dashboard_nav_btn.clicked.connect(self.handle_hr_dashboard_nav)
+        self.hr_ui.hr_dashboard_pages.setCurrentWidget(self.hr_ui.db_page_1)
+        self.hr_ui.dashboard_nav_btn.setText("Next")
+
     def show_feedback_form(self):
         self.system_logs.log_system_action("HR opened feedback form", "Employee")
         self.feedback = Feedback(self.db, self.hr_data)
@@ -761,6 +765,16 @@ class HR:
             toast.setDuration(0) 
             toast.show()
             return False
+
+    def handle_hr_dashboard_nav(self):
+
+        current_widget = self.hr_ui.hr_dashboard_pages.currentWidget()
+        if current_widget == self.hr_ui.db_page_1:
+            self.hr_ui.hr_dashboard_pages.setCurrentWidget(self.hr_ui.db_page_2)
+            self.hr_ui.dashboard_nav_btn.setText("Back")
+        else:
+            self.hr_ui.hr_dashboard_pages.setCurrentWidget(self.hr_ui.db_page_1)
+            self.hr_ui.dashboard_nav_btn.setText("Next")
 
 class Home:
     password_changed = False
