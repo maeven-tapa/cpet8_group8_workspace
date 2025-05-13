@@ -15,7 +15,10 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QMainWindow {
-
+    background-image: url(&quot;resources/bg2.jpg&quot;);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #eef1f6
 }
 
 QToolTip {
