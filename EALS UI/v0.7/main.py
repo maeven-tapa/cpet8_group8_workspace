@@ -3793,7 +3793,6 @@ class Admin:
 
     def setup_attendance_pie_chart(self):
         self.pie_chart = QChart()
-        self.pie_chart.setTitle("Today's Attendance Distribution")
         self.pie_series = QPieSeries()
         self.pie_chart.addSeries(self.pie_series)
         self.pie_chart.setBackgroundBrush(QColor(239, 239, 239))

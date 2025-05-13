@@ -514,7 +514,7 @@ color: #2C2C2C;</string>
                       <number>0</number>
                      </property>
                      <item row="0" column="0">
-                      <widget class="QLabel" name="label_32">
+                      <widget class="QLabel" name="morning_shift_lbl">
                        <property name="font">
                         <font>
                          <pointsize>40</pointsize>
@@ -582,7 +582,7 @@ color: #2C2C2C;</string>
                       <number>0</number>
                      </property>
                      <item row="0" column="0">
-                      <widget class="QLabel" name="label_35">
+                      <widget class="QLabel" name="afternoon_shift_lbl">
                        <property name="font">
                         <font>
                          <pointsize>40</pointsize>
@@ -650,7 +650,7 @@ color: #2C2C2C;</string>
                       <number>0</number>
                      </property>
                      <item row="0" column="0">
-                      <widget class="QLabel" name="label_37">
+                      <widget class="QLabel" name="night_shift_lbl">
                        <property name="font">
                         <font>
                          <pointsize>40</pointsize>
@@ -718,7 +718,7 @@ color: #2C2C2C;</string>
                       <number>0</number>
                      </property>
                      <item row="0" column="0">
-                      <widget class="QLabel" name="label_39">
+                      <widget class="QLabel" name="ave_overtime_lbl">
                        <property name="font">
                         <font>
                          <pointsize>40</pointsize>
@@ -739,7 +739,7 @@ color: #2C2C2C;</string>
                       </widget>
                      </item>
                      <item row="1" column="0">
-                      <widget class="QLabel" name="label_40">
+                      <widget class="QLabel" name="label_32">
                        <property name="text">
                         <string>Ave. Overtime Hours</string>
                        </property>
@@ -872,7 +872,7 @@ border-radius:6px;</string>
                      <string notr="true">border: none;</string>
                     </property>
                     <property name="text">
-                     <string>title:</string>
+                     <string>Today's Attendance Distribution</string>
                     </property>
                     <property name="indent">
                      <number>4</number>
