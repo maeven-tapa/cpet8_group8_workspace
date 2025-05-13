@@ -166,7 +166,7 @@ QToolTip {
         <item row="0" column="0">
          <widget class="QStackedWidget" name="hr_dashboard_pages">
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="db_page_1">
            <layout class="QGridLayout" name="gridLayout_9" columnstretch="2,1">
@@ -194,7 +194,7 @@ border-radius:6px;</string>
                   <string notr="true">border: none;</string>
                  </property>
                  <property name="text">
-                  <string>title:</string>
+                  <string>Daily Employee Attendance</string>
                  </property>
                  <property name="indent">
                   <number>4</number>
@@ -586,7 +586,7 @@ border-radius:6px;</string>
                      <string notr="true">border: none;</string>
                     </property>
                     <property name="text">
-                     <string>title:</string>
+                     <string>Average Work Hours (Last 7 Days)</string>
                     </property>
                     <property name="indent">
                      <number>4</number>
@@ -649,7 +649,7 @@ border-radius:6px;</string>
                      <string notr="true">border: none;</string>
                     </property>
                     <property name="text">
-                     <string>title:</string>
+                     <string>Today's Attendance Distribution</string>
                     </property>
                     <property name="indent">
                      <number>4</number>
@@ -683,7 +683,7 @@ color: #2C2C2C;</string>
                       <number>2</number>
                      </property>
                      <item row="0" column="0">
-                      <layout class="QGridLayout" name="chart_layout1_2"/>
+                      <layout class="QGridLayout" name="chart_layout3"/>
                      </item>
                     </layout>
                    </widget>

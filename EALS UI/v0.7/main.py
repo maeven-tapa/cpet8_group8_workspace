@@ -468,6 +468,271 @@ class HR:
         self.hr_ui.hr_dashboard_pages.setCurrentWidget(self.hr_ui.db_page_1)
         self.hr_ui.dashboard_nav_btn.setText("Next")
 
+        # --- HR CHARTS SETUP ---
+        self.chart_view = None
+        self.setup_attendance_area_chart()
+        if hasattr(self.hr_ui, "chart_layout1") and self.chart_view:
+            self.hr_ui.chart_layout1.addWidget(self.chart_view, 0, 0)
+
+        self.avg_work_hours_chart_view = None
+        self.setup_avg_work_hours_line_chart()
+        if hasattr(self.hr_ui, "chart_layout2") and self.avg_work_hours_chart_view:
+            self.hr_ui.chart_layout2.addWidget(self.avg_work_hours_chart_view, 0, 0)
+
+        self.pie_chart_view = None
+        self.setup_attendance_pie_chart()
+        if hasattr(self.hr_ui, "chart_layout3") and self.pie_chart_view:
+            self.hr_ui.chart_layout3.addWidget(self.pie_chart_view, 0, 0)
+        # --- END HR CHARTS SETUP ---
+
+    # --- HR CHARTS LOGIC (copied and adapted from Admin) ---
+    def setup_attendance_area_chart(self):
+        self.chart = QChart()
+        self.present_series = QLineSeries()
+        self.absent_series = QLineSeries()
+        self.present_series.setName("Present")
+        self.absent_series.setName("Absent")
+
+        self.present_area = QAreaSeries(self.present_series)
+        self.present_area.setName("Present")
+        self.present_area.setColor(QColor(128, 173, 246, 180))
+        self.present_area.setBorderColor(QColor(128, 173, 246))
+        self.present_area.setOpacity(0.6)
+
+        self.absent_area = QAreaSeries(self.absent_series)
+        self.absent_area.setName("Absent")
+        self.absent_area.setColor(QColor(48, 9, 154, 180))
+        self.absent_area.setBorderColor(QColor(48, 9, 154))
+        self.absent_area.setOpacity(0.6)
+
+        self.chart.setBackgroundBrush(QColor(239, 239, 239))
+
+        self.chart.addSeries(self.present_area)
+        self.chart.addSeries(self.absent_area)
+
+        self.axis_x = QValueAxis()
+        self.axis_x.setTitleText("Day of Month")
+        self.axis_x.setLabelFormat("%d")
+        self.axis_y = QValueAxis()
+        self.axis_y.setTitleText("Count")
+        self.chart.addAxis(self.axis_x, Qt.AlignBottom)
+        self.chart.addAxis(self.axis_y, Qt.AlignLeft)
+        self.present_area.attachAxis(self.axis_x)
+        self.present_area.attachAxis(self.axis_y)
+        self.absent_area.attachAxis(self.axis_x)
+        self.absent_area.attachAxis(self.axis_y)
+
+        self.chart.legend().setVisible(True)
+        self.chart.legend().setAlignment(Qt.AlignBottom)
+
+        self.chart_view = QChartView(self.chart)
+        self.chart_view.setRenderHint(QPainter.Antialiasing)
+
+        self.update_attendance_area_chart()
+
+    def update_attendance_area_chart(self):
+        self.present_series.clear()
+        self.absent_series.clear()
+        try:
+            cursor = self.db.execute_query(
+                """
+                SELECT date(created_at) as log_date, present_count, absent_count
+                FROM system_logs
+                WHERE date(created_at) >= date('now', '-6 days')
+                ORDER BY date(created_at)
+                """
+            )
+            data = cursor.fetchall() if cursor else []
+            if not data:
+                return
+
+            dates = []
+            presents = []
+            absents = []
+            max_y = 1
+
+            for row in data:
+                date_str, present, absent = row
+                try:
+                    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                    dates.append(date_obj.strftime("%d"))
+                    presents.append(int(present))
+                    absents.append(int(absent))
+                    max_y = max(max_y, int(present), int(absent))
+                except Exception:
+                    continue
+
+            if not dates:
+                return
+
+            self.chart.removeAxis(self.axis_x)
+            axis_x = QCategoryAxis()
+            axis_x.setTitleText("Day of Month")
+            axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+            self.axis_x = axis_x
+
+            point_count = len(dates)
+            for i in range(point_count):
+                self.present_series.append(i, presents[i])
+                self.absent_series.append(i, absents[i])
+                axis_x.append(dates[i], i)
+
+            self.axis_x.setRange(0, point_count - 1)
+            self.axis_y.setRange(0, max_y)
+            self.axis_y.setTickCount(max_y + 1)
+            self.axis_y.setLabelFormat("%d")
+
+            self.chart.addAxis(self.axis_x, Qt.AlignBottom)
+            self.present_area.attachAxis(self.axis_x)
+            self.absent_area.attachAxis(self.axis_x)
+        except Exception as e:
+            print(f"Error updating HR attendance area chart: {e}")
+
+    def setup_avg_work_hours_line_chart(self):
+        self.avg_chart = QChart()
+        self.bar_series = QBarSeries()
+        self.line_series = QLineSeries()
+        self.bar_set = QBarSet("Actual")
+        self.bar_series.append(self.bar_set)
+        self.line_series.setName("Average")
+
+        pen = self.line_series.pen()
+        pen.setWidth(3)
+        pen.setColor(QColor(255, 140, 0))
+        self.line_series.setPen(pen)
+
+        self.avg_chart.addSeries(self.bar_series)
+        self.avg_chart.addSeries(self.line_series)
+        self.avg_chart.setBackgroundBrush(QColor(239, 239, 239))
+
+        self.avg_axis_x = QCategoryAxis()
+        self.avg_axis_x.setTitleText("Day")
+        self.avg_axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+
+        self.avg_axis_y = QValueAxis()
+        self.avg_axis_y.setTitleText("Hours")
+        self.avg_axis_y.setLabelFormat("%.1f")
+        self.avg_axis_y.setRange(0, 12)
+
+        self.avg_chart.addAxis(self.avg_axis_x, Qt.AlignBottom)
+        self.avg_chart.addAxis(self.avg_axis_y, Qt.AlignLeft)
+        self.bar_series.attachAxis(self.avg_axis_x)
+        self.bar_series.attachAxis(self.avg_axis_y)
+        self.line_series.attachAxis(self.avg_axis_x)
+        self.line_series.attachAxis(self.avg_axis_y)
+
+        self.avg_chart.legend().setVisible(True)
+        self.avg_chart.legend().setAlignment(Qt.AlignBottom)
+
+        self.avg_work_hours_chart_view = QChartView(self.avg_chart)
+        self.avg_work_hours_chart_view.setRenderHint(QPainter.Antialiasing)
+
+        self.update_avg_work_hours_line_chart()
+
+    def update_avg_work_hours_line_chart(self):
+        self.bar_set.remove(0, self.bar_set.count())
+        self.line_series.clear()
+        self.avg_chart.removeAxis(self.avg_axis_x)
+        self.avg_axis_x = QCategoryAxis()
+        self.avg_axis_x.setTitleText("Day")
+        self.avg_axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+
+        try:
+            cursor = self.db.execute_query(
+                """
+                SELECT date(created_at) as log_date, average_work_hours
+                FROM system_logs
+                WHERE date(created_at) >= date('now', '-6 days')
+                ORDER BY date(created_at)
+                """
+            )
+            data = cursor.fetchall() if cursor else []
+            if not data:
+                return
+
+            days = []
+            hours = []
+            max_hour = 1
+
+            for idx, row in enumerate(data):
+                date_str, avg_hours = row
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                day_label = date_obj.strftime("%a")
+                days.append(day_label)
+                hours_val = float(avg_hours) if avg_hours is not None else 0
+                hours.append(hours_val)
+                max_hour = max(max_hour, hours_val)
+
+            for val in hours:
+                self.bar_set << val
+
+            color = QColor(112, 205, 152)
+            color.setAlphaF(0.6)
+            self.bar_set.setColor(color)
+
+            avg_val = sum(hours) / len(hours) if hours else 0
+
+            for i in range(len(days)):
+                self.line_series.append(i, avg_val)
+
+            for i, label in enumerate(days):
+                self.avg_axis_x.append(label, i)
+
+            self.avg_axis_x.setRange(0, len(days) - 1)
+            self.avg_chart.addAxis(self.avg_axis_x, Qt.AlignBottom)
+            self.bar_series.attachAxis(self.avg_axis_x)
+            self.line_series.attachAxis(self.avg_axis_x)
+            self.avg_axis_y.setRange(0, max(8, int(max_hour + 1)))
+            self.avg_axis_y.setTickCount(min(13, int(max_hour + 2)))
+        except Exception as e:
+            print(f"Error updating HR avg work hours line chart: {e}")
+
+    def setup_attendance_pie_chart(self):
+        self.pie_chart = QChart()
+        self.pie_series = QPieSeries()
+        self.pie_chart.addSeries(self.pie_series)
+        self.pie_chart.setBackgroundBrush(QColor(239, 239, 239))
+        self.pie_chart.legend().setVisible(True)
+        self.pie_chart.legend().setAlignment(Qt.AlignBottom)
+        self.pie_chart_view = QChartView(self.pie_chart)
+        self.pie_chart_view.setRenderHint(QPainter.Antialiasing)
+        self.update_attendance_pie_chart()
+
+    def update_attendance_pie_chart(self):
+        self.pie_series.clear()
+        try:
+            today_date = datetime.now().strftime("%Y-%m-%d")
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
+                (today_date,)
+            )
+            present = cursor.fetchone()[0] if cursor else 0
+
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND employee_id NOT IN (SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)",
+                (today_date,)
+            )
+            absent = cursor.fetchone()[0] if cursor else 0
+
+            total = present + absent
+            if total == 0:
+                self.pie_series.append("No Data", 1)
+                self.pie_series.slices()[0].setColor(QColor(200, 200, 200))
+                self.pie_series.slices()[0].setLabelVisible(True)
+            else:
+                present_pct = (present / total) * 100
+                absent_pct = (absent / total) * 100
+                present_slice = self.pie_series.append(f"Present ({present_pct:.1f}%)", present)
+                absent_slice = self.pie_series.append(f"Absent ({absent_pct:.1f}%)", absent)
+                present_slice.setColor(QColor(255, 174, 53))
+                absent_slice.setColor(QColor(240, 86, 68))
+                present_slice.setLabelVisible(True)
+                absent_slice.setLabelVisible(True)
+        except Exception as e:
+            print(f"Error updating HR attendance pie chart: {e}")
+
+    # ...existing code...
+
     def show_feedback_form(self):
         self.system_logs.log_system_action("HR opened feedback form", "Employee")
         self.feedback = Feedback(self.db, self.hr_data)
@@ -3683,11 +3948,6 @@ class Admin:
         self.present_series.setName("Present")
         self.absent_series.setName("Absent")
 
-        self.present_area = QAreaSeries(self.present_series)
-        self.present_area.setName("Present")
-        self.absent_area = QAreaSeries(self.absent_series)
-        self.absent_area.setName("Absent")
-        
         self.present_area = QAreaSeries(self.present_series)
         self.present_area.setName("Present")
         self.present_area.setColor(QColor(128, 173, 246, 180))  
