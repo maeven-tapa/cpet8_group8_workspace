@@ -768,11 +768,96 @@ class HR:
             )
             absent_employees = cursor.fetchone()[0] if cursor else 0
 
+            # --- NEW: Shift and overtime labels (copied from Admin) ---
+            # Morning shift
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '6am to 2pm'"
+            )
+            morning_total = cursor.fetchone()[0] if cursor else 0
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
+                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
+                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '6am to 2pm' AND a.date = ? AND a.remarks = 'Clock In'",
+                (today_date,)
+            )
+            morning_present = cursor.fetchone()[0] if cursor else 0
+
+            # Afternoon shift
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '2pm to 10pm'"
+            )
+            afternoon_total = cursor.fetchone()[0] if cursor else 0
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
+                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
+                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '2pm to 10pm' AND a.date = ? AND a.remarks = 'Clock In'",
+                (today_date,)
+            )
+            afternoon_present = cursor.fetchone()[0] if cursor else 0
+
+            # Night shift
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '10pm to 6am'"
+            )
+            night_total = cursor.fetchone()[0] if cursor else 0
+            cursor = self.db.execute_query(
+                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
+                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
+                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '10pm to 6am' AND a.date = ? AND a.remarks = 'Clock In'",
+                (today_date,)
+            )
+            night_present = cursor.fetchone()[0] if cursor else 0
+
+            # --- NEW: Average overtime calculation ---
+            cursor = self.db.execute_query(
+                "SELECT employee_id FROM attendance_logs WHERE date = ? AND remarks = 'Clock In' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
+                (today_date,)
+            )
+            employee_ids = [row[0] for row in cursor.fetchall()] if cursor else []
+            total_overtime = 0
+            overtime_count = 0
+            for emp_id in employee_ids:
+                cur = self.db.execute_query(
+                    "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ? ORDER BY time ASC",
+                    (emp_id, today_date)
+                )
+                logs = cur.fetchall() if cur else []
+                clock_in_time = None
+                clock_out_time = None
+                for log in logs:
+                    if log[1] == "Clock In" and not clock_in_time:
+                        clock_in_time = log[0]
+                    elif log[1] == "Clock Out":
+                        clock_out_time = log[0]
+                if clock_in_time and clock_out_time:
+                    try:
+                        t1 = datetime.strptime(f"{today_date} {clock_in_time}", "%Y-%m-%d %H:%M:%S")
+                        t2 = datetime.strptime(f"{today_date} {clock_out_time}", "%Y-%m-%d %H:%M:%S")
+                        worked_hours = (t2 - t1).total_seconds() / 3600
+                        overtime = worked_hours - 8
+                        if overtime > 0:
+                            total_overtime += overtime
+                            overtime_count += 1
+                    except Exception:
+                        continue
+            ave_overtime = round(total_overtime / overtime_count, 2) if overtime_count > 0 else 0
+
+            # --- Set HR dashboard labels ---
             self.hr_ui.hr_total_employee_lbl.setText(f"{total_employees}/{total_employees}")
             self.hr_ui.hr_active_employee_lbl.setText(str(active_employees))
             self.hr_ui.hr_logged_employee_lbl.setText(str(logged_employees))
             self.hr_ui.hr_late_employee_lbl.setText(str(late_employees))
             self.hr_ui.hr_absent_employee_lbl.setText(str(absent_employees))
+
+            # --- Set new shift and overtime labels ---
+            if hasattr(self.hr_ui, "morning_shift_lbl"):
+                self.hr_ui.morning_shift_lbl.setText(f"{morning_present}/{morning_total}")
+            if hasattr(self.hr_ui, "afternoon_shift_lbl"):
+                self.hr_ui.afternoon_shift_lbl.setText(f"{afternoon_present}/{afternoon_total}")
+            if hasattr(self.hr_ui, "night_shift_lbl"):
+                self.hr_ui.night_shift_lbl.setText(f"{night_present}/{night_total}")
+            if hasattr(self.hr_ui, "ave_overtime_lbl"):
+                self.hr_ui.ave_overtime_lbl.setText(str(ave_overtime))
 
         except sqlite3.Error as e:
             print(f"Database error while updating HR dashboard labels: {e}")
