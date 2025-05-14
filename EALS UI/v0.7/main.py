@@ -8,6 +8,7 @@ import smtplib
 import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage  # Add this import
 from PySide6.QtWidgets import QApplication,QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit,QVBoxLayout, QPushButton, QRadioButton, QWidget, QHBoxLayout, QLabel, QListWidget, QListWidgetItem  # add QListWidget, QListWidgetItem
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import Qt, QDate, QCoreApplication, QProcess, QTimer, QRegularExpression
@@ -19,7 +20,9 @@ import secrets
 import string
 import chime
 from PySide6.QtCharts import QChart, QChartView, QAreaSeries, QLineSeries, QValueAxis, QCategoryAxis, QBarSeries, QBarSet, QPieSeries
+from PySide6.QtCharts import QHorizontalBarSeries, QBarCategoryAxis  # Add these imports
 import json  # For template saving/loading
+from report_generation import ReportGeneration
 
 PASSWORD_HASHER = argon2.PasswordHasher()
 
@@ -195,7 +198,6 @@ class DatabaseConnection:
     def close(self):
         if self.connection:
             self.connection.close()
-
 
 class SystemLogs:
     def __init__(self, db):
@@ -373,7 +375,7 @@ class Feedback:
         self.hr_data = hr_data
         self.loader = QUiLoader()
         self.feedback_ui = self.loader.load("ui/feedback.ui")
-        self.feedback_ui.setWindowTitle("Change Admin Password")
+        self.feedback_ui.setWindowTitle("Send Feedback")
         self.feedback_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         self.feedback_ui.setWindowModality(Qt.ApplicationModal)
         
@@ -457,6 +459,7 @@ class HR:
         self.hr_ui = self.loader.load("ui/hr.ui")
         self.hr_ui.setWindowIcon(QIcon('resources/logo.ico'))
         self.hr_ui.setWindowTitle("EALS - HR")
+        self.hr_ui.hr_home_tabs.setCurrentWidget(self.hr_ui.hr_dashboard)
         self.hr_ui.hr_employee_sc_pages.setCurrentWidget(self.hr_ui.hr_employee_dashboard_page)
         self.hr_ui.hr_employee_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.hr_ui.hr_employee_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -501,11 +504,45 @@ class HR:
         self.setup_attendance_pie_chart()
         if hasattr(self.hr_ui, "chart_layout3") and self.pie_chart_view:
             self.hr_ui.chart_layout3.addWidget(self.pie_chart_view, 0, 0)
+
+        # Change: Top 10 Presents Bar Chart (chart_layout4)
+        self.top_present_chart_view = None
+        self.setup_top_present_bar_chart()
+        if hasattr(self.hr_ui, "chart_layout4") and self.top_present_chart_view:
+            self.hr_ui.chart_layout4.addWidget(self.top_present_chart_view, 0, 0)
+
+        # Add: Top 10 Late Bar Chart (chart_layout5)
+        self.top_late_chart_view = None
+        self.setup_top_late_bar_chart()
+        if hasattr(self.hr_ui, "chart_layout5") and self.top_late_chart_view:
+            self.hr_ui.chart_layout5.addWidget(self.top_late_chart_view, 0, 0)
         # --- END HR CHARTS SETUP ---
 
         self.announcement = Announcement(db, hr_data, self.hr_ui)
 
-    # --- HR CHARTS LOGIC (copied and adapted from Admin) ---
+        # Add report generation button connection
+        self.hr_ui.generate_report_btn.clicked.connect(self.generate_report)
+        self.report_generator = ReportGeneration(self.db)
+
+    def generate_report(self):
+        file_dialog = QFileDialog()
+        file_dialog.setDefaultSuffix("pdf")
+        output_path, _ = file_dialog.getSaveFileName(
+            self.hr_ui,
+            "Save Report",
+            "",
+            "PDF Files (*.pdf)"
+        )
+        
+        if output_path:
+            try:
+                self.report_generator.generate_report(output_path)
+                self.system_logs.log_system_action(f"HR generated report: {output_path}", "Employee")
+                self.show_success("Report Generated", "The report has been generated successfully!")
+            except Exception as e:
+                print(f"Error generating report: {e}")
+                self.show_error("Report Generation Failed", "Failed to generate the report. Please try again.")
+
     def setup_attendance_area_chart(self):
         self.chart = QChart()
         self.present_series = QLineSeries()
@@ -750,6 +787,116 @@ class HR:
                 absent_slice.setLabelVisible(True)
         except Exception as e:
             print(f"Error updating HR attendance pie chart: {e}")
+
+    def setup_top_present_bar_chart(self):
+        # Top 10 employees by presence count (horizontal bar chart, modern look, 60% transparency)
+        self.top_present_chart = QChart()
+        self.top_present_series = QHorizontalBarSeries()
+        self.top_present_set = QBarSet("Presents")
+        self.top_present_series.append(self.top_present_set)
+        # Modern color with 60% transparency
+        present_color = QColor(76, 175, 80)  # Material green
+        present_color.setAlphaF(0.6)
+        self.top_present_set.setColor(present_color)
+        self.top_present_chart.addSeries(self.top_present_series)
+        self.top_present_chart.setBackgroundBrush(QColor(245, 245, 245))
+        self.top_present_chart.setTitleFont(self.hr_ui.font())
+        self.top_present_chart.setDropShadowEnabled(True)
+
+        self.top_present_axis_y = QBarCategoryAxis()
+        self.top_present_axis_x = QValueAxis()
+        self.top_present_axis_x.setTitleText("Presence Count")
+        self.top_present_axis_x.setLabelFormat("%d")
+        self.top_present_chart.addAxis(self.top_present_axis_y, Qt.AlignLeft)
+        self.top_present_chart.addAxis(self.top_present_axis_x, Qt.AlignBottom)
+        self.top_present_series.attachAxis(self.top_present_axis_y)
+        self.top_present_series.attachAxis(self.top_present_axis_x)
+        self.top_present_chart.legend().setVisible(False)
+
+        self.top_present_chart_view = QChartView(self.top_present_chart)
+        self.top_present_chart_view.setRenderHint(QPainter.Antialiasing)
+        self.update_top_present_bar_chart()
+
+    def update_top_present_bar_chart(self):
+        self.top_present_set.remove(0, self.top_present_set.count())
+        self.top_present_axis_y.clear()
+        try:
+            cursor = self.db.execute_query(
+                """
+                SELECT e.last_name, e.first_name, e.middle_initial, COUNT(a.log_id) as present_count
+                FROM Employee e
+                LEFT JOIN attendance_logs a ON e.employee_id = a.employee_id AND a.remarks = 'Clock In'
+                WHERE e.is_hr = 0
+                GROUP BY e.employee_id
+                ORDER BY present_count DESC
+                LIMIT 10
+                """
+            )
+            data = cursor.fetchall() if cursor else []
+            categories = []
+            max_present = 1
+            for row in data:
+                last, first, mi, count = row
+                name = f"{last}, {first} {mi or ''}".strip()
+                categories.append(name)
+                val = int(count or 0)
+                self.top_present_set << val
+                max_present = max(max_present, val)
+            self.top_present_axis_y.append(categories)
+            self.top_present_axis_x.setRange(0, max(1, max_present))
+        except Exception as e:
+            print(f"Error updating top present bar chart: {e}")
+
+    def setup_top_late_bar_chart(self):
+        # Top 10 employees by lateness count (horizontal bar chart, modern look, 60% transparency)
+        self.top_late_chart = QChart()
+        self.top_late_series = QHorizontalBarSeries()
+        self.top_late_set = QBarSet("Lates")
+        self.top_late_series.append(self.top_late_set)
+        # Modern color with 60% transparency
+        late_color = QColor(244, 67, 54)  # Material red
+        late_color.setAlphaF(0.6)
+        self.top_late_set.setColor(late_color)
+        self.top_late_chart.addSeries(self.top_late_series)
+        self.top_late_chart.setBackgroundBrush(QColor(245, 245, 245))
+        self.top_late_chart.setTitleFont(self.hr_ui.font())
+        self.top_late_chart.setDropShadowEnabled(True)
+
+        self.top_late_axis_y = QBarCategoryAxis()
+        self.top_late_axis_x = QValueAxis()
+        self.top_late_axis_x.setTitleText("Lateness Count")
+        self.top_late_axis_x.setLabelFormat("%d")
+        self.top_late_chart.addAxis(self.top_late_axis_y, Qt.AlignLeft)
+        self.top_late_chart.addAxis(self.top_late_axis_x, Qt.AlignBottom)
+        self.top_late_series.attachAxis(self.top_late_axis_y)
+        self.top_late_series.attachAxis(self.top_late_axis_x)
+        self.top_late_chart.legend().setVisible(False)
+
+        self.top_late_chart_view = QChartView(self.top_late_chart)
+        self.top_late_chart_view.setRenderHint(QPainter.Antialiasing)
+        self.update_top_late_bar_chart()
+
+    def update_top_late_bar_chart(self):
+        self.top_late_set.remove(0, self.top_late_set.count())
+        self.top_late_axis_y.clear()
+        try:
+            cursor = self.db.execute_query(
+                "SELECT last_name, first_name, middle_initial, late_count FROM Employee WHERE is_hr = 0 ORDER BY CAST(late_count AS INTEGER) DESC LIMIT 10"
+            )
+            data = cursor.fetchall() if cursor else []
+            categories = []
+            max_late = 1
+            for row in data:
+                last, first, mi, count = row
+                name = f"{last}, {first} {mi or ''}".strip()
+                categories.append(name)
+                val = int(count or 0)
+                self.top_late_set << val
+                max_late = max(max_late, val)
+            self.top_late_axis_y.append(categories)
+            self.top_late_axis_x.setRange(0, max(1, max_late))
+        except Exception as e:
+            print(f"Error updating top late bar chart: {e}")
 
     def show_feedback_form(self):
         self.system_logs.log_system_action("HR opened feedback form", "Employee")
@@ -1143,6 +1290,36 @@ class HR:
         else:
             self.hr_ui.hr_dashboard_pages.setCurrentWidget(self.hr_ui.db_page_1)
             self.hr_ui.dashboard_nav_btn.setText("Next")
+            
+    def show_success(self, title, message):
+        chime.theme('chime')
+        chime.success()
+        toast = Toast(self.hr_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)
+        toast.setOffset(25, 35)
+        toast.setBorderRadius(6)
+        toast.applyPreset(ToastPreset.SUCCESS)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPositionRelativeToWidget(self.hr_ui.hr_home_tabs)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+
+    def show_error(self, title, message):
+        chime.theme('big-sur')
+        chime.warning()
+        toast = Toast(self.hr_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)
+        toast.setOffset(25, 35)
+        toast.setBorderRadius(6)
+        toast.applyPreset(ToastPreset.ERROR)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPositionRelativeToWidget(self.hr_ui.hr_home_tabs)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
 
 class Home:
     password_changed = False
@@ -1267,6 +1444,9 @@ class Home:
                     if employee_data["is_hr"]:
                         if self.validate_hr_attendance(employee_data):
                             self.goto_hr_ui(employee_data)
+                            self.home_ui.home_id_box.clear() 
+                            self.home_ui.home_pass_box.clear()
+                            self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
                             self.show_success("Login Successful", "Welcome back, HR!")
                             self.system_logs.log_system_action("A user is logged in as HR", "Employee")
                     else:
@@ -1577,19 +1757,67 @@ class Home:
             message["To"] = recipient_email
             message["Subject"] = f"EALS Attendance Record: {remarks}"
 
+            header_img = os.path.join("resources", "theme_images", "default_theme_header.jpg")
+            footer_img = os.path.join("resources", "theme_images", "default_theme_footer.jpg")
+
             formatted_time = current_time.strftime("%B %d, %Y at %I:%M:%S %p")
-            body = (
-                f"Dear {employee_data['first_name']} {employee_data['last_name']},\n\n"
-                f"This email confirms that you have {remarks.lower()}ed on {formatted_time}.\n\n"
-                f"Details:\n"
-                f"Employee ID: {employee_data['employee_id']}\n"
-                f"Department: {employee_data['department']}\n"
-                f"Position: {employee_data['position']}\n"
-                f"Schedule: {employee_data['schedule']}\n\n"
-                f"This is a system-generated email. Please do not reply.\n\n"
-                f"Best regards,\nEALS System"
-            )
-            message.attach(MIMEText(body, "plain"))
+
+            html_content = f"""
+                <div style="margin: 20px auto; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
+                    <div style="background-color: #4285f4; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h2 style="margin: 0; text-align: center;">Attendance Record</h2>
+                    </div>
+                    <div style="background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <img src="cid:profileimg" style="width: 150px; height: 150px; border-radius: 75px; object-fit: cover; margin: 0 auto;">
+                        </div>
+                        <p style="color: #202124; font-size: 16px;">Dear {employee_data['first_name']} {employee_data['last_name']},</p>
+                        
+                        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <p style="color: #666666; margin: 5px 0;">This email confirms that you have <strong>{remarks.lower()}ed</strong> on {formatted_time}.</p>
+                        </div>
+
+                        <div style="background-color: #e8f0fe; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <h3 style="color: #1967d2; margin-top: 0;">Attendance Details:</h3>
+                            <p style="color: #666666; margin: 5px 0;">Employee ID: <strong>{employee_data['employee_id']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Department: <strong>{employee_data['department']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Position: <strong>{employee_data['position']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Schedule: <strong>{employee_data['schedule']}</strong></p>
+                        </div>
+
+                        <p style="color: #666666; font-style: italic;">This is a system-generated email. Please do not reply.</p>
+                        <br>
+                        <p style="color: #666666; margin-bottom: 0;">Best regards,<br>EALS System</p>
+                    </div>
+                </div>
+            """
+
+            if os.path.exists(header_img):
+                with open(header_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<headerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
+                    message.attach(img)
+
+            if os.path.exists(employee_data['profile_picture']):
+                with open(employee_data['profile_picture'], "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<profileimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(employee_data['profile_picture']))
+                    message.attach(img)
+
+            if os.path.exists(footer_img):
+                with open(footer_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<footerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
+                    message.attach(img)
+
+            html_header = '<img src="cid:headerimg" style="display:block; margin:auto; width:100%;"><br>' if os.path.exists(header_img) else ""
+            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto; width:100%;">' if os.path.exists(footer_img) else ""
+            
+            html_content = f"{html_header}{html_content}{html_footer}"
+            message.attach(MIMEText(html_content, "html"))
 
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.login(sender_email, sender_password)
@@ -1608,6 +1836,7 @@ class Home:
 
             self.system_logs.log_system_action("A user logged.", "AttendanceLog")
             remarks = self.employee_data.get("remarks", "Clock In")
+            is_late = self.employee_data.get("is_late", False)
             self.db.execute_query(
                 "INSERT INTO attendance_logs (employee_id, date, time, remarks, is_late) VALUES (?, ?, ?, ?, ?)", 
                 (self.employee_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), remarks, is_late)
@@ -2134,16 +2363,57 @@ class ForgotPassword:
             message = MIMEMultipart()
             message["From"] = sender_email
             message["To"] = email
-            message["Subject"] = "EALS Password Reset Verification Code"
-            body = (
-                f"Hello,\n\n"
-                f"We received a request to reset your password. Please use the verification code below to proceed with the password reset process.\n\n"
-                f"Verification Code: {code}\n\n"
-                f"If you did not request a password reset, please ignore this email or contact support.\n\n"
-                f"Thank you,\nThe EALS Team"
-            )
-            message.attach(MIMEText(body, "plain"))
+            message["Subject"] = "EALS Verification Code"
 
+            # Get default header and footer images
+            header_img = os.path.join("resources", "theme_images", "default_theme_header.jpg")
+            footer_img = os.path.join("resources", "theme_images", "default_theme_footer.jpg")
+
+            # Create HTML email content with Google-like styling
+            html_header = '<img src="cid:headerimg" style="display:block; margin:auto; width:100%;"><br>' if os.path.exists(header_img) else ""
+            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto; width:100%;">' if os.path.exists(footer_img) else ""
+            
+            html_content = f"""
+                <div style="margin: 20px auto; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
+                    <div style="background-color: #4285f4; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h2 style="margin: 0; text-align: center;">EALS Verification Code</h2>
+                    </div>
+                    <div style="background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <p style="color: #666666;">This verification code was sent to help you reset your EALS account password:</p>
+                        <div style="text-align: center; padding: 20px;">
+                            <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #202124;">{code}</span>
+                        </div>
+                        <p style="color: #666666;">Don't know why you received this?</p>
+                        <p style="color: #666666;">Someone requested a password reset for your EALS account. If this wasn't you, you can safely ignore this email.</p>
+                        <p style="color: #666666;">To protect your account, don't forward this email or give this code to anyone.</p>
+                        <br>
+                        <p style="color: #666666; margin-bottom: 0;">Best regards,<br>EALS Team</p>
+                    </div>
+                </div>
+            """
+
+            html_content = f"{html_header}{html_content}{html_footer}"
+
+            # Attach HTML content
+            message.attach(MIMEText(html_content, "html"))
+
+            # Attach header image if exists
+            if os.path.exists(header_img):
+                with open(header_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<headerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
+                    message.attach(img)
+
+            # Attach footer image if exists
+            if os.path.exists(footer_img):
+                with open(footer_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<footerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
+                    message.attach(img)
+
+            # Send email
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.login(sender_email, sender_password)
                 server.send_message(message)
@@ -3419,24 +3689,71 @@ class Admin:
             message = MIMEMultipart()
             message["From"] = sender_email
             message["To"] = recipient_email
-            message["Subject"] = "EALS - Registration Successful"
+            message["Subject"] = "EALS - Welcome and Account Details"
 
-            body = (
-                f"Dear {employee_data['first_name']} {employee_data['last_name']},\n\n"
-                f"Your employee account has been successfully registered.\n\n"
-                f"Here are your details:\n"
-                f"Employee ID: {employee_data['employee_id']}\n"
-                f"Department: {employee_data['department']}\n"
-                f"Position: {employee_data['position']}\n"
-                f"Schedule: {employee_data['schedule']}\n"
-                f"Email: {employee_data['email']}\n"
-                f"Status: {employee_data['status']}\n\n"
-                f"Your default password is your surname in ALL CAPS: {employee_data['last_name'].upper()}\n"
-                f"Please change your password upon your first login for security purposes.\n\n"
-                f"This is a system-generated email. Please do not reply.\n\n"
-                f"Best regards,\nEALS System"
-            )
-            message.attach(MIMEText(body, "plain"))
+            header_img = os.path.join("resources", "theme_images", "default_theme_header.jpg")
+            footer_img = os.path.join("resources", "theme_images", "default_theme_footer.jpg")
+
+            html_content = f"""
+                <div style="margin: 20px auto; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
+                    <div style="background-color: #4285f4; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h2 style="margin: 0; text-align: center;">Welcome to EALS</h2>
+                    </div>
+                    <div style="background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <img src="cid:profileimg" style="width: 150px; height: 150px; border-radius: 75px; object-fit: cover; margin: 0 auto;">
+                        </div>
+                        <p style="color: #202124; font-size: 16px;">Dear {employee_data['first_name']} {employee_data['last_name']},</p>
+                        <p style="color: #666666;">Welcome to EALS! Your employee account has been successfully registered.</p>
+                        
+                        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <h3 style="color: #202124; margin-top: 0;">Account Details:</h3>
+                            <p style="color: #666666; margin: 5px 0;">Employee ID: <strong>{employee_data['employee_id']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Department: <strong>{employee_data['department']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Position: <strong>{employee_data['position']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Schedule: <strong>{employee_data['schedule']}</strong></p>
+                            <p style="color: #666666; margin: 5px 0;">Email: <strong>{employee_data['email']}</strong></p>
+                        </div>
+
+                        <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                            <p style="color: #e65100; margin: 0;"><strong>Important:</strong></p>
+                            <p style="color: #ff6f00; margin: 5px 0;">Your default password is your surname in ALL CAPS: <strong>{employee_data['last_name'].upper()}</strong></p>
+                            <p style="color: #666666;">Please change your password upon your first login for security purposes.</p>
+                        </div>
+
+                        <p style="color: #666666;">This is a system-generated email. Please do not reply.</p>
+                        <br>
+                        <p style="color: #666666; margin-bottom: 0;">Best regards,<br>EALS System</p>
+                    </div>
+                </div>
+            """
+
+            if os.path.exists(header_img):
+                with open(header_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<headerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
+                    message.attach(img)
+
+            if os.path.exists(employee_data['profile_picture']):
+                with open(employee_data['profile_picture'], "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<profileimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(employee_data['profile_picture']))
+                    message.attach(img)
+
+            if os.path.exists(footer_img):
+                with open(footer_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<footerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
+                    message.attach(img)
+
+            html_header = '<img src="cid:headerimg" style="display:block; margin:auto; width:100%;"><br>' if os.path.exists(header_img) else ""
+            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto; width:100%;">' if os.path.exists(footer_img) else ""
+            
+            html_content = f"{html_header}{html_content}{html_footer}"
+            message.attach(MIMEText(html_content, "html"))
 
             with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
                 server.login(sender_email, sender_password)
@@ -4300,8 +4617,10 @@ class Announcement:
         self.hr_data = hr_data
         self.hr_ui = hr_ui
         self.attachments = []
+        self.edit_radio_buttons = []
+        
+        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_page)
 
-        # Connect UI elements
         self.hr_ui.employee_send_all_btn.toggled.connect(self.toggle_send_all)
         self.hr_ui.employee_choose_btn.toggled.connect(self.toggle_choose_employee)
         self.hr_ui.email_employee_search_box.textChanged.connect(self.filter_employee_table)
@@ -4310,6 +4629,17 @@ class Announcement:
         self.hr_ui.import_btn.clicked.connect(self.import_template)
         self.hr_ui.attach_btn.clicked.connect(self.attach_files)
         self.hr_ui.send_email_btn.clicked.connect(self.send_announcement_email)
+        self.hr_ui.email_view_btn.clicked.connect(self.view_selected_sched_email)
+        self.hr_ui.edit_email_btn.clicked.connect(self.edit_selected_sched_email)
+        self.hr_ui.delete_email_btn.clicked.connect(self.delete_selected_sched_email)
+        self.hr_ui.view_email_back_btn.clicked.connect(self.back_from_view_email)
+        self.hr_ui.edit_email_back_btn.clicked.connect(self.back_from_edit_email)
+        self.hr_ui.save_email_btn.clicked.connect(self.save_edited_email)
+
+        self.hr_ui.view_employee_send_all_btn.toggled.connect(self.toggle_view_send_all)
+        self.hr_ui.view_employee_choose_btn.toggled.connect(self.toggle_view_choose_employee)
+        self.hr_ui.edit_employee_send_all_btn.toggled.connect(self.toggle_edit_send_all)
+        self.hr_ui.edit_employee_choose_btn.toggled.connect(self.toggle_edit_choose_employee)
 
         self.radio_buttons = []  # Track radio buttons for single selection
 
@@ -4324,6 +4654,106 @@ class Announcement:
         # Ensure table is only enabled when choose is checked
         self.hr_ui.selectable_employee_list_tbl.setEnabled(self.hr_ui.employee_choose_btn.isChecked())
         self.hr_ui.employee_choose_btn.toggled.connect(self.toggle_choose_employee)
+
+    def show_success(self, title, message):
+        chime.theme('chime')
+        chime.success()
+        toast = Toast(self.hr_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)
+        toast.setOffset(25, 35)
+        toast.setBorderRadius(6)
+        toast.applyPreset(ToastPreset.SUCCESS)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPositionRelativeToWidget(self.hr_ui.hr_home_tabs)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+
+    def show_error(self, title, message):
+        chime.theme('big-sur')
+        chime.warning()
+        toast = Toast(self.hr_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)
+        toast.setOffset(25, 35)
+        toast.setBorderRadius(6)
+        toast.applyPreset(ToastPreset.ERROR)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPositionRelativeToWidget(self.hr_ui.hr_home_tabs)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+
+    def show_warning(self, title, message):
+        chime.warning()
+        toast = Toast(self.hr_ui)
+        toast.setTitle(title)
+        toast.setText(message)
+        toast.setDuration(2000)
+        toast.setOffset(25, 35)
+        toast.setBorderRadius(6)
+        toast.applyPreset(ToastPreset.WARNING)
+        toast.setBackgroundColor(QColor('#FFFFFF'))
+        toast.setPositionRelativeToWidget(self.hr_ui.hr_home_tabs)
+        toast.setPosition(ToastPosition.TOP_RIGHT)
+        toast.show()
+
+    def toggle_view_send_all(self):
+        self.hr_ui.view_email_employee_list_tbl.setDisabled(self.hr_ui.view_employee_send_all_btn.isChecked())
+        if self.hr_ui.view_employee_send_all_btn.isChecked():
+            self.load_view_email_employee_table("All")
+
+    def toggle_view_choose_employee(self):
+        self.hr_ui.view_email_employee_list_tbl.setEnabled(self.hr_ui.view_employee_choose_btn.isChecked())
+        if self.hr_ui.view_employee_choose_btn.isChecked():
+            self.load_view_email_employee_table("Selected")
+
+    def toggle_edit_send_all(self):
+        self.hr_ui.edit_email_employee_list_tbl.setDisabled(self.hr_ui.edit_employee_send_all_btn.isChecked())
+        if self.hr_ui.edit_employee_send_all_btn.isChecked():
+            self.load_edit_email_employee_table("All")
+    
+    def toggle_edit_choose_employee(self):
+        self.hr_ui.edit_email_employee_list_tbl.setEnabled(self.hr_ui.edit_employee_choose_btn.isChecked())
+        if self.hr_ui.edit_employee_choose_btn.isChecked():
+            self.load_edit_email_employee_table("Selected")
+
+    def load_view_email_employee_table(self, sending_type):
+        tbl = self.hr_ui.view_email_employee_list_tbl
+        tbl.setRowCount(0)
+        if sending_type == "All":
+            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
+        else:
+            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE employee_id = ?", (self.hr_data["employee_id"],))
+        employees = cursor.fetchall() if cursor else []
+        for emp in employees:
+            row = tbl.rowCount()
+            tbl.insertRow(row)
+            mi = f" {emp[3]}." if emp[3] else ""
+            name = f"{emp[2]}, {emp[1]}{mi}"
+            tbl.setItem(row, 0, QTableWidgetItem(name))
+            tbl.setItem(row, 1, QTableWidgetItem(emp[0]))
+            tbl.setItem(row, 2, QTableWidgetItem(f"{emp[4]} / {emp[5]}"))
+        tbl.resizeColumnsToContents()
+
+    def load_edit_email_employee_table(self, sending_type):
+        tbl = self.hr_ui.edit_email_employee_list_tbl
+        tbl.setRowCount(0)
+        if sending_type == "All":
+            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
+        else:
+            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE employee_id = ?", (self.hr_data["employee_id"],))
+        employees = cursor.fetchall() if cursor else []
+        for emp in employees:
+            row = tbl.rowCount()
+            tbl.insertRow(row)
+            mi = f" {emp[3]}." if emp[3] else ""
+            name = f"{emp[2]}, {emp[1]}{mi}"
+            tbl.setItem(row, 0, QTableWidgetItem(name))
+            tbl.setItem(row, 1, QTableWidgetItem(emp[0]))
+            tbl.setItem(row, 2, QTableWidgetItem(f"{emp[4]} / {emp[5]}"))
+        tbl.resizeColumnsToContents()
 
     def toggle_send_all(self):
         # If send all is checked, disable table
@@ -4341,11 +4771,9 @@ class Announcement:
             for radio in self.radio_buttons:
                 radio.setChecked(False)
 
-    # --- Scheduled Emails Table Logic ---
     def load_sched_email_table(self):
         tbl = self.hr_ui.sched_email_list_tbl
         tbl.setRowCount(0)
-        # Only announcements with schedule_enabled=1
         cursor = self.db.execute_query(
             "SELECT subject, created_at, schedule_frequency FROM announcements WHERE schedule_enabled = 1 ORDER BY created_at DESC"
         )
@@ -4356,7 +4784,6 @@ class Announcement:
             tbl.setItem(row, 0, QTableWidgetItem(entry[0]))  # Subject
             tbl.setItem(row, 1, QTableWidgetItem(str(entry[1])))  # Created at
             tbl.setItem(row, 2, QTableWidgetItem(str(entry[2])))  # Frequency
-        tbl.resizeColumnsToContents()
 
     def filter_sched_email_table(self):
         search_text = self.hr_ui.sched_email_search_box.text().lower()
@@ -4393,9 +4820,8 @@ class Announcement:
             for col, val in enumerate(row_data):
                 tbl.setItem(row, col, QTableWidgetItem(val))
         tbl.resizeColumnsToContents()
-
+    
     def load_employee_table(self):
-        # Load all employees into selectable_employee_list_tbl
         cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
         employees = cursor.fetchall() if cursor else []
         tbl = self.hr_ui.selectable_employee_list_tbl
@@ -4469,9 +4895,25 @@ class Announcement:
             mi = f" {emp_data['middle_initial']}." if emp_data['middle_initial'] else ""
             name = f"{emp_data['last_name']}, {emp_data['first_name']}{mi}"
             self.hr_ui.selectable_employee_list_tbl.setItem(row, 1, QTableWidgetItem(name))
-            self.hr_ui.selectable_employee_list_tbl.setItem(row, 2, QTableWidgetItem(emp_data['employee_id']))
+            self.hr_ui.selectable_employee_list_tbl.setItem(row, 2, QTableWidgetItem(emp_data["employee_id"]))
             self.hr_ui.selectable_employee_list_tbl.setItem(row, 3, QTableWidgetItem(f"{emp_data['department']} / {emp_data['position']}"))
         self.hr_ui.selectable_employee_list_tbl.resizeColumnsToContents()
+
+    def get_theme_images(self):
+
+        theme_map = {
+            "Default": ("default_theme_header.jpg", "default_theme_footer.jpg"),
+            "Christmass Design": ("xmass_theme_header.jpg", "xmass_theme_footer.jpg"),
+            "Design 1": ("theme1_header.jpg", "theme1_footer.jpg"),
+            "Design 2": ("theme2_header.jpg", "theme2_footer.jpg"),
+        }
+        theme = "Default"  
+        if self.hr_ui.set_theme_btn.isChecked():
+            theme = self.hr_ui.theme_design_box.currentText()
+        header, footer = theme_map.get(theme, theme_map["Default"])
+        header_path = os.path.join("resources", "theme_images", header)
+        footer_path = os.path.join("resources", "theme_images", footer)
+        return header_path, footer_path
 
     def attach_files(self):
         valid_exts = ('.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.zip')
@@ -4481,11 +4923,12 @@ class Announcement:
             valid_files = [f for f in files if os.path.splitext(f)[1].lower() in valid_exts]
             if len(valid_files) < len(files):
                 QMessageBox.warning(self.hr_ui, "Attachment Error", "Some files were not added because they are not supported by Gmail.")
-            self.attachments.extend([f for f in valid_files if f not in self.attachments])
+            for f in valid_files:
+                if f not in self.attachments:
+                    self.attachments.append(f)
             self.update_attachments_list()
 
     def update_attachments_list(self):
-        # Use QListWidget named attachments_list
         lw: QListWidget = self.hr_ui.attachments_list
         lw.clear()
         for file_path in self.attachments:
@@ -4509,6 +4952,11 @@ class Announcement:
 
     def remove_attachment(self, file_path):
         if file_path in self.attachments:
+            if os.path.commonpath([os.path.abspath(file_path), os.path.abspath("resources/email_files")]) == os.path.abspath("resources/email_files"):
+                try:
+                    os.remove(file_path)
+                except Exception:
+                    pass
             self.attachments.remove(file_path)
             self.update_attachments_list()
 
@@ -4536,7 +4984,6 @@ class Announcement:
             with open(fname, "w", encoding="utf-8") as f:
                 json.dump(template, f)
 
-
     def import_template(self):
         template_dir = "resources/email_templates"
         fname, _ = QFileDialog.getOpenFileName(self.hr_ui, "Import Template", template_dir, "JSON Files (*.json)")
@@ -4556,20 +5003,109 @@ class Announcement:
             else:
                 self.hr_ui.set_theme_btn.setChecked(False)
 
+    def compose_html_body(self, message, subject, header_img, footer_img):
+        html_header = '<img src="cid:headerimg" style="display:block; margin:auto; width:100%;"><br>' if os.path.exists(header_img) else ""
+        
+        html_content = f"""
+            <div style="margin: 20px auto; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
+                <div style="background-color: #4285f4; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0; text-align: center;">{subject}</h2>
+                </div>
+                <div style="background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="color: #666666; line-height: 1.6;">
+                        {message}
+                    </div>
+                    <br>
+                    <div style="color: #666666; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                        <p style="margin-bottom: 0;">Best regards,<br>EALS HR Team</p>
+                    </div>
+                </div>
+            </div>
+        """
+        html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto; width:100%;">' if os.path.exists(footer_img) else ""
+        return f"{html_header}{html_content}{html_footer}"
+
+    def send_emails(self, recipients, subject, message, header_img, footer_img):
+        sender_email = "eals.tupc@gmail.com"
+        sender_password = "buwl tszg dghr exln"
+        
+        for recipient in recipients:
+            try:
+                msg = MIMEMultipart()
+                msg["From"] = sender_email
+                msg["To"] = recipient
+                msg["Subject"] = subject
+
+                # Attach header image
+                if os.path.exists(header_img):
+                    with open(header_img, "rb") as f:
+                        img = MIMEImage(f.read())
+                        img.add_header("Content-ID", "<headerimg>")
+                        img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
+                        msg.attach(img)
+
+                # Attach footer image
+                if os.path.exists(footer_img):
+                    with open(footer_img, "rb") as f:
+                        img = MIMEImage(f.read())
+                        img.add_header("Content-ID", "<footerimg>")
+                        img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
+                        msg.attach(img)
+
+                # Attach HTML content
+                html_body = self.compose_html_body(message, subject, header_img, footer_img)
+                msg.attach(MIMEText(html_body, "html"))
+
+                # Attach files
+                for file_path in self.attachments:
+                    try:
+                        with open(file_path, "rb") as f:
+                            from email.mime.base import MIMEBase
+                            from email import encoders
+                            part = MIMEBase("application", "octet-stream")
+                            part.set_payload(f.read())
+                            encoders.encode_base64(part)
+                            part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(file_path)}")
+                            msg.attach(part)
+                    except Exception as e:
+                        print(f"Attachment error: {file_path}: {e}")
+                        continue
+
+                # Send email
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                    server.login(sender_email, sender_password)
+                    server.send_message(msg)
+                
+
+            except Exception as e:
+                print(f"Error sending announcement email to {recipient}: {e}")
 
     def send_announcement_email(self):
         subject = self.hr_ui.email_subject.text()
         message = self.hr_ui.email_message.toPlainText()
+        # --- Failsafe checks ---
+        if not subject.strip():
+            self.show_error("Missing Subject", "Please enter a subject for the announcement.")
+            return
+        if not message.strip():
+            self.show_error("Missing Message", "Please enter a message for the announcement.")
+            return
+        if not (self.hr_ui.employee_send_all_btn.isChecked() or self.hr_ui.employee_choose_btn.isChecked()):
+            self.show_error("No Recipient Type", "Please select either 'Send to All' or 'Choose Employee'.")
+            return
+        if self.hr_ui.employee_choose_btn.isChecked():
+            selected = any(radio.isChecked() for radio in self.radio_buttons)
+            if not selected:
+                self.show_error("No Employee Selected", "Please select at least one employee from the table.")
+                return
         schedule_enabled = self.hr_ui.set_schedule_btn.isChecked()
         schedule_frequency = self.hr_ui.schedule_frequency_box.currentText() if schedule_enabled else None
         theme_enabled = self.hr_ui.set_theme_btn.isChecked()
         theme_type = self.hr_ui.theme_design_box.currentText() if theme_enabled else None
-        files_path = ";".join(self.attachments)
-        attached_files_count = len(self.attachments)
+        header_img, footer_img = self.get_theme_images()
+
         sending_type = "All" if self.hr_ui.employee_send_all_btn.isChecked() else "Selected"
         involved_employee = None
-
-        # Get recipients
         recipients = []
         if sending_type == "All":
             cursor = self.db.execute_query("SELECT email FROM Employee WHERE is_hr = 0 AND status = 'Active'")
@@ -4586,68 +5122,67 @@ class Announcement:
                         involved_employee = emp_id
                     break
 
-        # Save to database
-        self.db.execute_query(
-            '''INSERT INTO announcements (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, attached_files_count, files_path, created_by)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-            (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, attached_files_count, files_path, self.hr_data["employee_id"])
+        # Save announcement to database and handle attachments
+        self.save_announcement_to_db(subject, message, sending_type, involved_employee, 
+                                   schedule_enabled, schedule_frequency, theme_enabled, theme_type)
+
+        # Send emails in background thread
+        QTimer.singleShot(0, lambda: self.show_success("Announcement Sent", f"Successfully sent announcement email."))
+        threading.Thread(
+            target=lambda: self.send_emails(recipients, subject, message, header_img, footer_img),
+            daemon=True
+        ).start()
+
+        # Clear form
+        self.clear_announcement_form()
+
+    def save_announcement_to_db(self, subject, message, sending_type, involved_employee, 
+                              schedule_enabled, schedule_frequency, theme_enabled, theme_type):
+        cursor = self.db.execute_query(
+            '''INSERT INTO announcements (subject, message, sending_type, involved_employee, 
+               schedule_enabled, schedule_frequency, theme_enabled, theme_type, 
+               attached_files_count, files_path, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (subject, message, sending_type, involved_employee, schedule_enabled, 
+             schedule_frequency, theme_enabled, theme_type, 0, "", self.hr_data["employee_id"])
         )
+        
+        cursor = self.db.execute_query("SELECT id FROM announcements ORDER BY id DESC LIMIT 1")
+        announcement_id = cursor.fetchone()[0] if cursor else None
 
-        # Send email
-        sender_email = "eals.tupc@gmail.com"
-        sender_password = "buwl tszg dghr exln"
-        for recipient in recipients:
-            try:
-                msg = MIMEMultipart()
-                msg["From"] = sender_email
-                msg["To"] = recipient
-                msg["Subject"] = subject
-                msg.attach(MIMEText(message, "plain"))
-                # Attach files
-                for file_path in self.attachments:
-                    try:
-                        with open(file_path, "rb") as f:
-                            from email.mime.base import MIMEBase
-                            from email import encoders
-                            part = MIMEBase("application", "octet-stream")
-                            part.setPayload(f.read())
-                            encoders.encode_base64(part)
-                            part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(file_path)}")
-                            msg.attach(part)
-                    except Exception as e:
-                        print(f"Attachment error: {file_path}: {e}")
-                        continue
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                    server.login(sender_email, sender_password)
-                    server.send_message(msg)
-            except Exception as e:
-                print(f"Error sending announcement email to {recipient}: {e}")
+        if announcement_id:
+            self.handle_attachments(announcement_id)
 
+    def handle_attachments(self, announcement_id):
+        """Handle saving attachments for an announcement"""
+        if not self.attachments:
+            return
 
-        chime.theme('chime')
-        chime.success()
-        toast = Toast(self.hr_ui)
-        toast.setTitle("Announcement Sent")
-        toast.setText("Announcement email(s) sent successfully.")
-        toast.setDuration(2000)
-        toast.setOffset(25, 35)
-        toast.setBorderRadius(6)
-        toast.applyPreset(ToastPreset.SUCCESS)
-        toast.setBackgroundColor(QColor('#FFFFFF'))
-        toast.setPosition(ToastPosition.TOP_RIGHT)
-        toast.show()
+        email_files_dir = os.path.join("resources", "email_files", str(announcement_id))
+        if not os.path.exists(email_files_dir):
+            os.makedirs(email_files_dir)
 
-        # --- Clear fields after send ---
-        self.hr_ui.email_subject.clear()
-        self.hr_ui.email_message.clear()
-        self.hr_ui.set_schedule_btn.setChecked(False)
-        self.hr_ui.set_theme_btn.setChecked(False)
-        toast.applyPreset(ToastPreset.SUCCESS)
-        toast.setBackgroundColor(QColor('#FFFFFF'))
-        toast.setPosition(ToastPosition.TOP_RIGHT)
-        toast.show()
+        new_attachment_paths = []
+        for file_path in self.attachments:
+            dest = os.path.join(email_files_dir, os.path.basename(file_path))
+            if not os.path.exists(dest):
+                try:
+                    shutil.copy(file_path, dest)
+                except Exception as e:
+                    print(f"Error copying attachment {file_path}: {e}")
+                    continue
+            new_attachment_paths.append(dest)
 
-        # --- Clear fields after send ---
+        if new_attachment_paths:
+            self.db.execute_query(
+                "UPDATE announcements SET attached_files_count = ?, files_path = ? WHERE id = ?",
+                (len(new_attachment_paths), ";".join(new_attachment_paths), announcement_id)
+            )
+            # Update the attachments list with the new paths
+            self.attachments = new_attachment_paths
+            self.update_attachments_list()
+
+    def clear_announcement_form(self):
         self.hr_ui.email_subject.clear()
         self.hr_ui.email_message.clear()
         self.hr_ui.set_schedule_btn.setChecked(False)
@@ -4660,8 +5195,345 @@ class Announcement:
         self.update_attachments_list()
         self.load_sched_email_table()
 
+    def get_selected_sched_email_row(self):
+        tbl = self.hr_ui.sched_email_list_tbl
+        selected = tbl.selectedIndexes()
+        if selected:
+            return selected[0].row()
+        return None
+
+    def get_sched_email_db_id_by_row(self, row):
+        # Get the announcement id for the selected row in sched_email_list_tbl
+        if row is None or row >= len(self.sched_email_entries):
+            return None
+        subject, created_at, _ = self.sched_email_entries[row]
+        cursor = self.db.execute_query(
+            "SELECT id FROM announcements WHERE subject = ? AND created_at = ? AND schedule_enabled = 1",
+            (subject, created_at)
+        )
+        result = cursor.fetchone() if cursor else None
+        return result[0] if result else None
+
+    def view_selected_sched_email(self):
+        row = self.get_selected_sched_email_row()
+        ann_id = self.get_sched_email_db_id_by_row(row)
+        if ann_id is None:
+            return
+        cursor = self.db.execute_query("SELECT * FROM announcements WHERE id = ?", (ann_id,))
+        ann = cursor.fetchone() if cursor else None
+        if not ann:
+            return
+        # Populate view page fields
+        self.hr_ui.view_email_subject.setText(ann[1])
+        self.hr_ui.view_email_message.setPlainText(ann[2])
+        self.hr_ui.view_set_schedule_btn.setChecked(bool(ann[5]))
+        if ann[5]:
+            self.hr_ui.view_schedule_frequency_box.setCurrentText(str(ann[6]))
+        else:
+            self.hr_ui.view_schedule_frequency_box.setCurrentIndex(0)
+        self.hr_ui.view_set_theme_btn.setChecked(bool(ann[7]))
+        if ann[7]:
+            self.hr_ui.view_theme_design_box.setCurrentText(ann[8] or "")
+        else:
+            self.hr_ui.view_theme_design_box.setCurrentIndex(0)
+        # Employee selection
+        if ann[3] == "All":
+            self.hr_ui.view_employee_send_all_btn.setChecked(True)
+            self.hr_ui.view_employee_choose_btn.setChecked(False)
+            self.hr_ui.view_email_employee_list_tbl.setDisabled(True)
+        else:
+            self.hr_ui.view_employee_send_all_btn.setChecked(False)
+            self.hr_ui.view_employee_choose_btn.setChecked(True)
+            self.hr_ui.view_email_employee_list_tbl.setEnabled(True)
+        # Populate employee table
+        self.populate_view_email_employee_table(ann[3], ann[4])
+        # Attachments
+        self.populate_view_attachments_list(ann[10])
+        # Switch page
+        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_view_page)
+
+    def populate_view_email_employee_table(self, sending_type, involved_employee):
+        tbl = self.hr_ui.view_email_employee_list_tbl
+        tbl.setRowCount(0)
+        if sending_type == "All":
+            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
+        else:
+            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE employee_id = ?", (involved_employee,))
+        employees = cursor.fetchall() if cursor else []
+        for emp in employees:
+            row = tbl.rowCount()
+            tbl.insertRow(row)
+            mi = f" {emp[3]}." if emp[3] else ""
+            name = f"{emp[2]}, {emp[1]}{mi}"
+            tbl.setItem(row, 0, QTableWidgetItem(name))
+            tbl.setItem(row, 1, QTableWidgetItem(emp[0]))
+            tbl.setItem(row, 2, QTableWidgetItem(f"{emp[4]} / {emp[5]}"))
+        tbl.resizeColumnsToContents()
+
+    def populate_view_attachments_list(self, files_path):
+        lw = self.hr_ui.view_attachments_list
+        lw.clear()
+        if not files_path:
+            return
+        files = files_path.split(";")
+        for file_path in files:
+            fname = os.path.basename(file_path)
+            item_widget = QWidget()
+            hbox = QHBoxLayout(item_widget)
+            hbox.setContentsMargins(0, 0, 0, 0)
+            label = QLabel(fname)
+            hbox.addWidget(label)
+            hbox.addStretch()
+            item_widget.setLayout(hbox)
+            item = QListWidgetItem()
+            item.setSizeHint(item_widget.sizeHint())
+            lw.addItem(item)
+            lw.setItemWidget(item, item_widget)
+
+    def back_from_view_email(self):
+        # Clear all view fields
+        self.hr_ui.view_email_subject.clear()
+        self.hr_ui.view_email_message.clear()
+        self.hr_ui.view_employee_send_all_btn.setChecked(False)
+        self.hr_ui.view_email_employee_list_tbl.setRowCount(0)
+        self.hr_ui.view_set_schedule_btn.setChecked(False)
+        self.hr_ui.view_schedule_frequency_box.setCurrentIndex(0)
+        self.hr_ui.view_set_theme_btn.setChecked(False)
+        self.hr_ui.view_theme_design_box.setCurrentIndex(0)
+        self.hr_ui.view_attachments_list.clear()
+        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_page)
+
+    def edit_selected_sched_email(self):
+        # --- Failsafe checks before proceeding ---
+        subject = self.hr_ui.edit_email_subject.text()
+        message = self.hr_ui.edit_email_message.toPlainText()
+        if not subject.strip():
+            self.show_error("Missing Subject", "Please enter a subject for the announcement.")
+            return
+        if not message.strip():
+            self.show_error("Missing Message", "Please enter a message for the announcement.")
+            return
+        if not (self.hr_ui.edit_employee_send_all_btn.isChecked() or self.hr_ui.edit_employee_choose_btn.isChecked()):
+            self.show_error("No Recipient Type", "Please select either 'Send to All' or 'Choose Employee'.")
+            return
+        if self.hr_ui.edit_employee_choose_btn.isChecked():
+            tbl = self.hr_ui.edit_email_employee_list_tbl
+            selected = any(
+                tbl.cellWidget(row, 0).isChecked() if tbl.cellWidget(row, 0) else False
+                for row in range(tbl.rowCount())
+            )
+            if not selected:
+                self.show_error("No Employee Selected", "Please select at least one employee from the table.")
+                return
+        row = self.get_selected_sched_email_row()
+        ann_id = self.get_sched_email_db_id_by_row(row)
+        if ann_id is None:
+            return
+        self.editing_announcement_id = ann_id
+        cursor = self.db.execute_query("SELECT * FROM announcements WHERE id = ?", (ann_id,))
+        ann = cursor.fetchone() if cursor else None
+        if not ann:
+            return
+        # Populate edit page fields
+        self.hr_ui.edit_email_subject.setText(ann[1])
+        self.hr_ui.edit_email_message.setPlainText(ann[2])
+        self.hr_ui.edit_set_schedule_btn.setChecked(bool(ann[5]))
+        if ann[5]:
+            self.hr_ui.edit_schedule_frequency_box.setCurrentText(str(ann[6]))
+        else:
+            self.hr_ui.edit_schedule_frequency_box.setCurrentIndex(0)
+        self.hr_ui.edit_set_theme_btn.setChecked(bool(ann[7]))
+        if ann[7]:
+            self.hr_ui.edit_theme_design_box.setCurrentText(ann[8] or "")
+        else:
+            self.hr_ui.edit_theme_design_box.setCurrentIndex(0)
+        # Employee selection
+        if ann[3] == "All":
+            self.hr_ui.edit_employee_send_all_btn.setChecked(True)
+            self.hr_ui.edit_employee_choose_btn.setChecked(False)
+            self.hr_ui.edit_email_employee_list_tbl.setDisabled(True)
+        else:
+            self.hr_ui.edit_employee_send_all_btn.setChecked(False)
+            self.hr_ui.edit_employee_choose_btn.setChecked(True)
+            self.hr_ui.edit_email_employee_list_tbl.setEnabled(True)
+        # Populate employee table
+        self.populate_edit_email_employee_table(ann[3], ann[4])
+        # Attachments
+        self.edit_attachments = ann[10].split(";") if ann[10] else []
+        self.update_edit_attachments_list()
+        # Switch page
+        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_edit_page)
+
+    def populate_edit_email_employee_table(self, sending_type, involved_employee):
+        tbl = self.hr_ui.edit_email_employee_list_tbl
+        tbl.setRowCount(0)
+        
+        # Get all active employees
+        cursor = self.db.execute_query(
+            "SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'"
+        )
+        employees = cursor.fetchall() if cursor else []
+        
+        # Create two lists to store selected and unselected employees
+        selected_employees = []
+        unselected_employees = []
+        
+        for emp in employees:
+            emp_data = {
+                "employee_id": emp[0],
+                "first_name": emp[1],
+                "last_name": emp[2],
+                "middle_initial": emp[3],
+                "department": emp[4],
+                "position": emp[5],
+                "selected": emp[0] == involved_employee
+            }
+            if emp_data["selected"]:
+                selected_employees.append(emp_data)
+            else:
+                unselected_employees.append(emp_data)
+        
+        # Sort both lists by name
+        def sort_by_name(emp):
+            return f"{emp['last_name']}, {emp['first_name']}"
+        
+        selected_employees.sort(key=sort_by_name)
+        unselected_employees.sort(key=sort_by_name)
+        
+        # Combine lists with selected employees first
+        all_employees = selected_employees + unselected_employees
+        self.edit_radio_buttons = []
+        
+        # Populate table
+        for emp_data in all_employees:
+            row = tbl.rowCount()
+            tbl.insertRow(row)
+            
+            # Add radio button
+            radio = QRadioButton()
+            radio.setStyleSheet("background-color: white;")
+            radio.toggled.connect(lambda checked, r=row: self.handle_edit_radio_selected(r, checked))
+            radio.setChecked(emp_data["selected"])
+            self.edit_radio_buttons.append(radio)
+            tbl.setCellWidget(row, 0, radio)
+            
+            # Add other columns
+            mi = f" {emp_data['middle_initial']}." if emp_data['middle_initial'] else ""
+            name = f"{emp_data['last_name']}, {emp_data['first_name']}{mi}"
+            tbl.setItem(row, 1, QTableWidgetItem(name))
+            tbl.setItem(row, 2, QTableWidgetItem(emp_data["employee_id"]))
+            tbl.setItem(row, 3, QTableWidgetItem(f"{emp_data['department']} / {emp_data['position']}"))
+        
+        tbl.resizeColumnsToContents()
+
+    def handle_edit_radio_selected(self, row, checked):
+        if checked:
+            # Uncheck all other radios
+            for idx, radio in enumerate(self.edit_radio_buttons):
+                if idx != row:
+                    radio.setChecked(False)
+
+    def update_edit_attachments_list(self):
+        lw = self.hr_ui.edit_attachments_list
+        lw.clear()
+        for file_path in self.edit_attachments:
+            fname = os.path.basename(file_path)
+            item_widget = QWidget()
+            hbox = QHBoxLayout(item_widget)
+            hbox.setContentsMargins(0, 0, 0, 0)
+            label = QLabel(fname)
+            btn = QPushButton("✕")
+            btn.setFixedSize(20, 20)
+            btn.setStyleSheet("color: red; background: transparent; border: none; font-weight: bold;")
+            btn.clicked.connect(lambda _, f=file_path: self.remove_edit_attachment(f))
+            hbox.addWidget(label)
+            hbox.addWidget(btn)
+            hbox.addStretch()
+            item_widget.setLayout(hbox)
+            item = QListWidgetItem()
+            item.setSizeHint(item_widget.sizeHint())
+            lw.addItem(item)
+            lw.setItemWidget(item, item_widget)
+
+    def remove_edit_attachment(self, file_path):
+        if file_path in self.edit_attachments:
+            # If file is in resources/email_files, delete it
+            if os.path.commonpath([os.path.abspath(file_path), os.path.abspath("resources/email_files")]) == os.path.abspath("resources/email_files"):
+                try:
+                    os.remove(file_path)
+                except Exception:
+                    pass
+            self.edit_attachments.remove(file_path)
+            self.update_edit_attachments_list()
+
+    def back_from_edit_email(self):
+        self.hr_ui.edit_email_subject.clear()
+        self.hr_ui.edit_email_message.clear()
+        self.hr_ui.edit_employee_send_all_btn.setChecked(False)
+        self.hr_ui.edit_email_employee_list_tbl.setRowCount(0)
+        self.hr_ui.edit_set_schedule_btn.setChecked(False)
+        self.hr_ui.edit_schedule_frequency_box.setCurrentIndex(0)
+        self.hr_ui.edit_set_theme_btn.setChecked(False)
+        self.hr_ui.edit_theme_design_box.setCurrentIndex(0)
+        self.hr_ui.edit_attachments_list.clear()
+        self.edit_attachments = []
+        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_page)
+
+    def save_edited_email(self):
+        ann_id = getattr(self, "editing_announcement_id", None)
+        if not ann_id:
+            return
+        subject = self.hr_ui.edit_email_subject.text()
+        message = self.hr_ui.edit_email_message.toPlainText()
+        schedule_enabled = self.hr_ui.edit_set_schedule_btn.isChecked()
+        schedule_frequency = self.hr_ui.edit_schedule_frequency_box.currentText() if schedule_enabled else None
+        theme_enabled = self.hr_ui.edit_set_theme_btn.isChecked()
+        theme_type = self.hr_ui.edit_theme_design_box.currentText() if theme_enabled else None
+        sending_type = "All" if self.hr_ui.edit_employee_send_all_btn.isChecked() else "Selected"
+        involved_employee = None
+        if sending_type == "Selected":
+            tbl = self.hr_ui.edit_email_employee_list_tbl
+            if tbl.rowCount() > 0:
+                involved_employee = tbl.item(0, 1).text()
+        # Save attachments (already handled in self.edit_attachments)
+        files_path = ";".join(self.edit_attachments)
+        self.db.execute_query(
+            '''UPDATE announcements SET subject=?, message=?, sending_type=?, involved_employee=?, schedule_enabled=?, schedule_frequency=?, theme_enabled=?, theme_type=?, attached_files_count=?, files_path=? WHERE id=?''',
+            (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, len(self.edit_attachments), files_path, ann_id)
+        )
+        self.back_from_edit_email()
+        self.load_sched_email_table()
+
+    def delete_selected_sched_email(self):
+        row = self.get_selected_sched_email_row()
+        ann_id = self.get_sched_email_db_id_by_row(row)
+        if ann_id is None:
+            return
+        # Get files_path to delete attachments
+        cursor = self.db.execute_query("SELECT files_path FROM announcements WHERE id = ?", (ann_id,))
+        result = cursor.fetchone() if cursor else None
+        if result and result[0]:
+            files = result[0].split(";")
+            for file_path in files:
+                try:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                except Exception:
+                    pass
+            # Remove the folder if empty
+            folder = os.path.dirname(files[0])
+            try:
+                if os.path.exists(folder) and not os.listdir(folder):
+                    os.rmdir(folder)
+            except Exception:
+                pass
+        # Delete announcement from DB
+        self.db.execute_query("DELETE FROM announcements WHERE id = ?", (ann_id,))
+        self.load_sched_email_table()
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     controller = EALS()
     sys.exit(app.exec())
+
 

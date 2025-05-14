@@ -41,7 +41,7 @@ QToolTip {
      <number>40</number>
     </property>
     <item row="0" column="0">
-     <widget class="QTabWidget" name="tabWidget">
+     <widget class="QTabWidget" name="hr_home_tabs">
       <property name="font">
        <font>
         <pointsize>13</pointsize>
@@ -101,7 +101,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <property name="iconSize">
        <size>
@@ -1607,7 +1607,29 @@ border-radius:6px;</string>
           <property name="frameShadow">
            <enum>QFrame::Shadow::Raised</enum>
           </property>
-          <layout class="QGridLayout" name="gridLayout_34" rowstretch="0,10,0">
+          <layout class="QGridLayout" name="gridLayout_34" rowstretch="0,15,0,1">
+           <item row="2" column="0">
+            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="10">
+             <item>
+              <widget class="QLabel" name="label_10">
+               <property name="font">
+                <font>
+                 <stylestrategy>NoAntialias</stylestrategy>
+                </font>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">border: none;</string>
+               </property>
+               <property name="text">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;Select any email from the table and use the buttons on the right to configure it.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
            <item row="0" column="0">
             <widget class="QLabel" name="label_24">
              <property name="font">
@@ -1892,65 +1914,15 @@ QToolTip {
              </layout>
             </widget>
            </item>
-           <item row="2" column="0">
-            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="10,1,1,1">
-             <item>
-              <widget class="QLabel" name="label_10">
-               <property name="styleSheet">
-                <string notr="true">border: none;</string>
-               </property>
-               <property name="text">
-                <string>Note:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="email_view_btn">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="font">
-                <font>
-                 <bold>true</bold>
-                 <stylestrategy>PreferDefault</stylestrategy>
-                </font>
-               </property>
-               <property name="cursor">
-                <cursorShape>PointingHandCursor</cursorShape>
-               </property>
-               <property name="toolTip">
-                <string>Display detailed information for the selected account</string>
-               </property>
-               <property name="styleSheet">
-                <string notr="true">QPushButton {
-    background-color: #6F42C1;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-weight: bold;
-}
-
-QPushButton:hover {
-    background-color: #5A36A3;
-    text-decoration: underline;
-}
-
-QPushButton:pressed {
-    background-color: #4E2F8F;
-    text-decoration: underline;
-}
-</string>
-               </property>
-               <property name="text">
-                <string>View</string>
-               </property>
-              </widget>
-             </item>
-             <item>
+           <item row="3" column="0">
+            <layout class="QGridLayout" name="gridLayout_48">
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item row="0" column="1">
               <widget class="QPushButton" name="edit_email_btn">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -1997,7 +1969,53 @@ QPushButton:pressed {
                </property>
               </widget>
              </item>
-             <item>
+             <item row="0" column="0">
+              <widget class="QPushButton" name="email_view_btn">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="font">
+                <font>
+                 <bold>true</bold>
+                 <stylestrategy>PreferDefault</stylestrategy>
+                </font>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="toolTip">
+                <string>Display detailed information for the selected account</string>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QPushButton {
+    background-color: #6F42C1;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #5A36A3;
+    text-decoration: underline;
+}
+
+QPushButton:pressed {
+    background-color: #4E2F8F;
+    text-decoration: underline;
+}
+</string>
+               </property>
+               <property name="text">
+                <string>View</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
               <widget class="QPushButton" name="delete_email_btn">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
@@ -2077,7 +2095,7 @@ border-radius:6px;
               <string notr="true">border: none;</string>
              </property>
              <property name="currentIndex">
-              <number>0</number>
+              <number>1</number>
              </property>
              <widget class="QWidget" name="email_page">
               <layout class="QGridLayout" name="gridLayout_19" columnstretch="1,1">
@@ -3077,7 +3095,17 @@ QScrollBar::sub-page:vertical {
                         </item>
                         <item>
                          <property name="text">
+                          <string>Christmass Design</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
                           <string>Design 1</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Design 2</string>
                          </property>
                         </item>
                        </widget>
@@ -3151,6 +3179,9 @@ color: #2C2C2C;</string>
                   </item>
                   <item>
                    <widget class="QLineEdit" name="view_email_subject">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="styleSheet">
                      <string notr="true">QLineEdit {
     background-color: #ffffff;
@@ -3192,6 +3223,9 @@ QLineEdit:focus {
                   </item>
                   <item>
                    <widget class="QPlainTextEdit" name="view_email_message">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="styleSheet">
                      <string notr="true">QPlainTextEdit {
     background-color: white;
@@ -3241,6 +3275,9 @@ color: #2C2C2C;</string>
                      <layout class="QVBoxLayout" name="verticalLayout_16">
                       <item>
                        <widget class="QTableWidget" name="view_email_employee_list_tbl">
+                        <property name="enabled">
+                         <bool>false</bool>
+                        </property>
                         <property name="font">
                          <font>
                           <family>Segoe UI</family>
@@ -3317,6 +3354,9 @@ QToolTip {
                         <property name="autoScrollMargin">
                          <number>16</number>
                         </property>
+                        <attribute name="horizontalHeaderMinimumSectionSize">
+                         <number>34</number>
+                        </attribute>
                         <attribute name="horizontalHeaderDefaultSectionSize">
                          <number>100</number>
                         </attribute>
@@ -3325,6 +3365,9 @@ QToolTip {
                         </attribute>
                         <attribute name="verticalHeaderVisible">
                          <bool>false</bool>
+                        </attribute>
+                        <attribute name="verticalHeaderDefaultSectionSize">
+                         <number>40</number>
                         </attribute>
                         <attribute name="verticalHeaderStretchLastSection">
                          <bool>false</bool>
@@ -3350,6 +3393,9 @@ QToolTip {
                     </item>
                     <item row="0" column="1">
                      <widget class="QComboBox" name="view_email_employee_sort_box">
+                      <property name="enabled">
+                       <bool>true</bool>
+                      </property>
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
                         <horstretch>0</horstretch>
@@ -3492,6 +3538,9 @@ QLineEdit:focus {
                  </item>
                  <item row="0" column="1">
                   <widget class="QRadioButton" name="view_employee_choose_btn">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
                    <property name="font">
                     <font>
                      <family>Segoe UI</family>
@@ -3608,7 +3657,11 @@ color: #2C2C2C;</string>
                      </layout>
                     </item>
                     <item row="0" column="0">
-                     <widget class="QListWidget" name="view_attachments_list"/>
+                     <widget class="QListWidget" name="view_attachments_list">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
+                     </widget>
                     </item>
                    </layout>
                   </widget>
@@ -3631,6 +3684,9 @@ color: #2C2C2C;</string>
                      <layout class="QVBoxLayout" name="verticalLayout_37">
                       <item>
                        <widget class="QRadioButton" name="view_set_schedule_btn">
+                        <property name="enabled">
+                         <bool>false</bool>
+                        </property>
                         <property name="font">
                          <font>
                           <family>Segoe UI</family>
@@ -3680,6 +3736,9 @@ QRadioButton::indicator:checked:hover {
                       </item>
                       <item>
                        <widget class="QComboBox" name="view_schedule_frequency_box">
+                        <property name="enabled">
+                         <bool>false</bool>
+                        </property>
                         <property name="styleSheet">
                          <string notr="true">QComboBox {
     background-color: #ffffff;
@@ -3771,6 +3830,9 @@ QScrollBar::sub-page:vertical {
                  </item>
                  <item row="0" column="0">
                   <widget class="QRadioButton" name="view_employee_send_all_btn">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
                    <property name="font">
                     <font>
                      <family>Segoe UI</family>
@@ -3836,6 +3898,9 @@ color: #2C2C2C;</string>
                      <layout class="QVBoxLayout" name="verticalLayout_39">
                       <item>
                        <widget class="QRadioButton" name="view_set_theme_btn">
+                        <property name="enabled">
+                         <bool>false</bool>
+                        </property>
                         <property name="font">
                          <font>
                           <family>Segoe UI</family>
@@ -4216,6 +4281,11 @@ QToolTip {
                         <attribute name="verticalHeaderStretchLastSection">
                          <bool>false</bool>
                         </attribute>
+                        <column>
+                         <property name="text">
+                          <string/>
+                         </property>
+                        </column>
                         <column>
                          <property name="text">
                           <string>Name:</string>
@@ -4949,62 +5019,194 @@ QToolTip {
            <number>0</number>
           </property>
           <widget class="QWidget" name="hr_employee_dashboard_page">
-           <layout class="QGridLayout" name="gridLayout_3" rowstretch="9,1">
+           <layout class="QGridLayout" name="gridLayout_46" columnstretch="6,10">
             <item row="0" column="0">
-             <widget class="QFrame" name="frame_4">
-              <property name="styleSheet">
-               <string notr="true">background-color: rgb(249, 249, 249);
+             <layout class="QGridLayout" name="gridLayout_3">
+              <item row="0" column="0">
+               <widget class="QWidget" name="widget_30" native="true">
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(251, 251, 251);
+border: 1px solid rgb(239, 239, 239);
+border-radius:6px;</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_18" stretch="0,3">
+                 <item>
+                  <widget class="QLabel" name="label_22">
+                   <property name="font">
+                    <font>
+                     <bold>true</bold>
+                     <stylestrategy>NoAntialias</stylestrategy>
+                     <kerning>false</kerning>
+                    </font>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Top 10 employees based on performance records</string>
+                   </property>
+                   <property name="indent">
+                    <number>4</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QFrame" name="graph2_frame_2">
+                   <property name="styleSheet">
+                    <string notr="true">background-color: rgb(239, 239, 239);
+border-radius:6px;
+color: #2C2C2C;</string>
+                   </property>
+                   <property name="frameShape">
+                    <enum>QFrame::Shape::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Shadow::Raised</enum>
+                   </property>
+                   <layout class="QGridLayout" name="gridLayout_37">
+                    <property name="leftMargin">
+                     <number>2</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>2</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>2</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>2</number>
+                    </property>
+                    <item row="0" column="0">
+                     <layout class="QGridLayout" name="chart_layout4"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QWidget" name="widget_31" native="true">
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(251, 251, 251);
+border: 1px solid rgb(239, 239, 239);
+border-radius:6px;</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_20" stretch="0,3">
+                 <item>
+                  <widget class="QLabel" name="label_25">
+                   <property name="font">
+                    <font>
+                     <bold>true</bold>
+                     <stylestrategy>NoAntialias</stylestrategy>
+                     <kerning>false</kerning>
+                    </font>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">border: none;</string>
+                   </property>
+                   <property name="text">
+                    <string>Top 10 employees with punctuality or productivity issues</string>
+                   </property>
+                   <property name="indent">
+                    <number>4</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QFrame" name="graph2_frame_3">
+                   <property name="styleSheet">
+                    <string notr="true">background-color: rgb(239, 239, 239);
+border-radius:6px;
+color: #2C2C2C;</string>
+                   </property>
+                   <property name="frameShape">
+                    <enum>QFrame::Shape::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Shadow::Raised</enum>
+                   </property>
+                   <layout class="QGridLayout" name="gridLayout_38">
+                    <property name="leftMargin">
+                     <number>2</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>2</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>2</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>2</number>
+                    </property>
+                    <item row="0" column="0">
+                     <layout class="QGridLayout" name="chart_layout5"/>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="0" column="1">
+             <layout class="QGridLayout" name="gridLayout_6" rowstretch="12,1">
+              <item row="0" column="0">
+               <widget class="QFrame" name="frame_4">
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(249, 249, 249);
 border-radius:10px;</string>
-              </property>
-              <property name="frameShape">
-               <enum>QFrame::Shape::StyledPanel</enum>
-              </property>
-              <property name="frameShadow">
-               <enum>QFrame::Shadow::Raised</enum>
-              </property>
-              <layout class="QGridLayout" name="gridLayout_6">
-               <item row="0" column="0">
-                <widget class="QLabel" name="label_13">
-                 <property name="font">
-                  <font>
-                   <bold>true</bold>
-                   <stylestrategy>NoAntialias</stylestrategy>
-                  </font>
-                 </property>
-                 <property name="text">
-                  <string>Employee Accounts</string>
-                 </property>
-                 <property name="indent">
-                  <number>6</number>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="0">
-                <widget class="QWidget" name="widget_8" native="true">
-                 <property name="styleSheet">
-                  <string notr="true">background-color: rgb(235, 235, 235);
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::Shape::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Shadow::Raised</enum>
+                </property>
+                <layout class="QGridLayout" name="gridLayout_7">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="label_13">
+                   <property name="font">
+                    <font>
+                     <bold>true</bold>
+                     <stylestrategy>NoAntialias</stylestrategy>
+                    </font>
+                   </property>
+                   <property name="text">
+                    <string>Employee Accounts</string>
+                   </property>
+                   <property name="indent">
+                    <number>6</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QWidget" name="widget_8" native="true">
+                   <property name="styleSheet">
+                    <string notr="true">background-color: rgb(235, 235, 235);
 border-radius: 10px;</string>
-                 </property>
-                 <layout class="QGridLayout" name="gridLayout_7" rowstretch="1,19" columnstretch="2,1">
-                  <item row="0" column="0">
-                   <widget class="QLineEdit" name="hr_employee_search_box">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="font">
-                     <font>
-                      <family>Segoe UI</family>
-                      <pointsize>-1</pointsize>
-                      <italic>false</italic>
-                      <bold>false</bold>
-                      <stylestrategy>NoAntialias</stylestrategy>
-                     </font>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">QLineEdit {
+                   </property>
+                   <layout class="QGridLayout" name="gridLayout_39" rowstretch="1,19" columnstretch="2,1">
+                    <item row="0" column="0">
+                     <widget class="QLineEdit" name="hr_employee_search_box">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Segoe UI</family>
+                        <pointsize>-1</pointsize>
+                        <italic>false</italic>
+                        <bold>false</bold>
+                        <stylestrategy>NoAntialias</stylestrategy>
+                       </font>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">QLineEdit {
     background-color: #ffffff;
     border: 1px solid #dcdcdc;
     border-radius: 6px;
@@ -5021,37 +5223,37 @@ QLineEdit:focus {
     outline: none;
 }
 </string>
-                    </property>
-                    <property name="placeholderText">
-                     <string>Search....</string>
-                    </property>
-                    <property name="clearButtonEnabled">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="1">
-                   <widget class="QComboBox" name="hr_employee_sort_box">
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
-                    </property>
-                    <property name="font">
-                     <font>
-                      <family>Segoe UI</family>
-                      <pointsize>-1</pointsize>
-                      <italic>false</italic>
-                      <bold>false</bold>
-                      <stylestrategy>NoAntialias</stylestrategy>
-                     </font>
-                    </property>
-                    <property name="toolTip">
-                     <string>Select sorting criteria for employee records</string>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">QComboBox {
+                      </property>
+                      <property name="placeholderText">
+                       <string>Search....</string>
+                      </property>
+                      <property name="clearButtonEnabled">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="1">
+                     <widget class="QComboBox" name="hr_employee_sort_box">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Segoe UI</family>
+                        <pointsize>-1</pointsize>
+                        <italic>false</italic>
+                        <bold>false</bold>
+                        <stylestrategy>NoAntialias</stylestrategy>
+                       </font>
+                      </property>
+                      <property name="toolTip">
+                       <string>Select sorting criteria for employee records</string>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">QComboBox {
     background-color: #ffffff;
     border: 1px solid #dcdcdc;
     border-radius: 6px;
@@ -5093,47 +5295,47 @@ QComboBox QAbstractItemView {
     font: 12px 'Segoe UI', sans-serif;
 }
 </string>
-                    </property>
-                    <item>
-                     <property name="text">
-                      <string>By Name:</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>By Department:</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>By Position:</string>
-                     </property>
-                    </item>
-                    <item>
-                     <property name="text">
-                      <string>By Status:</string>
-                     </property>
-                    </item>
-                   </widget>
-                  </item>
-                  <item row="1" column="0" colspan="2">
-                   <layout class="QVBoxLayout" name="verticalLayout_7">
-                    <item>
-                     <widget class="QTableWidget" name="hr_employee_tbl">
-                      <property name="font">
-                       <font>
-                        <family>Segoe UI</family>
-                        <pointsize>-1</pointsize>
-                        <italic>false</italic>
-                        <bold>false</bold>
-                        <stylestrategy>PreferDefault</stylestrategy>
-                       </font>
                       </property>
-                      <property name="toolTip">
-                       <string>Displays all employee accounts registered in the system.</string>
-                      </property>
-                      <property name="styleSheet">
-                       <string notr="true">QTableWidget {
+                      <item>
+                       <property name="text">
+                        <string>By Name:</string>
+                       </property>
+                      </item>
+                      <item>
+                       <property name="text">
+                        <string>By Department:</string>
+                       </property>
+                      </item>
+                      <item>
+                       <property name="text">
+                        <string>By Position:</string>
+                       </property>
+                      </item>
+                      <item>
+                       <property name="text">
+                        <string>By Status:</string>
+                       </property>
+                      </item>
+                     </widget>
+                    </item>
+                    <item row="1" column="0" colspan="2">
+                     <layout class="QVBoxLayout" name="verticalLayout_7">
+                      <item>
+                       <widget class="QTableWidget" name="hr_employee_tbl">
+                        <property name="font">
+                         <font>
+                          <family>Segoe UI</family>
+                          <pointsize>-1</pointsize>
+                          <italic>false</italic>
+                          <bold>false</bold>
+                          <stylestrategy>PreferDefault</stylestrategy>
+                         </font>
+                        </property>
+                        <property name="toolTip">
+                         <string>Displays all employee accounts registered in the system.</string>
+                        </property>
+                        <property name="styleSheet">
+                         <string notr="true">QTableWidget {
     background-color: #ffffff;
     border: 1px solid #dcdcdc;
     gridline-color: #e0e0e0;
@@ -5181,112 +5383,152 @@ QScrollBar::add-line, QScrollBar::sub-line {
     width: 0px;
 }
 </string>
-                      </property>
-                      <property name="horizontalScrollBarPolicy">
-                       <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
-                      </property>
-                      <property name="autoScrollMargin">
-                       <number>16</number>
-                      </property>
-                      <attribute name="horizontalHeaderDefaultSectionSize">
-                       <number>500</number>
-                      </attribute>
-                      <attribute name="horizontalHeaderStretchLastSection">
-                       <bool>true</bool>
-                      </attribute>
-                      <attribute name="verticalHeaderVisible">
-                       <bool>false</bool>
-                      </attribute>
-                      <attribute name="verticalHeaderStretchLastSection">
-                       <bool>false</bool>
-                      </attribute>
-                      <column>
-                       <property name="text">
-                        <string>Name:</string>
-                       </property>
-                      </column>
-                      <column>
-                       <property name="text">
-                        <string>Department / Position:</string>
-                       </property>
-                      </column>
-                      <column>
-                       <property name="text">
-                        <string>Status:</string>
-                       </property>
-                      </column>
-                     </widget>
+                        </property>
+                        <property name="horizontalScrollBarPolicy">
+                         <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
+                        </property>
+                        <property name="autoScrollMargin">
+                         <number>16</number>
+                        </property>
+                        <attribute name="horizontalHeaderDefaultSectionSize">
+                         <number>500</number>
+                        </attribute>
+                        <attribute name="horizontalHeaderStretchLastSection">
+                         <bool>true</bool>
+                        </attribute>
+                        <attribute name="verticalHeaderVisible">
+                         <bool>false</bool>
+                        </attribute>
+                        <attribute name="verticalHeaderStretchLastSection">
+                         <bool>false</bool>
+                        </attribute>
+                        <column>
+                         <property name="text">
+                          <string>Name:</string>
+                         </property>
+                        </column>
+                        <column>
+                         <property name="text">
+                          <string>Department / Position:</string>
+                         </property>
+                        </column>
+                        <column>
+                         <property name="text">
+                          <string>Status:</string>
+                         </property>
+                        </column>
+                       </widget>
+                      </item>
+                     </layout>
                     </item>
                    </layout>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
-               <item row="2" column="0">
-                <widget class="QLabel" name="label_14">
-                 <property name="font">
-                  <font>
-                   <stylestrategy>NoAntialias</stylestrategy>
-                  </font>
-                 </property>
-                 <property name="text">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;Select an employee from the list above, then click the 'View' button to see detailed information.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <property name="indent">
-                  <number>6</number>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QWidget" name="widget_10" native="true">
-              <property name="styleSheet">
-               <string notr="true">background-color: rgb(249, 249, 249);
-border-radius:10px;</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_8">
-               <item>
-                <widget class="Line" name="line">
-                 <property name="maximumSize">
-                  <size>
-                   <width>16777215</width>
-                   <height>1</height>
-                  </size>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">border: 2px solid rgb(199, 199, 199);</string>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Orientation::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <layout class="QVBoxLayout" name="verticalLayout_9">
-                 <item>
-                  <widget class="QPushButton" name="hr_employee_view_btn">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="label_14">
                    <property name="font">
                     <font>
-                     <bold>true</bold>
                      <stylestrategy>NoAntialias</stylestrategy>
                     </font>
                    </property>
-                   <property name="cursor">
-                    <cursorShape>PointingHandCursor</cursorShape>
+                   <property name="text">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Note: &lt;/span&gt;Select an employee from the list above, then click the 'View' button to see detailed information.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
-                   <property name="toolTip">
-                    <string>Display detailed information for the selected account</string>
+                   <property name="indent">
+                    <number>6</number>
                    </property>
-                   <property name="styleSheet">
-                    <string notr="true">QPushButton {
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QWidget" name="widget_10" native="true">
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(249, 249, 249);
+border-radius:10px;</string>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_8">
+                 <item>
+                  <layout class="QGridLayout" name="gridLayout_40">
+                   <property name="leftMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>0</number>
+                   </property>
+                   <property name="horizontalSpacing">
+                    <number>10</number>
+                   </property>
+                   <item row="0" column="0">
+                    <widget class="QPushButton" name="generate_report_btn">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="font">
+                      <font>
+                       <italic>false</italic>
+                       <bold>true</bold>
+                       <stylestrategy>PreferDefault</stylestrategy>
+                      </font>
+                     </property>
+                     <property name="cursor">
+                      <cursorShape>PointingHandCursor</cursorShape>
+                     </property>
+                     <property name="toolTip">
+                      <string>Modify selected employee or HR account details</string>
+                     </property>
+                     <property name="styleSheet">
+                      <string notr="true">QPushButton {
+    background-color: #28A745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #218838;
+    text-decoration: underline;
+}
+
+QPushButton:pressed {
+    background-color: #1E7E34;
+    text-decoration: underline;
+}
+</string>
+                     </property>
+                     <property name="text">
+                      <string>Generate Monthly Report</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QPushButton" name="hr_employee_view_btn">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="font">
+                      <font>
+                       <bold>true</bold>
+                       <stylestrategy>NoAntialias</stylestrategy>
+                      </font>
+                     </property>
+                     <property name="cursor">
+                      <cursorShape>PointingHandCursor</cursorShape>
+                     </property>
+                     <property name="toolTip">
+                      <string>Display detailed information for the selected account</string>
+                     </property>
+                     <property name="styleSheet">
+                      <string notr="true">QPushButton {
     background-color: #6F42C1;
     color: white;
     border: none;
@@ -5305,16 +5547,18 @@ QPushButton:pressed {
     text-decoration: underline;
 }
 </string>
-                   </property>
-                   <property name="text">
-                    <string>View</string>
-                   </property>
-                  </widget>
+                     </property>
+                     <property name="text">
+                      <string>View</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
                  </item>
                 </layout>
-               </item>
-              </layout>
-             </widget>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>
