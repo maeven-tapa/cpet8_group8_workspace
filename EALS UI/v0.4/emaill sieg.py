@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 class RegistrationApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Enrollment System")
+        self.setWindowTitle("Personalised Email App")
         self.setup_ui()
 
     def setup_ui(self):
@@ -31,7 +31,7 @@ class RegistrationApp(QWidget):
         layout.addWidget(self.personal_msg_label)
         layout.addWidget(self.personal_msg_input)
 
-        self.submit_btn = QPushButton("Submit Registration")
+        self.submit_btn = QPushButton("Send")
         self.submit_btn.clicked.connect(self.send_registration_email)
         layout.addWidget(self.submit_btn)
 
@@ -43,7 +43,7 @@ class RegistrationApp(QWidget):
         message = self.personal_msg_input.toPlainText()
         time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        email_subject = "Registration Summary"
+        email_subject = "Personalized Email Test"
         email_body = f"""
         A new user has registered:
         Name: {name}
@@ -62,7 +62,6 @@ class RegistrationApp(QWidget):
         SMTP_PORT = 587
         SENDER_EMAIL = "eals.tupc@gmail.com"
         SENDER_PASSWORD = "buwl tszg dghr exln"
-        RECEIVER_EMAIL = "siegmond.amador04@gmail.com"  # Could also be dynamic
         msg = EmailMessage()
         msg["Subject"] = subject
         msg["From"] = SENDER_EMAIL
@@ -80,11 +79,8 @@ class RegistrationApp(QWidget):
             
 
 if __name__ == "__main__":
-
-
     app = QApplication(sys.argv)
     window = RegistrationApp()
     window.show()
-
     exit_code = app.exec()
     sys.exit(exit_code)

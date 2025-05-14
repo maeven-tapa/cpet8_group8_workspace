@@ -11,7 +11,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage 
 from PySide6.QtWidgets import QApplication,QMessageBox, QTableWidgetItem, QAbstractItemView, QFileDialog, QLineEdit,QVBoxLayout, QPushButton, QRadioButton, QWidget, QHBoxLayout, QLabel, QListWidget, QListWidgetItem  # add QListWidget, QListWidgetItem
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtCore import Qt, QDate, QCoreApplication, QProcess, QTimer, QRegularExpression
+from PySide6.QtCore import Qt, QDate, QCoreApplication, QProcess, QTimer, QRegularExpression, Signal, QObject
 from PySide6.QtGui import QPixmap, QRegularExpressionValidator, QIcon, QColor, QPainter
 from datetime import datetime, timedelta
 from pyqttoast import Toast, ToastPreset, ToastPosition
@@ -31,7 +31,9 @@ import tempfile
 import pandas as pd
 import io
 import json
-
+from PIL import Image
+from PySide6.QtGui import QPixmap
+from pyzkfp import ZKFP2
 
 PASSWORD_HASHER = argon2.PasswordHasher()
 
@@ -85,6 +87,13 @@ class DatabaseConnection:
                     absent_count CHAR(2),
                     FOREIGN KEY (created_by) REFERENCES Admin(admin_id),
                     FOREIGN KEY (last_modified_by) REFERENCES Admin(admin_id)
+                );
+
+                CREATE TABLE IF NOT EXISTS fingerprints (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    employee_id VARCHAR(20) NOT NULL,
+                    template_path TEXT NOT NULL,
+                    FOREIGN KEY (employee_id) REFERENCES Employee(employee_id)
                 );
 
                 CREATE TABLE IF NOT EXISTS attendance_logs (
@@ -359,6 +368,155 @@ class SystemLogs:
 
         except Exception as e:
             print(f"Error logging system action: {e}")
+
+class FingerprintSignals(QObject):
+    match_found = Signal(str)  # Signal for employee_id
+    update_display = Signal(bytes)  # Signal for image data
+    update_status = Signal(str)  # Signal for status messages
+
+class FingerprintLogic:
+    def __init__(self, db):
+        self.zkfp = ZKFP2()
+        self.device_open = False
+        self.last_template = None
+        self.db = db
+        self.templates_dir = "resources/registered_fingerprint"
+        os.makedirs(self.templates_dir, exist_ok=True)
+        self.signals = FingerprintSignals()
+
+    def initialize_device(self):
+        try:
+            self.zkfp.Init()
+            count = self.zkfp.GetDeviceCount()
+            if count > 0:
+                self.zkfp.OpenDevice(0)
+                self.device_open = True
+                print(f"Device initialized. {count} device(s) found.")
+                self.zkfp.Light('white')
+                return True
+            else:
+                print("No device found.")
+                return False
+        except Exception as e:
+            print(f"Error initializing device: {e}")
+            return False
+
+    def terminate_device(self):
+        if self.device_open:
+            self.zkfp.CloseDevice()
+        self.zkfp.Terminate()
+        print("Device terminated.")
+
+    def register_fingerprint(self, employee_id, fp_image_lbl, fp_enrollment_note_lbl):
+        if not self.device_open:
+            fp_enrollment_note_lbl.setText("Device not initialized. Please reinitialize.")
+            return
+
+        # Run fingerprint registration in a separate thread
+        threading.Thread(
+            target=self._register_fingerprint_worker,
+            args=(employee_id, fp_image_lbl, fp_enrollment_note_lbl),
+            daemon=True
+        ).start()
+
+    def _register_fingerprint_worker(self, employee_id, fp_image_lbl, fp_enrollment_note_lbl):
+        templates = []
+        for i in range(3):
+            while True:
+                capture = self.zkfp.AcquireFingerprint()
+                if capture:
+                    tmp, image_data = capture
+                    templates.append(tmp)
+                    self.display_image(image_data, fp_image_lbl)
+                    fp_enrollment_note_lbl.setText(f"Fingerprint {i + 1} captured. Please tap again.")
+                    break
+
+        reg_temp, _ = self.zkfp.DBMerge(*templates)
+        reg_temp_bytes = bytes(reg_temp)
+
+        try:
+            cursor = self.db.execute_query("INSERT INTO fingerprints (employee_id, template_path) VALUES (?, ?)", (employee_id, ""))
+            fingerprint_id = cursor.lastrowid
+
+            template_path = os.path.join(self.templates_dir, f"template_{fingerprint_id}.tpl")
+            with open(template_path, "wb") as tpl_file:
+                tpl_file.write(reg_temp_bytes)
+
+            self.db.execute_query("UPDATE fingerprints SET template_path = ? WHERE id = ?", (template_path, fingerprint_id))
+            fp_enrollment_note_lbl.setText("Fingerprint enrollment successful!")
+            print(f"Fingerprint registered for employee ID {employee_id} and saved to {template_path}")
+        except Exception as e:
+            fp_enrollment_note_lbl.setText("Error during fingerprint registration.")
+            print(f"Error registering fingerprint: {e}")
+
+    def display_image(self, image_data, fp_image_lbl):
+        width, height = 300, 400
+        img = Image.frombytes('L', (width, height), image_data)
+        img = img.resize((200, 200))
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        pixmap = QPixmap()
+        pixmap.loadFromData(buffer.getvalue())
+        pixmap = pixmap.scaled(fp_image_lbl.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        fp_image_lbl.setPixmap(pixmap)
+
+    def compare_1_1(self, fp_image_lbl, fp_comparison_note_lbl, callback):
+        if not self.device_open:
+            fp_comparison_note_lbl.setText("Device not initialized. Please reinitialize.")
+            return
+
+        # Run fingerprint comparison in a separate thread
+        threading.Thread(
+            target=self._compare_1_1_worker,
+            args=(fp_image_lbl, fp_comparison_note_lbl, callback),
+            daemon=True
+        ).start()
+
+    def _compare_1_1_worker(self, fp_image_lbl, fp_comparison_note_lbl, callback):
+        try:
+            while True:
+                capture = self.zkfp.AcquireFingerprint()
+                if capture:
+                    captured_template, image_data = capture
+                    self.signals.update_display.emit(image_data)
+                    break
+        except Exception as e:
+            print(f"Error capturing fingerprint: {str(e)}")
+            self.signals.update_status.emit("Error during fingerprint scan. Please try again.")
+            callback(None)
+            return
+
+        try:
+            cursor = self.db.execute_query("SELECT id, employee_id, template_path FROM fingerprints")
+            records = cursor.fetchall() if cursor else []
+
+            best_score = -1
+            matched_employee_id = None
+            for record_id, employee_id, template_path in records:
+                if os.path.exists(template_path):
+                    with open(template_path, "rb") as tpl_file:
+                        db_template = tpl_file.read()
+
+                    result = self.zkfp.DBMatch(captured_template, db_template)
+                    print(f"Match result: {result}")
+
+                    threshold = 50  # Adjust based on testing
+                    if result >= threshold and result > best_score:
+                        best_score = result
+                        matched_employee_id = employee_id
+
+            if best_score > 0:
+                self.zkfp.Light('green')
+                self.signals.update_status.emit("Match found!")
+                self.signals.match_found.emit(matched_employee_id)
+            else:
+                self.zkfp.Light('red')
+                self.signals.update_status.emit("No match found. Please try again.")
+                callback(None)
+        except Exception as e:
+            print(f"Error during fingerprint comparison: {str(e)}")
+            self.signals.update_status.emit("Error during fingerprint scan. Please try again.")
+            callback(None)
 
 class EALS:
     def __init__(self):
@@ -1329,6 +1487,458 @@ class HR:
         toast.setPositionRelativeToWidget(self.hr_ui.hr_home_tabs)
         toast.setPosition(ToastPosition.TOP_RIGHT)
         toast.show()
+    
+class ChangePassword(QObject):
+    passwordChanged = Signal(dict)  # Add signal with employee data
+
+    def __init__(self, db, user_id, user_type="admin"):
+        super().__init__()  # Initialize QObject
+        self.db = db
+        self.system_logs = SystemLogs(db)
+        self.user_id = user_id
+        self.user_type = user_type  
+        self.loader = QUiLoader()
+        self.change_pass_ui = self.loader.load("ui/change_pass.ui")
+        
+        self.cp_visible = False
+        self.np_visible = False
+        self.changepass_visible = False
+        
+        if user_type == "admin":
+            self.change_pass_ui.setWindowTitle("Change Admin Password")
+            self.system_logs.log_system_action("The admin change password prompt has been loaded.", "Admin")
+        else:
+            self.change_pass_ui.setWindowTitle("Change Employee Password")
+            self.system_logs.log_system_action("The employee change password prompt has been loaded.", "Employee")
+            
+        self.change_pass_ui.change_pass_note.setText("For security purposes, please enter your current password below, then choose a new password and confirm it. Make sure your new password is at least 8 characters long.")
+        self.change_pass_ui.change_pass_note.setStyleSheet("color: black; border: none;")
+        self.change_pass_ui.cp_visibility_btn.clicked.connect(self.toggle_cp_visibility)
+        self.change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
+        self.change_pass_ui.changepass_visibility_btn.clicked.connect(self.toggle_changepass_visibility)
+        self.change_pass_ui.admin_change_pass_btn.clicked.connect(self.validate_and_change_password)
+        self.change_pass_ui.admin_change_cancel_btn.clicked.connect(self.cancel_change_password)
+        self.change_pass_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+        self.change_pass_ui.setWindowModality(Qt.ApplicationModal)
+
+    def cancel_change_password(self):
+        self.system_logs.log_system_action(f"Password change cancelled by {self.user_type}.", "Admin" if self.user_type == "admin" else "Employee")
+        self.change_pass_ui.close()
+
+    def toggle_cp_visibility(self):
+        if self.cp_visible:
+            self.change_pass_ui.change_pass_cp_box.setEchoMode(QLineEdit.Password)
+        else:
+            self.change_pass_ui.change_pass_cp_box.setEchoMode(QLineEdit.Normal)
+        self.cp_visible = not self.cp_visible
+
+    def toggle_np_visibility(self):
+        if self.np_visible:
+            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Password)
+        else:
+            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Normal)
+        self.np_visible = not self.np_visible
+
+    def toggle_changepass_visibility(self):
+        if self.changepass_visible:
+            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Password)
+        else:
+            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Normal)
+        self.changepass_visible = not self.changepass_visible
+
+    def validate_and_change_password(self):
+        new_password = self.change_pass_ui.change_pass_np_box.text()
+        confirm_password = self.change_pass_ui.change_pass_confirm_box.text()
+        current_password = self.change_pass_ui.change_pass_cp_box.text()
+
+        try:
+            if self.user_type == "admin":
+                table = "Admin"
+                id_field = "admin_id"
+            else:
+                table = "Employee"
+                id_field = "employee_id"
+
+            cursor = self.db.execute_query(
+                "SELECT password FROM {} WHERE {} = ?".format(table, id_field),
+                (self.user_id,)
+            )
+            result = cursor.fetchone()
+
+            if not result:
+                chime.warning()
+                self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
+                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
+                return
+            
+            try:
+                PASSWORD_HASHER.verify(result[0], current_password)
+            except argon2.exceptions.VerifyMismatchError:
+                chime.warning()
+                self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
+                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
+                return
+
+            if not current_password or not new_password or not confirm_password:
+                chime.warning()
+                self.change_pass_ui.change_pass_note.setText("All password fields are required.")
+                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
+                return
+
+            if new_password != confirm_password:
+                chime.warning()
+                self.change_pass_ui.change_pass_note.setText("The new password and confirmation password do not match.")
+                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
+                return
+
+            if len(new_password) < 8:
+                chime.warning()
+                self.change_pass_ui.change_pass_note.setText("Your new password must be at least 8 characters long.")
+                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
+                return
+
+            hashed_password = PASSWORD_HASHER.hash(new_password)
+
+            self.db.execute_query(
+                "UPDATE {} SET password = ?, password_changed = TRUE WHERE {} = ?".format(table, id_field),
+                (hashed_password, self.user_id)
+            )
+
+            self.system_logs.log_system_action(f"The {self.user_type} password has been changed.", "Admin" if self.user_type == "admin" else "Employee")
+            chime.theme('chime')
+            chime.success()
+            toast = Toast(self.change_pass_ui)
+            toast.setTitle("Password Changed Successfully")
+            toast.setText("Your password has been updated. Please use the new password for future logins.")
+            toast.setDuration(2000)
+            toast.setOffset(30, 70) 
+            toast.setBorderRadius(6) 
+            toast.applyPreset(ToastPreset.SUCCESS)  
+            toast.setBackgroundColor(QColor('#FFFFFF')) 
+            toast.setPosition(ToastPosition.TOP_RIGHT) 
+            toast.show()
+
+            if self.user_type == "employee":
+                cursor = self.db.execute_query("""
+                    SELECT * FROM Employee WHERE employee_id = ?
+                """, (self.user_id,))
+                if cursor:
+                    employee = cursor.fetchone()
+                    if employee:
+                        employee_data = {
+                            "employee_id": employee[0],
+                            "first_name": employee[1],
+                            "last_name": employee[2],
+                            "middle_initial": employee[3],
+                            "birthday": employee[4],
+                            "gender": employee[5],
+                            "department": employee[6],
+                            "position": employee[7],
+                            "schedule": employee[8],
+                            "is_hr": employee[9],
+                            "password_changed": True,  # Now changed
+                            "profile_picture": employee[13],
+                            "email": employee[14]
+                        }
+                        self.passwordChanged.emit(employee_data)
+
+            self.change_pass_ui.close()
+
+        except sqlite3.Error as e:
+            self.system_logs.log_system_action(
+                f"Database error during {self.user_type} password change", 
+                "Admin" if self.user_type == "admin" else "Employee"
+            )
+            print(f"Database error during password change: {e}")           
+
+class ForgotPassword:
+    def __init__(self, db):
+        self.db = db
+        self.system_logs = SystemLogs(db)
+        self.loader = QUiLoader()
+        self.forgot_pass_ui = self.loader.load("ui/forgot_password.ui")
+        self.forgot_pass_ui.setWindowTitle("Forgot Password")
+        self.forgot_pass_ui.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+        self.forgot_pass_ui.setWindowModality(Qt.ApplicationModal)
+
+        self.forgot_pass_ui.confirm_btn.clicked.connect(self.validate_account)
+        self.forgot_pass_ui.verify_code_btn.clicked.connect(self.verify_code)
+        self.forgot_pass_ui.fp_back_btn.clicked.connect(self.close_window)
+        self.forgot_pass_ui.fp_back2_btn.clicked.connect(self.go_back_to_page1)
+        
+        self.current_employee = None
+        self.verification_code = None
+        
+        self.setup_pin_inputs()
+    
+    def setup_pin_inputs(self):
+        self.forgot_pass_ui.pin_1.setMaxLength(1)
+        self.forgot_pass_ui.pin_2.setMaxLength(1)
+        self.forgot_pass_ui.pin_3.setMaxLength(1)
+        self.forgot_pass_ui.pin_4.setMaxLength(1)
+        
+        validator = QRegularExpressionValidator(QRegularExpression("[0-9]"))
+        self.forgot_pass_ui.pin_1.setValidator(validator)
+        self.forgot_pass_ui.pin_2.setValidator(validator)
+        self.forgot_pass_ui.pin_3.setValidator(validator)
+        self.forgot_pass_ui.pin_4.setValidator(validator)
+        
+        self.forgot_pass_ui.pin_1.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_1, self.forgot_pass_ui.pin_2))
+        self.forgot_pass_ui.pin_2.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_2, self.forgot_pass_ui.pin_3))
+        self.forgot_pass_ui.pin_3.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_3, self.forgot_pass_ui.pin_4))
+        self.forgot_pass_ui.pin_4.textChanged.connect(lambda: self.check_verification_ready())
+    
+    def move_focus_to_next(self, current, next_input):
+        if current.text():
+            next_input.setFocus()
+    
+    def check_verification_ready(self):
+
+        all_filled = bool(self.forgot_pass_ui.pin_1.text() and 
+                         self.forgot_pass_ui.pin_2.text() and 
+                         self.forgot_pass_ui.pin_3.text() and 
+                         self.forgot_pass_ui.pin_4.text())
+        self.forgot_pass_ui.verify_code_btn.setEnabled(all_filled)
+
+    def validate_account(self):
+        account_id = self.forgot_pass_ui.forgot_pass_id_box.text().strip()
+        birthday = self.forgot_pass_ui.forgot_pass_birthday_box.date().toString("yyyy-MM-dd")
+        email = self.forgot_pass_ui.forgot_pass_email_box.text().strip()
+
+        if not account_id or not birthday or not email:
+            missing_fields = []
+            if not account_id:
+                missing_fields.append("Account ID")
+            if not birthday:
+                missing_fields.append("Birthday")
+            if not email:
+                missing_fields.append("Email Address")
+            self.forgot_pass_ui.fp_page1_note.setText(f"Warning: Please fill in the following fields: {', '.join(missing_fields)}.")
+            self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
+            return
+
+        try:
+            cursor = self.db.execute_query(
+                "SELECT * FROM Employee WHERE employee_id = ?", 
+                (account_id,)
+            )
+            employee = cursor.fetchone()
+
+            if not employee:
+                self.forgot_pass_ui.fp_page1_note.setText("Warning: The provided Account ID does not exist.")
+                self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
+                return
+
+            if employee[4] != birthday or employee[14] != email:
+                self.forgot_pass_ui.fp_page1_note.setText("Warning: The provided information does not match our records. Please check your inputs.")
+                self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
+                return
+
+            self.current_employee = {
+                "employee_id": employee[0],
+                "email": employee[14]
+            }
+            
+            self.verification_code = ''.join([str(secrets.randbelow(10)) for _ in range(4)])
+            self.system_logs.log_system_action(
+                f"Password reset verification code generated for employee {account_id}", 
+                "Employee"
+            )
+            
+
+            chime.theme('chime')
+            chime.success()
+            toast = Toast(self.forgot_pass_ui)
+            toast.setTitle("Email Sent")
+            toast.setText(f"A verification code has been sent to {email}.")
+            toast.setDuration(2000)
+            toast.setOffset(30, 70)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.SUCCESS)
+            toast.setBackgroundColor(QColor('#FFFFFF'))
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.show()
+            
+            threading.Thread(
+                target=lambda: self.send_verification_email(self.current_employee["email"], self.verification_code),
+                daemon=True
+            ).start()
+
+
+            self.forgot_pass_ui.fp_stackedWidget.setCurrentWidget(self.forgot_pass_ui.fp_page_2)
+            
+            self.forgot_pass_ui.pin_1.clear()
+            self.forgot_pass_ui.pin_2.clear()
+            self.forgot_pass_ui.pin_3.clear()
+            self.forgot_pass_ui.pin_4.clear()
+            self.forgot_pass_ui.pin_1.setFocus()
+
+        except sqlite3.Error as e:
+            print(f"Database error during account validation: {e}")
+            self.forgot_pass_ui.fp_page1_note.setText("Error: An error occurred while validating your account. Please try again later.")
+            self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
+            
+    def send_verification_email(self, email, code):
+        try:
+            sender_email = "eals.tupc@gmail.com"  
+            sender_password = "buwl tszg dghr exln"  
+
+            message = MIMEMultipart()
+            message["From"] = sender_email
+            message["To"] = email
+            message["Subject"] = "EALS Verification Code"
+
+            # Get default header and footer images
+            header_img = os.path.join("resources", "theme_images", "default_theme_header.jpg")
+            footer_img = os.path.join("resources", "theme_images", "default_theme_footer.jpg")
+
+            # Create HTML email content with Google-like styling
+            html_header = '<img src="cid:headerimg" style="display:block; margin:auto; width:100%;"><br>' if os.path.exists(header_img) else ""
+            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto; width:100%;">' if os.path.exists(footer_img) else ""
+            
+            html_content = f"""
+                <div style="margin: 20px auto; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
+                    <div style="background-color: #4285f4; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h2 style="margin: 0; text-align: center;">EALS Verification Code</h2>
+                    </div>
+                    <div style="background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <p style="color: #666666;">This verification code was sent to help you reset your EALS account password:</p>
+                        <div style="text-align: center; padding: 20px;">
+                            <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #202124;">{code}</span>
+                        </div>
+                        <p style="color: #666666;">Don't know why you received this?</p>
+                        <p style="color: #666666;">Someone requested a password reset for your EALS account. If this wasn't you, you can safely ignore this email.</p>
+                        <p style="color: #666666;">To protect your account, don't forward this email or give this code to anyone.</p>
+                        <br>
+                        <p style="color: #666666; margin-bottom: 0;">Best regards,<br>EALS Team</p>
+                    </div>
+                </div>
+            """
+
+            html_content = f"{html_header}{html_content}{html_footer}"
+
+            # Attach HTML content
+            message.attach(MIMEText(html_content, "html"))
+
+            # Attach header image if exists
+            if os.path.exists(header_img):
+                with open(header_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<headerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
+                    message.attach(img)
+
+            # Attach footer image if exists
+            if os.path.exists(footer_img):
+                with open(footer_img, "rb") as f:
+                    img = MIMEImage(f.read())
+                    img.add_header("Content-ID", "<footerimg>")
+                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
+                    message.attach(img)
+
+            # Send email
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                server.login(sender_email, sender_password)
+                server.send_message(message)
+
+            print(f"Verification code sent to {email}")
+            return True
+        except Exception as e:
+            print(f"Error sending verification email: {e}")
+            return False
+
+    def verify_code(self):
+        entered_code = ''.join([
+            self.forgot_pass_ui.pin_1.text(),
+            self.forgot_pass_ui.pin_2.text(),
+            self.forgot_pass_ui.pin_3.text(),
+            self.forgot_pass_ui.pin_4.text()
+        ])
+
+        if entered_code == self.verification_code:
+            self.change_pass_ui = QUiLoader().load("ui/employee_change_pass.ui")
+            self.change_pass_ui.setWindowTitle("Change Password")
+            self.change_pass_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+
+            self.change_pass_ui.employee_change_pass_btn.clicked.connect(self.validate_and_change_password)
+            self.np_visible = False
+            self.cp_visible = False
+            self.change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
+            self.change_pass_ui.cp_visibility_btn.clicked.connect(self.toggle_cp_visibility)
+            self.forgot_pass_ui.close()
+            self.change_pass_ui.show()
+        else:
+            self.forgot_pass_ui.fp_page2_note.setText("Warning: The verification code you entered is incorrect. Please try again.")
+            self.forgot_pass_ui.fp_page2_note.setStyleSheet("color: black; background-color: yellow;")
+            
+    def toggle_np_visibility(self):
+        if self.np_visible:
+            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Password)
+        else:
+            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Normal)
+        self.np_visible = not self.np_visible
+
+    def toggle_cp_visibility(self):
+        if self.cp_visible:
+            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Password)
+        else:
+            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Normal)
+        self.cp_visible = not self.cp_visible
+
+    def validate_and_change_password(self):
+        new_password = self.change_pass_ui.change_pass_np_box.text()
+        confirm_password = self.change_pass_ui.change_pass_confirm_box.text()
+
+        if not new_password or not confirm_password:
+            chime.warning()
+            self.change_pass_ui.change_pass_note.setText("Note: All fields are required.")
+            self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
+            return
+
+        if new_password != confirm_password:
+            chime.warning()
+            self.change_pass_ui.change_pass_note.setText("Note: Passwords do not match.")
+            self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
+            return
+
+        if len(new_password) < 8:
+            chime.warning()
+            self.change_pass_ui.change_pass_note.setText("Note: Password must be at least 8 characters long.")
+            self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
+            return
+
+        try:
+            hashed_password = PASSWORD_HASHER.hash(new_password)
+
+            self.db.execute_query(
+                "UPDATE Employee SET password = ?, password_changed = TRUE WHERE employee_id = ?",
+                (hashed_password, self.current_employee["employee_id"])
+            )
+            self.change_pass_ui.close()
+            
+            
+            chime.theme('chime')
+            chime.success()
+            toast = Toast(self.forgot_pass_ui)
+            toast.setTitle("Success")
+            toast.setText("Password changed successfully.")
+            toast.setDuration(2000)
+            toast.setOffset(30, 70)
+            toast.setBorderRadius(6)
+            toast.applyPreset(ToastPreset.SUCCESS)
+            toast.setBackgroundColor(QColor('#FFFFFF'))
+            toast.setPosition(ToastPosition.TOP_RIGHT)
+            toast.show()
+
+        except sqlite3.Error as e:
+            print(f"Database error during password change: {e}")
+            QMessageBox.critical(None, "Error", "Failed to change password. Please try again.")
+
+    def go_back_to_page1(self):
+        self.forgot_pass_ui.fp_stackedWidget.setCurrentWidget(self.forgot_pass_ui.fp_page_1)
+
+    def close_window(self):
+        self.forgot_pass_ui.close()
 
 class Home:
     password_changed = False
@@ -1341,20 +1951,208 @@ class Home:
         self.home_ui = self.loader.load("ui/home.ui")
         self.home_ui.setWindowIcon(QIcon('resources/logo.ico'))
         self.home_ui.setWindowTitle("EALS")
-        self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
+        
+        # Initialize signals first
+        self.fp_signals = FingerprintSignals()
+        self.fp_signals.match_found.connect(self.handle_fingerprint_match)
+        self.fp_signals.update_display.connect(self.update_fingerprint_display)
+        self.fp_signals.update_status.connect(self.update_fingerprint_status)
+        
+        # Initialize fingerprint logic
+        self.fp_logic = FingerprintLogic(self.db)
+        self.fp_logic.signals = self.fp_signals
+        
+        # Setup UI connections
+        self.home_ui.home_login_btn.clicked.connect(self.handle_login)
+        self.home_ui.bio1_next.clicked.connect(self.goto_bio2)
+        self.home_ui.bio2_next.clicked.connect(self.goto_result_prompt)
+        self.home_ui.default_login_btn.clicked.connect(self.goto_default_login)
+        
+        # Check if there are enrolled employees
+        cursor = self.db.execute_query("SELECT COUNT(*) FROM fingerprints")
+        enrolled_count = cursor.fetchone()[0] if cursor else 0
+        
+        if enrolled_count > 0:
+            self.home_ui.main_page.setCurrentWidget(self.home_ui.bio_page)
+            self.initialize_bio_page()
+        else:
+            self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
+            
         self.admin_id = None
         self.admin_password = None
         self.check_initial_setup()
         self.update_date_today()
-        self.home_ui.home_login_btn.clicked.connect(self.handle_login)
-        self.home_ui.bio1_next.clicked.connect(self.goto_bio2)
-        self.home_ui.bio2_next.clicked.connect(self.goto_result_prompt)
         self.employee_data = None  
+        self.source_page = None  # Add this to track where user came from
         self.system_logs.log_system_action("The home UI has been loaded.", "SystemSettings")
         self.home_ui.pass_visibility_button.clicked.connect(self.toggle_password_visibility)
         self.home_ui.forgot_pass_btn.clicked.connect(self.goto_forgot_password)
         self.password_visible = False
+
+    def initialize_bio_page(self):
+        if self.fp_logic.initialize_device():
+            self.fp_logic.signals = self.fp_signals  # Connect signals
+            self.home_ui.bio_note_lbl.setText("Sensor ready. Please tap your finger.")
+            self.start_fingerprint_scanning()
+        else:
+            self.home_ui.bio_note_lbl.setText("Error initializing sensor. Please use default login.")
+            
+    def start_fingerprint_scanning(self):
+        def scan_result_callback(matched_employee_id):
+            if matched_employee_id:
+                self.fp_signals.match_found.emit(matched_employee_id)
+                
+        threading.Thread(
+            target=self.fp_logic.compare_1_1,
+            args=(self.home_ui.biometric_display_lbl, self.home_ui.bio_note_lbl, scan_result_callback),
+            daemon=True
+        ).start()
+
+    def handle_fingerprint_match(self, employee_id):
+        cursor = self.db.execute_query("""
+            SELECT * FROM Employee WHERE employee_id = ?
+        """, (employee_id,))
         
+        if cursor:
+            result = cursor.fetchone()
+            if result:
+                if result[10] == "Inactive":  # Check if employee is inactive
+                    self.show_error("Access Denied", "Your account is inactive. Please contact HR.")
+                    return
+
+                self.employee_data = {
+                    "employee_id": result[0],
+                    "first_name": result[1],
+                    "last_name": result[2],
+                    "middle_initial": result[3],
+                    "birthday": result[4],
+                    "gender": result[5],
+                    "department": result[6],
+                    "position": result[7],
+                    "schedule": result[8],
+                    "is_hr": result[9],
+                    "password_changed": result[12],
+                    "profile_picture": result[13],
+                    "email": result[14]
+                }
+
+                # Check if HR
+                if self.employee_data["is_hr"]:
+                    if self.validate_hr_attendance(self.employee_data):
+                        self.goto_hr_ui(self.employee_data)
+                    return
+
+                # Get current time and schedule
+                current_time = datetime.now()
+                current_hour = current_time.hour
+                schedule_start, schedule_end = self.parse_schedule(self.employee_data["schedule"])
+
+                # Check attendance status
+                current_date = current_time.strftime("%Y-%m-%d")
+                cursor = self.db.execute_query(
+                    "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ? ORDER BY time DESC LIMIT 1",
+                    (employee_id, current_date)
+                )
+                last_log = cursor.fetchone() if cursor else None
+
+                if last_log and last_log[1] == "Clock In":
+                    self.employee_data["remarks"] = "Clock Out"
+                else:
+                    if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
+                        self.show_warning("Invalid Login", "You cannot log in outside your scheduled shift.")
+                        return
+                    self.employee_data["remarks"] = "Clock In"
+                    late_threshold = datetime.now().replace(hour=schedule_start, minute=15)
+                    self.employee_data["is_late"] = datetime.now() > late_threshold
+
+                self.update_bio_page_info()
+                self.source_page = "bio_page"  # Set source when coming from bio
+                if not self.employee_data["password_changed"]:
+                    QTimer.singleShot(2000, lambda: self.show_change_password_dialog())
+                else:
+                    QTimer.singleShot(2000, self.goto_result_prompt)
+
+    def update_fingerprint_display(self, image_data):
+        width, height = 300, 400
+        img = Image.frombytes('L', (width, height), image_data)
+        img = img.resize((200, 200))
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        pixmap = QPixmap()
+        pixmap.loadFromData(buffer.getvalue())
+        pixmap = pixmap.scaled(self.home_ui.biometric_display_lbl.size(), 
+                             Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.home_ui.biometric_display_lbl.setPixmap(pixmap)
+
+    def update_fingerprint_status(self, message):
+        self.home_ui.bio_note_lbl.setText(message)
+
+    def update_bio_page_info(self):
+        if self.employee_data:
+            pixmap = QPixmap(self.employee_data["profile_picture"])
+            pixmap = pixmap.scaled(self.home_ui.bio_employee_pic.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.home_ui.bio_employee_pic.setPixmap(pixmap)
+            
+            self.home_ui.bio_employee_name.setText(f"<b>Name:</b> {self.employee_data['first_name']} {self.employee_data['last_name']}")
+            self.home_ui.bio_employee_department.setText(f"<b>Department:</b> {self.employee_data['department']}")
+            self.home_ui.bio_employee_position.setText(f"<b>Position:</b> {self.employee_data['position']}")
+            self.home_ui.bio_employee_shift.setText(f"<b>Shift:</b> {self.employee_data['schedule']}")
+
+    def show_change_password_dialog(self):
+        self.changepass = ChangePassword(self.db, self.employee_data["employee_id"], "employee")
+        self.changepass.passwordChanged.connect(self.handle_password_changed)
+        self.changepass.change_pass_ui.show()
+
+    def handle_password_changed(self, employee_data):
+        self.employee_data = employee_data
+        self.goto_result_prompt()
+
+    def on_password_changed(self):
+        self.goto_result_prompt()
+
+    def goto_default_login(self):
+        current_page = self.home_ui.main_page.currentWidget()
+        
+        try:
+            if current_page == self.home_ui.home_page:
+                # Going to bio page - first set page then handle device
+                self.home_ui.main_page.setCurrentWidget(self.home_ui.bio_page)
+                
+                def safe_init():
+                    try:
+                        # Create new ZKFP2 instance to ensure clean state
+                        self.fp_logic.zkfp = ZKFP2()
+                        self.fp_logic.device_open = False
+                        
+                        if self.fp_logic.initialize_device():
+                            self.home_ui.bio_note_lbl.setText("Sensor ready. Please tap your finger.")
+                            self.start_fingerprint_scanning()
+                        else:
+                            self.home_ui.bio_note_lbl.setText("Error initializing sensor. Please use default login.")
+                            
+                    except Exception as e:
+                        print(f"Error in safe_init: {e}")
+                        self.home_ui.bio_note_lbl.setText("Error initializing sensor. Please try again.")
+                
+                # Delay initialization 
+                QTimer.singleShot(1500, safe_init)
+                
+            else:
+                # Going to home page - first close device then switch page
+                if self.fp_logic.device_open:
+                    try:
+                        self.fp_logic.terminate_device()
+                    except Exception as e:
+                        print(f"Error terminating device: {e}")
+                    finally:
+                        self.fp_logic.device_open = False
+                        
+                self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
+                        
+        except Exception as e:
+            print(f"Error switching pages: {e}")
+            self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
+
     def update_date_today(self):
         current_date = datetime.now()
         formatted_date = current_date.strftime("%a, %b %d, %Y")
@@ -1460,6 +2258,7 @@ class Home:
                             self.system_logs.log_system_action("A user is logged in as HR", "Employee")
                     else:
                         self.employee_data = employee_data
+                        self.source_page = "home_page"  # Set source when coming from login
                         if self.validate_attendance():
                             self.system_logs.log_system_action("A user is logged in as an employee", "Employee")
                             self.goto_bio1()
@@ -1838,6 +2637,21 @@ class Home:
             print(f"Error sending attendance email: {e}")
             return False
 
+    def clear_bio_page(self):
+        self.home_ui.biometric_display_lbl.clear()
+        self.home_ui.biometric_display_lbl.setText(f"<b>Biometrics Image</b>")
+        self.home_ui.bio_employee_pic.clear()
+        self.home_ui.bio_employee_pic.setText(f"<b>Employee Picture</b>")
+        self.home_ui.bio_employee_name.clear()
+        self.home_ui.bio_employee_name.setText(f"<b>Name:</b>")
+        self.home_ui.bio_employee_department.clear() 
+        self.home_ui.bio_employee_department.setText(f"<b>Department:</b>")
+        self.home_ui.bio_employee_position.clear()
+        self.home_ui.bio_employee_position.setText(f"<b>Position:</b>")
+        self.home_ui.bio_employee_shift.clear()
+        self.home_ui.bio_employee_shift.setText(f"<b>Shift:</b>")
+        self.home_ui.bio_note_lbl.setText("Sensor ready. Please tap your finger.")
+
     def goto_result_prompt(self):
         if self.employee_data:
             current_time = datetime.now()
@@ -1888,7 +2702,7 @@ class Home:
                 if was_late:
                     messages.insert(0, "You were late for your shift today. Please be punctual next time.")
                     
-                cursor = self.db.execute_query("SELECT date, time, remarks FROM attendance_logsWHERE employee_id = ?ORDER BY date DESC, time DESCLIMIT 10",
+                cursor = self.db.execute_query("SELECT date, time, remarks FROM attendance_logs WHERE employee_id = ? ORDER BY date DESC, time DESC LIMIT 10",
                 (self.employee_data["employee_id"],)
                 )
                 logs = cursor.fetchall() if cursor else []
@@ -1953,11 +2767,22 @@ class Home:
 
             result_prompt = self.home_ui.main_page.indexOf(self.home_ui.result_page)
             self.home_ui.main_page.setCurrentIndex(result_prompt)
-            self.home_ui.home_id_box.clear() 
-            self.home_ui.home_pass_box.clear()
-            self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
 
-            QTimer.singleShot(5000, lambda: self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page))
+            # Modify the return timer to check source_page and reset bio page
+            def return_to_source():
+                if self.source_page == "bio_page":
+                    self.home_ui.main_page.setCurrentWidget(self.home_ui.bio_page)
+                    self.clear_bio_page()  # Clear displays
+                    self.start_fingerprint_scanning()  # Restart scanning
+                else:
+                    self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
+                
+                self.home_ui.home_id_box.clear()
+                self.home_ui.home_pass_box.clear()
+                self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
+                self.source_page = None  # Reset source page
+
+            QTimer.singleShot(5000, return_to_source)
 
     def parse_schedule(self, schedule):
         
@@ -2099,432 +2924,6 @@ class Home:
 
     def send_email_notif(self):
         pass
-    
-class ChangePassword:
-    def __init__(self, db, user_id, user_type="admin"):
-        self.db = db
-        self.system_logs = SystemLogs(db)
-        self.user_id = user_id
-        self.user_type = user_type  
-        self.loader = QUiLoader()
-        self.change_pass_ui = self.loader.load("ui/change_pass.ui")
-        
-        self.cp_visible = False
-        self.np_visible = False
-        self.changepass_visible = False
-        
-        if user_type == "admin":
-            self.change_pass_ui.setWindowTitle("Change Admin Password")
-            self.system_logs.log_system_action("The admin change password prompt has been loaded.", "Admin")
-        else:
-            self.change_pass_ui.setWindowTitle("Change Employee Password")
-            self.system_logs.log_system_action("The employee change password prompt has been loaded.", "Employee")
-            
-        self.change_pass_ui.change_pass_note.setText("For security purposes, please enter your current password below, then choose a new password and confirm it. Make sure your new password is at least 8 characters long.")
-        self.change_pass_ui.change_pass_note.setStyleSheet("color: black; border: none;")
-        self.change_pass_ui.cp_visibility_btn.clicked.connect(self.toggle_cp_visibility)
-        self.change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
-        self.change_pass_ui.changepass_visibility_btn.clicked.connect(self.toggle_changepass_visibility)
-        self.change_pass_ui.admin_change_pass_btn.clicked.connect(self.validate_and_change_password)
-        self.change_pass_ui.admin_change_cancel_btn.clicked.connect(self.cancel_change_password)
-        self.change_pass_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-        self.change_pass_ui.setWindowModality(Qt.ApplicationModal)
-
-    def cancel_change_password(self):
-        self.system_logs.log_system_action(f"Password change cancelled by {self.user_type}.", "Admin" if self.user_type == "admin" else "Employee")
-        self.change_pass_ui.close()
-
-    def toggle_cp_visibility(self):
-        if self.cp_visible:
-            self.change_pass_ui.change_pass_cp_box.setEchoMode(QLineEdit.Password)
-        else:
-            self.change_pass_ui.change_pass_cp_box.setEchoMode(QLineEdit.Normal)
-        self.cp_visible = not self.cp_visible
-
-    def toggle_np_visibility(self):
-        if self.np_visible:
-            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Password)
-        else:
-            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Normal)
-        self.np_visible = not self.np_visible
-
-    def toggle_changepass_visibility(self):
-        if self.changepass_visible:
-            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Password)
-        else:
-            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Normal)
-        self.changepass_visible = not self.changepass_visible
-
-    def validate_and_change_password(self):
-        new_password = self.change_pass_ui.change_pass_np_box.text()
-        confirm_password = self.change_pass_ui.change_pass_confirm_box.text()
-        current_password = self.change_pass_ui.change_pass_cp_box.text()
-
-        try:
-            if self.user_type == "admin":
-                table = "Admin"
-                id_field = "admin_id"
-            else:
-                table = "Employee"
-                id_field = "employee_id"
-
-            cursor = self.db.execute_query(
-                "SELECT password FROM {} WHERE {} = ?".format(table, id_field),
-                (self.user_id,)
-            )
-            result = cursor.fetchone()
-
-            if not result:
-                chime.warning()
-                self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-            
-            try:
-                PASSWORD_HASHER.verify(result[0], current_password)
-            except argon2.exceptions.VerifyMismatchError:
-                chime.warning()
-                self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            if not current_password or not new_password or not confirm_password:
-                chime.warning()
-                self.change_pass_ui.change_pass_note.setText("All password fields are required.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            if new_password != confirm_password:
-                chime.warning()
-                self.change_pass_ui.change_pass_note.setText("The new password and confirmation password do not match.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            if len(new_password) < 8:
-                chime.warning()
-                self.change_pass_ui.change_pass_note.setText("Your new password must be at least 8 characters long.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            hashed_password = PASSWORD_HASHER.hash(new_password)
-
-            self.db.execute_query(
-                "UPDATE {} SET password = ?, password_changed = TRUE WHERE {} = ?".format(table, id_field),
-                (hashed_password, self.user_id)
-            )
-
-            self.system_logs.log_system_action(f"The {self.user_type} password has been changed.", "Admin" if self.user_type == "admin" else "Employee")
-            chime.theme('chime')
-            chime.success()
-            toast = Toast(self.change_pass_ui)
-            toast.setTitle("Password Changed Successfully")
-            toast.setText("Your password has been updated. Please use the new password for future logins.")
-            toast.setDuration(2000)
-            toast.setOffset(30, 70) 
-            toast.setBorderRadius(6) 
-            toast.applyPreset(ToastPreset.SUCCESS)  
-            toast.setBackgroundColor(QColor('#FFFFFF')) 
-            toast.setPosition(ToastPosition.TOP_RIGHT) 
-            toast.show()
-
-
-            self.change_pass_ui.close()
-
-        except sqlite3.Error as e:
-            self.system_logs.log_system_action(
-                f"Database error during {self.user_type} password change", 
-                "Admin" if self.user_type == "admin" else "Employee"
-            )
-            print(f"Database error during password change: {e}")           
-
-class ForgotPassword:
-    def __init__(self, db):
-        self.db = db
-        self.system_logs = SystemLogs(db)
-        self.loader = QUiLoader()
-        self.forgot_pass_ui = self.loader.load("ui/forgot_password.ui")
-        self.forgot_pass_ui.setWindowTitle("Forgot Password")
-        self.forgot_pass_ui.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-        self.forgot_pass_ui.setWindowModality(Qt.ApplicationModal)
-
-        self.forgot_pass_ui.confirm_btn.clicked.connect(self.validate_account)
-        self.forgot_pass_ui.verify_code_btn.clicked.connect(self.verify_code)
-        self.forgot_pass_ui.fp_back_btn.clicked.connect(self.close_window)
-        self.forgot_pass_ui.fp_back2_btn.clicked.connect(self.go_back_to_page1)
-        
-        self.current_employee = None
-        self.verification_code = None
-        
-        self.setup_pin_inputs()
-    
-    def setup_pin_inputs(self):
-        self.forgot_pass_ui.pin_1.setMaxLength(1)
-        self.forgot_pass_ui.pin_2.setMaxLength(1)
-        self.forgot_pass_ui.pin_3.setMaxLength(1)
-        self.forgot_pass_ui.pin_4.setMaxLength(1)
-        
-        validator = QRegularExpressionValidator(QRegularExpression("[0-9]"))
-        self.forgot_pass_ui.pin_1.setValidator(validator)
-        self.forgot_pass_ui.pin_2.setValidator(validator)
-        self.forgot_pass_ui.pin_3.setValidator(validator)
-        self.forgot_pass_ui.pin_4.setValidator(validator)
-        
-        self.forgot_pass_ui.pin_1.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_1, self.forgot_pass_ui.pin_2))
-        self.forgot_pass_ui.pin_2.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_2, self.forgot_pass_ui.pin_3))
-        self.forgot_pass_ui.pin_3.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_3, self.forgot_pass_ui.pin_4))
-        self.forgot_pass_ui.pin_4.textChanged.connect(lambda: self.check_verification_ready())
-    
-    def move_focus_to_next(self, current, next_input):
-        if current.text():
-            next_input.setFocus()
-    
-    def check_verification_ready(self):
-
-        all_filled = bool(self.forgot_pass_ui.pin_1.text() and 
-                         self.forgot_pass_ui.pin_2.text() and 
-                         self.forgot_pass_ui.pin_3.text() and 
-                         self.forgot_pass_ui.pin_4.text())
-        self.forgot_pass_ui.verify_code_btn.setEnabled(all_filled)
-
-    def validate_account(self):
-        account_id = self.forgot_pass_ui.forgot_pass_id_box.text().strip()
-        birthday = self.forgot_pass_ui.forgot_pass_birthday_box.date().toString("yyyy-MM-dd")
-        email = self.forgot_pass_ui.forgot_pass_email_box.text().strip()
-
-        if not account_id or not birthday or not email:
-            missing_fields = []
-            if not account_id:
-                missing_fields.append("Account ID")
-            if not birthday:
-                missing_fields.append("Birthday")
-            if not email:
-                missing_fields.append("Email Address")
-            self.forgot_pass_ui.fp_page1_note.setText(f"Warning: Please fill in the following fields: {', '.join(missing_fields)}.")
-            self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
-            return
-
-        try:
-            cursor = self.db.execute_query(
-                "SELECT * FROM Employee WHERE employee_id = ?", 
-                (account_id,)
-            )
-            employee = cursor.fetchone()
-
-            if not employee:
-                self.forgot_pass_ui.fp_page1_note.setText("Warning: The provided Account ID does not exist.")
-                self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
-                return
-
-            if employee[4] != birthday or employee[14] != email:
-                self.forgot_pass_ui.fp_page1_note.setText("Warning: The provided information does not match our records. Please check your inputs.")
-                self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
-                return
-
-            self.current_employee = {
-                "employee_id": employee[0],
-                "email": employee[14]
-            }
-            
-            self.verification_code = ''.join([str(secrets.randbelow(10)) for _ in range(4)])
-            self.system_logs.log_system_action(
-                f"Password reset verification code generated for employee {account_id}", 
-                "Employee"
-            )
-            
-
-            chime.theme('chime')
-            chime.success()
-            toast = Toast(self.forgot_pass_ui)
-            toast.setTitle("Email Sent")
-            toast.setText(f"A verification code has been sent to {email}.")
-            toast.setDuration(2000)
-            toast.setOffset(30, 70)
-            toast.setBorderRadius(6)
-            toast.applyPreset(ToastPreset.SUCCESS)
-            toast.setBackgroundColor(QColor('#FFFFFF'))
-            toast.setPosition(ToastPosition.TOP_RIGHT)
-            toast.show()
-            
-            threading.Thread(
-                target=lambda: self.send_verification_email(self.current_employee["email"], self.verification_code),
-                daemon=True
-            ).start()
-
-
-            self.forgot_pass_ui.fp_stackedWidget.setCurrentWidget(self.forgot_pass_ui.fp_page_2)
-            
-            self.forgot_pass_ui.pin_1.clear()
-            self.forgot_pass_ui.pin_2.clear()
-            self.forgot_pass_ui.pin_3.clear()
-            self.forgot_pass_ui.pin_4.clear()
-            self.forgot_pass_ui.pin_1.setFocus()
-
-        except sqlite3.Error as e:
-            print(f"Database error during account validation: {e}")
-            self.forgot_pass_ui.fp_page1_note.setText("Error: An error occurred while validating your account. Please try again later.")
-            self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
-            
-    def send_verification_email(self, email, code):
-        try:
-            sender_email = "eals.tupc@gmail.com"  
-            sender_password = "buwl tszg dghr exln"  
-
-            message = MIMEMultipart()
-            message["From"] = sender_email
-            message["To"] = email
-            message["Subject"] = "EALS Verification Code"
-
-            # Get default header and footer images
-            header_img = os.path.join("resources", "theme_images", "default_theme_header.jpg")
-            footer_img = os.path.join("resources", "theme_images", "default_theme_footer.jpg")
-
-            # Create HTML email content with Google-like styling
-            html_header = '<img src="cid:headerimg" style="display:block; margin:auto; width:100%;"><br>' if os.path.exists(header_img) else ""
-            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto; width:100%;">' if os.path.exists(footer_img) else ""
-            
-            html_content = f"""
-                <div style="margin: 20px auto; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
-                    <div style="background-color: #4285f4; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-                        <h2 style="margin: 0; text-align: center;">EALS Verification Code</h2>
-                    </div>
-                    <div style="background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <p style="color: #666666;">This verification code was sent to help you reset your EALS account password:</p>
-                        <div style="text-align: center; padding: 20px;">
-                            <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #202124;">{code}</span>
-                        </div>
-                        <p style="color: #666666;">Don't know why you received this?</p>
-                        <p style="color: #666666;">Someone requested a password reset for your EALS account. If this wasn't you, you can safely ignore this email.</p>
-                        <p style="color: #666666;">To protect your account, don't forward this email or give this code to anyone.</p>
-                        <br>
-                        <p style="color: #666666; margin-bottom: 0;">Best regards,<br>EALS Team</p>
-                    </div>
-                </div>
-            """
-
-            html_content = f"{html_header}{html_content}{html_footer}"
-
-            # Attach HTML content
-            message.attach(MIMEText(html_content, "html"))
-
-            # Attach header image if exists
-            if os.path.exists(header_img):
-                with open(header_img, "rb") as f:
-                    img = MIMEImage(f.read())
-                    img.add_header("Content-ID", "<headerimg>")
-                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
-                    message.attach(img)
-
-            # Attach footer image if exists
-            if os.path.exists(footer_img):
-                with open(footer_img, "rb") as f:
-                    img = MIMEImage(f.read())
-                    img.add_header("Content-ID", "<footerimg>")
-                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
-                    message.attach(img)
-
-            # Send email
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                server.login(sender_email, sender_password)
-                server.send_message(message)
-
-            print(f"Verification code sent to {email}")
-            return True
-        except Exception as e:
-            print(f"Error sending verification email: {e}")
-            return False
-
-    def verify_code(self):
-        entered_code = ''.join([
-            self.forgot_pass_ui.pin_1.text(),
-            self.forgot_pass_ui.pin_2.text(),
-            self.forgot_pass_ui.pin_3.text(),
-            self.forgot_pass_ui.pin_4.text()
-        ])
-
-        if entered_code == self.verification_code:
-            self.change_pass_ui = QUiLoader().load("ui/employee_change_pass.ui")
-            self.change_pass_ui.setWindowTitle("Change Password")
-            self.change_pass_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-
-            self.change_pass_ui.employee_change_pass_btn.clicked.connect(self.validate_and_change_password)
-            self.np_visible = False
-            self.cp_visible = False
-            self.change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
-            self.change_pass_ui.cp_visibility_btn.clicked.connect(self.toggle_cp_visibility)
-            self.forgot_pass_ui.close()
-            self.change_pass_ui.show()
-        else:
-            self.forgot_pass_ui.fp_page2_note.setText("Warning: The verification code you entered is incorrect. Please try again.")
-            self.forgot_pass_ui.fp_page2_note.setStyleSheet("color: black; background-color: yellow;")
-            
-    def toggle_np_visibility(self):
-        if self.np_visible:
-            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Password)
-        else:
-            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Normal)
-        self.np_visible = not self.np_visible
-
-    def toggle_cp_visibility(self):
-        if self.cp_visible:
-            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Password)
-        else:
-            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Normal)
-        self.cp_visible = not self.cp_visible
-
-    def validate_and_change_password(self):
-        new_password = self.change_pass_ui.change_pass_np_box.text()
-        confirm_password = self.change_pass_ui.change_pass_confirm_box.text()
-
-        if not new_password or not confirm_password:
-            chime.warning()
-            self.change_pass_ui.change_pass_note.setText("Note: All fields are required.")
-            self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
-            return
-
-        if new_password != confirm_password:
-            chime.warning()
-            self.change_pass_ui.change_pass_note.setText("Note: Passwords do not match.")
-            self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
-            return
-
-        if len(new_password) < 8:
-            chime.warning()
-            self.change_pass_ui.change_pass_note.setText("Note: Password must be at least 8 characters long.")
-            self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
-            return
-
-        try:
-            hashed_password = PASSWORD_HASHER.hash(new_password)
-
-            self.db.execute_query(
-                "UPDATE Employee SET password = ?, password_changed = TRUE WHERE employee_id = ?",
-                (hashed_password, self.current_employee["employee_id"])
-            )
-            self.change_pass_ui.close()
-            
-            
-            chime.theme('chime')
-            chime.success()
-            toast = Toast(self.forgot_pass_ui)
-            toast.setTitle("Success")
-            toast.setText("Password changed successfully.")
-            toast.setDuration(2000)
-            toast.setOffset(30, 70)
-            toast.setBorderRadius(6)
-            toast.applyPreset(ToastPreset.SUCCESS)
-            toast.setBackgroundColor(QColor('#FFFFFF'))
-            toast.setPosition(ToastPosition.TOP_RIGHT)
-            toast.show()
-
-        except sqlite3.Error as e:
-            print(f"Database error during password change: {e}")
-            QMessageBox.critical(None, "Error", "Failed to change password. Please try again.")
-
-    def go_back_to_page1(self):
-        self.forgot_pass_ui.fp_stackedWidget.setCurrentWidget(self.forgot_pass_ui.fp_page_1)
-
-    def close_window(self):
-        self.forgot_pass_ui.close()
 
 class Admin:
     def __init__(self, db):
@@ -2633,6 +3032,9 @@ class Admin:
         self.setup_attendance_pie_chart()
         if hasattr(self.admin_ui, "chart_layout3") and self.pie_chart_view:
             self.admin_ui.chart_layout3.addWidget(self.pie_chart_view, 0, 0)
+
+        self.fingerprint_logic = FingerprintLogic(db)
+        self.admin_ui.fp_device_rescan_btn.clicked.connect(self.handle_fp_device_rescan)
 
     def handle_dashboard_nav(self):
         current_widget = self.admin_ui.dashboard_pages.currentWidget()
@@ -2781,9 +3183,31 @@ class Admin:
         self.toggle_hr_fields()
 
     def goto_employee_enroll_2(self):
-        self.system_logs.log_system_action("the enrollment proceed to the step 2.", "Employee")
+        if not hasattr(self, 'current_employee_data') or not self.current_employee_data:
+            self.show_error("Enrollment Error", "Please register the employee first.")
+            return
+
+        self.system_logs.log_system_action("Proceeding to fingerprint enrollment step 2.", "Employee")
         employee_enroll_2_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_enroll2_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_enroll_2_page)
+
+        self.initialize_fp_device()
+
+    def initialize_fp_device(self):
+        device_status = self.fingerprint_logic.initialize_device()
+        if device_status:
+            self.admin_ui.device_lbl.setText("Device initialized successfully.")
+            self.fingerprint_logic.register_fingerprint(
+                self.current_employee_data["employee_id"],
+                self.admin_ui.fp_image_lbl,
+                self.admin_ui.fp_enrollment_note_lbl
+            )
+        else:
+            self.admin_ui.device_lbl.setText("No device found. Please reinitialize.")
+
+    def handle_fp_device_rescan(self):
+        self.fingerprint_logic.terminate_device()
+        self.initialize_fp_device()
 
     def goto_employee_enroll_3(self):
         self.system_logs.log_system_action("the enrollment proceed to the step 3.", "Employee")
