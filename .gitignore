@@ -34,6 +34,9 @@ logs/
 
 backups/
 
+email_files/
+
+*copy.py
 # Profile pictures folder
 profile_pictures/
 # PyInstaller
