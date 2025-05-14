@@ -7,31 +7,6 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QTextEdit
 )
 
-# -------------- CONFIGURATION --------------
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-SENDER_EMAIL = "eals.tupc@gmail.com"
-SENDER_PASSWORD = "buwltszgdghrexln"
-RECEIVER_EMAIL = "siegmond.amador04@gmail.com"  # Could also be dynamic
-
-# -------------- EMAIL SENDING FUNCTION --------------
-def send_email(subject, body):
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = SENDER_EMAIL
-    msg["To"] = RECEIVER_EMAIL
-    msg.set_content(body)
-
-    try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.send_message(msg)
-            print(f"Email sent: {subject}")
-    except Exception as e:
-        print(f"Failed to send email: {e}")
-
-# -------------- MAIN APP --------------
 class RegistrationApp(QWidget):
     def __init__(self):
         super().__init__()
@@ -79,25 +54,37 @@ class RegistrationApp(QWidget):
         {message}
         """
 
-        send_email(email_subject, email_body)
+        self.send_email(email_subject, email_body, email)
+        
+    def send_email(self, subject, body, email):
+        
+        SMTP_SERVER = "smtp.gmail.com"
+        SMTP_PORT = 587
+        SENDER_EMAIL = "eals.tupc@gmail.com"
+        SENDER_PASSWORD = "buwl tszg dghr exln"
+        RECEIVER_EMAIL = "siegmond.amador04@gmail.com"  # Could also be dynamic
+        msg = EmailMessage()
+        msg["Subject"] = subject
+        msg["From"] = SENDER_EMAIL
+        msg["To"] = email
+        msg.set_content(body)
 
-# -------------- ENTRY & EXIT EMAIL NOTIFICATIONS --------------
-def send_entry_email():
-    time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    send_email("App Started", f"The program was started at {time_now}.")
+        try:
+            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+                server.starttls()
+                server.login(SENDER_EMAIL, SENDER_PASSWORD)
+                server.send_message(msg)
+                print(f"Email sent: {subject}")
+        except Exception as e:
+            print(f"Failed to send email: {e}")
+            
 
-def send_exit_email():
-    time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    send_email("App Closed", f"The program was closed at {time_now}.")
-
-# -------------- MAIN --------------
 if __name__ == "__main__":
-    send_entry_email()
+
 
     app = QApplication(sys.argv)
     window = RegistrationApp()
     window.show()
 
     exit_code = app.exec()
-    send_exit_email()
     sys.exit(exit_code)
