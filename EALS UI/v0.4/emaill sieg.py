@@ -1,103 +1,113 @@
 import sys
 import smtplib
 from datetime import datetime
-from email.message import EmailMessage
-
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QTextEdit
+    QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit,
+    QPushButton, QTextEdit, QMessageBox
 )
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
-# -------------- CONFIGURATION --------------
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SENDER_EMAIL = "eals.tupc@gmail.com"
-SENDER_PASSWORD = "buwltszgdghrexln"
-RECEIVER_EMAIL = "siegmond.amador04@gmail.com"  # Could also be dynamic
+EMAIL_SENDER = "siegmond.amador04@gmail.com"
+EMAIL_PASSWORD = "zres pxgx isfo dlpb"
+EMAIL_ADMIN = "siegmond.amador04@gmail.com"
 
-# -------------- EMAIL SENDING FUNCTION --------------
-def send_email(subject, body):
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = SENDER_EMAIL
-    msg["To"] = RECEIVER_EMAIL
-    msg.set_content(body)
 
+def send_email(subject: str, body: str, receiver: str = EMAIL_ADMIN):
     try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-            server.starttls()
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.send_message(msg)
-            print(f"Email sent: {subject}")
-    except Exception as e:
-        print(f"Failed to send email: {e}")
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = receiver
+        msg['Subject'] = subject
 
-# -------------- MAIN APP --------------
+        msg.attach(MIMEText(body, 'plain'))
+
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+    except Exception as e:
+        print("Email send failed:", e)
+
+
+
 class RegistrationApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Enrollment System")
-        self.setup_ui()
+        self.setWindowTitle("Registration & Email System")
+        self.setGeometry(100, 100, 400, 400)
 
-    def setup_ui(self):
         layout = QVBoxLayout()
 
-        self.name_label = QLabel("Name:")
         self.name_input = QLineEdit()
-        layout.addWidget(self.name_label)
-        layout.addWidget(self.name_input)
+        self.name_input.setPlaceholderText("Enter your name")
 
-        self.email_label = QLabel("Email:")
         self.email_input = QLineEdit()
-        layout.addWidget(self.email_label)
+        self.email_input.setPlaceholderText("Enter your email")
+
+        self.message_box = QTextEdit()
+        self.message_box.setPlaceholderText("Enter your personalized message (optional)")
+
+        self.register_button = QPushButton("Register")
+        self.register_button.clicked.connect(self.register_user)
+
+        layout.addWidget(QLabel("Name:"))
+        layout.addWidget(self.name_input)
+        layout.addWidget(QLabel("Email:"))
         layout.addWidget(self.email_input)
-
-        self.personal_msg_label = QLabel("Personalized Message:")
-        self.personal_msg_input = QTextEdit()
-        layout.addWidget(self.personal_msg_label)
-        layout.addWidget(self.personal_msg_input)
-
-        self.submit_btn = QPushButton("Submit Registration")
-        self.submit_btn.clicked.connect(self.send_registration_email)
-        layout.addWidget(self.submit_btn)
+        layout.addWidget(QLabel("Personalized Message:"))
+        layout.addWidget(self.message_box)
+        layout.addWidget(self.register_button)
 
         self.setLayout(layout)
 
-    def send_registration_email(self):
+        send_email("User Entered the App",
+                   f"User opened the application at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    def register_user(self):
         name = self.name_input.text()
         email = self.email_input.text()
-        message = self.personal_msg_input.toPlainText()
-        time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        message = self.message_box.toPlainText()
 
-        email_subject = "Registration Summary"
-        email_body = f"""
-        A new user has registered:
-        Name: {name}
-        Email: {email}
-        Time: {time_now}
+        if not name or not email:
+            QMessageBox.warning(self, "Error", "Name and email are required.")
+            return
 
-        Personalized Message:
-        {message}
-        """
+        summary = f"""Hello {name},
 
-        send_email(email_subject, email_body)
+    Thank you for registering!
 
-# -------------- ENTRY & EXIT EMAIL NOTIFICATIONS --------------
-def send_entry_email():
-    time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    send_email("App Started", f"The program was started at {time_now}.")
+    📋 Your Registration Summary:
+    Name: {name}
+    Email: {email}
+    Registered At: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-def send_exit_email():
-    time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    send_email("App Closed", f"The program was closed at {time_now}.")
+    Your Message:
+    {message if message else 'None'}
 
-# -------------- MAIN --------------
+    Best regards,
+    Your App Team
+    """
+
+        send_email("Welcome to the App!", summary, receiver=email)
+
+        
+        send_email("Admin Copy - New User Registration", summary, receiver=EMAIL_ADMIN)
+
+        QMessageBox.information(self, "Success", "Registration successful. Summary sent to user's Gmail.")
+
+
+    def closeEvent(self, event):
+        send_email("User Exited the App",
+                   f"User closed the application at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        event.accept()
+
+
 if __name__ == "__main__":
-    send_entry_email()
-
     app = QApplication(sys.argv)
     window = RegistrationApp()
     window.show()
-
-    exit_code = app.exec()
-    send_exit_email()
-    sys.exit(exit_code)
+    sys.exit(app.exec())
