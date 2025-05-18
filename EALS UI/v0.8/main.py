@@ -534,23 +534,40 @@ class HR:
         self.report_generator = ReportGeneration(self.db)
 
     def generate_report(self):
-        file_dialog = QFileDialog()
-        file_dialog.setDefaultSuffix("pdf")
-        output_path, _ = file_dialog.getSaveFileName(
-            self.hr_ui,
-            "Save Report",
-            "",
-            "PDF Files (*.pdf)"
-        )
-        
-        if output_path:
-            try:
-                self.report_generator.generate_report(output_path)
-                self.system_logs.log_system_action(f"HR generated report: {output_path}", "Employee")
-                self.show_success("Report Generated", "The report has been generated successfully!")
-            except Exception as e:
-                print(f"Error generating report: {e}")
-                self.show_error("Report Generation Failed", "Failed to generate the report. Please try again.")
+        try:
+            # First check if there are any non-HR employees with attendance records
+            cursor = self.db.execute_query("""
+                SELECT COUNT(*) 
+                FROM attendance_logs a
+                JOIN Employee e ON a.employee_id = e.employee_id
+                WHERE e.is_hr = 0
+            """)
+            record_count = cursor.fetchone()[0] if cursor else 0
+            
+            if record_count == 0:
+                self.show_error("Report Generation Failed", "No attendance records found for regular employees. Reports can only be generated once employees have clock-in data.")
+                return
+                
+            file_dialog = QFileDialog()
+            file_dialog.setDefaultSuffix("pdf")
+            output_path, _ = file_dialog.getSaveFileName(
+                self.hr_ui,
+                "Save Report",
+                "",
+                "PDF Files (*.pdf)"
+            )
+            
+            if output_path:
+                try:
+                    self.report_generator.generate_report(output_path)
+                    self.system_logs.log_system_action(f"HR generated report: {output_path}", "Employee")
+                    self.show_success("Report Generated", "The report has been generated successfully!")
+                except Exception as e:
+                    print(f"Error generating report: {e}")
+                    self.show_error("Report Generation Failed", "Failed to generate the report. Please try again.")
+        except Exception as e:
+            print(f"Error checking for attendance records: {e}")
+            self.show_error("Report Generation Failed", "An error occurred while checking attendance records.")
 
     def setup_attendance_area_chart(self):
         self.chart = QChart()
@@ -798,13 +815,11 @@ class HR:
             print(f"Error updating HR attendance pie chart: {e}")
 
     def setup_top_present_bar_chart(self):
-        # Top 10 employees by presence count (horizontal bar chart, modern look, 60% transparency)
         self.top_present_chart = QChart()
         self.top_present_series = QHorizontalBarSeries()
         self.top_present_set = QBarSet("Presents")
         self.top_present_series.append(self.top_present_set)
-        # Modern color with 60% transparency
-        present_color = QColor(76, 175, 80)  # Material green
+        present_color = QColor(76, 175, 80) 
         present_color.setAlphaF(0.6)
         self.top_present_set.setColor(present_color)
         self.top_present_chart.addSeries(self.top_present_series)
@@ -857,13 +872,11 @@ class HR:
             print(f"Error updating top present bar chart: {e}")
 
     def setup_top_late_bar_chart(self):
-        # Top 10 employees by lateness count (horizontal bar chart, modern look, 60% transparency)
         self.top_late_chart = QChart()
         self.top_late_series = QHorizontalBarSeries()
         self.top_late_set = QBarSet("Lates")
         self.top_late_series.append(self.top_late_set)
-        # Modern color with 60% transparency
-        late_color = QColor(244, 67, 54)  # Material red
+        late_color = QColor(244, 67, 54) 
         late_color.setAlphaF(0.6)
         self.top_late_set.setColor(late_color)
         self.top_late_chart.addSeries(self.top_late_series)
@@ -873,7 +886,7 @@ class HR:
 
         self.top_late_axis_y = QBarCategoryAxis()
         self.top_late_axis_x = QValueAxis()
-        self.top_late_axis_x.setTitleText("Lateness Count")
+        self.top_late_axis_x.setTitleText("Late Count")
         self.top_late_axis_x.setLabelFormat("%d")
         self.top_late_chart.addAxis(self.top_late_axis_y, Qt.AlignLeft)
         self.top_late_chart.addAxis(self.top_late_axis_x, Qt.AlignBottom)

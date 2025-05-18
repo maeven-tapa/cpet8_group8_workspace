@@ -146,7 +146,7 @@ border-radius: 5px;</string>
          </property>
          <property name="icon">
           <iconset>
-           <normaloff>../../../../../../../../resources/keys.png</normaloff>../../../../../../../../resources/keys.png</iconset>
+           <normaloff>../resources/keys.png</normaloff>../resources/keys.png</iconset>
          </property>
          <property name="checkable">
           <bool>false</bool>

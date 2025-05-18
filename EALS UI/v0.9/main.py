@@ -6,6 +6,7 @@ import threading
 import shutil
 import smtplib
 import socket
+import time  # Add time module import 1
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage 
@@ -222,10 +223,6 @@ class SystemLogs:
         self.db = db
 
     def get_average_work_hours(self, date_str):
-        """
-        Calculate the average work hours for all employees for a given date.
-        Only considers employees (is_hr = 0) who have both a Clock In and Clock Out on that date.
-        """
         try:
             cursor = self.db.execute_query(
                 '''
@@ -238,7 +235,6 @@ class SystemLogs:
             total_hours = 0
             count = 0
             for emp_id in employee_ids:
-                # Get Clock In and Clock Out times for this employee on this date
                 cur = self.db.execute_query(
                     '''
                     SELECT time, remarks FROM attendance_logs
@@ -270,10 +266,6 @@ class SystemLogs:
             return 0
 
     def log_system_action(self, action, entity_type):
-        """
-        entities = Employee, Admin, Feedback, AttendanceLog, SystemSettings
-        sample usage = self.system_logs.log_system_action(f"HR discarded feedback draft", "Employee")
-        """
         try:
             log_dir = "resources/logs"
             if not os.path.exists(log_dir):
@@ -311,28 +303,24 @@ class SystemLogs:
             absent_count = 0
             late_count = 0
             try:
-                # Present: employees who have attendance log today
                 cursor = self.db.execute_query(
                     "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
                     (today,)
                 )
                 present_count = cursor.fetchone()[0] if cursor else 0
 
-                # Late: employees who have is_late=1 today
                 cursor = self.db.execute_query(
                     "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs WHERE date = ? AND is_late = 1 AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
                     (today,)
                 )
                 late_count = cursor.fetchone()[0] if cursor else 0
 
-                # Absent: active employees with no attendance log today
                 cursor = self.db.execute_query(
                     "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND employee_id NOT IN (SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)",
                     (today,)
                 )
                 absent_count = cursor.fetchone()[0] if cursor else 0
                 
-                # Calculate average work hours for today
                 average_work_hours = self.get_average_work_hours(today)
             except Exception as e:
                 print(f"Error computing attendance counts for system logs: {e}")
@@ -370,9 +358,9 @@ class SystemLogs:
             print(f"Error logging system action: {e}")
 
 class FingerprintSignals(QObject):
-    match_found = Signal(str)  # Signal for employee_id
-    update_display = Signal(bytes)  # Signal for image data
-    update_status = Signal(str)  # Signal for status messages
+    match_found = Signal(str)
+    update_display = Signal(bytes)
+    update_status = Signal(str)
 
 class FingerprintLogic:
     def __init__(self, db):
@@ -383,9 +371,18 @@ class FingerprintLogic:
         self.templates_dir = "resources/registered_fingerprint"
         os.makedirs(self.templates_dir, exist_ok=True)
         self.signals = FingerprintSignals()
+        self.enrollment_in_progress = False
+        self.enrollment_completed = False
+        self.employee_id_being_enrolled = None
 
     def initialize_device(self):
         try:
+            if self.device_open:
+                try:
+                    self.terminate_device()
+                    time.sleep(1)
+                except Exception as e:
+                    print(f"Error terminating device before reinitializing: {e}")
             self.zkfp.Init()
             count = self.zkfp.GetDeviceCount()
             if count > 0:
@@ -399,20 +396,44 @@ class FingerprintLogic:
                 return False
         except Exception as e:
             print(f"Error initializing device: {e}")
+            self.device_open = False
             return False
 
     def terminate_device(self):
-        if self.device_open:
-            self.zkfp.CloseDevice()
-        self.zkfp.Terminate()
-        print("Device terminated.")
+        print("Attempting to terminate fingerprint device...")
+        try:
+            if self.device_open:
+                try:
+                    self.zkfp.Light('red')
+                    time.sleep(2)
+                except Exception as light_error:
+                    print(f"Warning: Could not set device light before termination: {light_error}")
+                try:
+                    self.zkfp.CloseDevice()
+                    print("ZKFP CloseDevice called.")
+                except Exception as e:
+                    print(f"Error during ZKFP CloseDevice: {e}")
+            self.zkfp.Terminate()
+            self.device_open = False
+            print("Device terminated successfully.")
+        except Exception as e:
+            print(f"Error during device termination: {e}")
+            self.device_open = False
+            raise
 
     def register_fingerprint(self, employee_id, fp_image_lbl, fp_enrollment_note_lbl):
         if not self.device_open:
             fp_enrollment_note_lbl.setText("Device not initialized. Please reinitialize.")
             return
 
-        # Run fingerprint registration in a separate thread
+        cursor = self.db.execute_query("SELECT id FROM fingerprints WHERE employee_id = ?", (employee_id,))
+        if cursor and cursor.fetchone():
+            fp_enrollment_note_lbl.setText("Fingerprint already registered for this employee.")
+            self.enrollment_completed = True
+            return
+        self.enrollment_in_progress = True
+        self.enrollment_completed = False
+        self.employee_id_being_enrolled = employee_id
         threading.Thread(
             target=self._register_fingerprint_worker,
             args=(employee_id, fp_image_lbl, fp_enrollment_note_lbl),
@@ -421,20 +442,37 @@ class FingerprintLogic:
 
     def _register_fingerprint_worker(self, employee_id, fp_image_lbl, fp_enrollment_note_lbl):
         templates = []
-        for i in range(3):
-            while True:
-                capture = self.zkfp.AcquireFingerprint()
-                if capture:
-                    tmp, image_data = capture
-                    templates.append(tmp)
-                    self.display_image(image_data, fp_image_lbl)
-                    fp_enrollment_note_lbl.setText(f"Fingerprint {i + 1} captured. Please tap again.")
-                    break
-
-        reg_temp, _ = self.zkfp.DBMerge(*templates)
-        reg_temp_bytes = bytes(reg_temp)
-
         try:
+            for i in range(3):
+                fp_enrollment_note_lbl.setText(f"Please place your finger on the sensor. Scan {i + 1} of 3...")
+                while True:
+                    if not self.enrollment_in_progress:
+                        return
+                    
+                    capture = self.zkfp.AcquireFingerprint()
+                    if capture:
+                        tmp, image_data = capture
+                        
+                        if self.is_fingerprint_already_used(tmp, employee_id):
+                            fp_enrollment_note_lbl.setText("This fingerprint is already registered to another employee. Try a different finger.")
+                            time.sleep(2)
+                            continue
+                            
+                        templates.append(tmp)
+                        self.display_image(image_data, fp_image_lbl)
+                        fp_enrollment_note_lbl.setText(f"Fingerprint {i + 1} captured. Please wait...")
+                        time.sleep(1)
+                        break
+
+            fp_enrollment_note_lbl.setText("Processing fingerprint template...")
+            reg_temp, _ = self.zkfp.DBMerge(*templates)
+            reg_temp_bytes = bytes(reg_temp)
+            
+            if self.is_fingerprint_already_used(reg_temp, employee_id):
+                fp_enrollment_note_lbl.setText("This fingerprint matches one already in the system. Registration failed.")
+                self.enrollment_in_progress = False
+                return
+
             cursor = self.db.execute_query("INSERT INTO fingerprints (employee_id, template_path) VALUES (?, ?)", (employee_id, ""))
             fingerprint_id = cursor.lastrowid
 
@@ -445,10 +483,67 @@ class FingerprintLogic:
             self.db.execute_query("UPDATE fingerprints SET template_path = ? WHERE id = ?", (template_path, fingerprint_id))
             fp_enrollment_note_lbl.setText("Fingerprint enrollment successful!")
             print(f"Fingerprint registered for employee ID {employee_id} and saved to {template_path}")
+            self.enrollment_completed = True
+            self.enrollment_in_progress = False
         except Exception as e:
-            fp_enrollment_note_lbl.setText("Error during fingerprint registration.")
+            fp_enrollment_note_lbl.setText(f"Error during fingerprint registration: {str(e)}")
             print(f"Error registering fingerprint: {e}")
-
+            self.enrollment_in_progress = False
+            
+    def is_fingerprint_already_used(self, new_template, current_employee_id=None):
+        try:
+            cursor = self.db.execute_query(
+                "SELECT employee_id, template_path FROM fingerprints WHERE employee_id != ?", 
+                (current_employee_id or "",)
+            )
+            records = cursor.fetchall() if cursor else []
+            for employee_id, template_path in records:
+                if not os.path.exists(template_path):
+                    continue
+                try:
+                    with open(template_path, "rb") as f:
+                        existing_template = f.read()
+                    match_score = self.zkfp.DBMatch(new_template, existing_template)
+                    print(f"Fingerprint match check with {employee_id}: score {match_score}")
+                    if match_score >= 35:
+                        return True
+                except Exception as e:
+                    print(f"Error comparing fingerprints: {e}")
+                    continue
+            return False
+        except Exception as e:
+            print(f"Error checking fingerprint duplication: {e}")
+            return False
+        
+    def cancel_registration(self):
+        self.enrollment_in_progress = False
+        self.enrollment_completed = False
+        if self.employee_id_being_enrolled:
+            try:
+                cursor = self.db.execute_query(
+                    "SELECT id, template_path FROM fingerprints WHERE employee_id = ? AND (template_path = '' OR template_path IS NULL)",
+                    (self.employee_id_being_enrolled,)
+                )
+                if cursor:
+                    incomplete_regs = cursor.fetchall()
+                    for reg in incomplete_regs:
+                        self.db.execute_query("DELETE FROM fingerprints WHERE id = ?", (reg[0],))
+            except Exception as e:
+                print(f"Error cleaning up incomplete registrations: {e}")
+            self.employee_id_being_enrolled = None
+            
+    def is_fingerprint_registered(self, employee_id):
+        try:
+            cursor = self.db.execute_query(
+                "SELECT COUNT(*) FROM fingerprints WHERE employee_id = ? AND template_path != ''", 
+                (employee_id,)
+            )
+            count = cursor.fetchone()[0] if cursor else 0
+            return count > 0
+        except Exception as e:
+            print(f"Error checking fingerprint registration: {e}")
+            return False
+        
     def display_image(self, image_data, fp_image_lbl):
         width, height = 300, 400
         img = Image.frombytes('L', (width, height), image_data)
@@ -459,19 +554,17 @@ class FingerprintLogic:
         pixmap.loadFromData(buffer.getvalue())
         pixmap = pixmap.scaled(fp_image_lbl.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
         fp_image_lbl.setPixmap(pixmap)
-
+        
     def compare_1_1(self, fp_image_lbl, fp_comparison_note_lbl, callback):
         if not self.device_open:
             fp_comparison_note_lbl.setText("Device not initialized. Please reinitialize.")
             return
-
-        # Run fingerprint comparison in a separate thread
         threading.Thread(
             target=self._compare_1_1_worker,
             args=(fp_image_lbl, fp_comparison_note_lbl, callback),
             daemon=True
         ).start()
-
+        
     def _compare_1_1_worker(self, fp_image_lbl, fp_comparison_note_lbl, callback):
         try:
             while True:
@@ -485,39 +578,40 @@ class FingerprintLogic:
             self.signals.update_status.emit("Error during fingerprint scan. Please try again.")
             callback(None)
             return
-
         try:
             cursor = self.db.execute_query("SELECT id, employee_id, template_path FROM fingerprints")
             records = cursor.fetchall() if cursor else []
-
             best_score = -1
             matched_employee_id = None
             for record_id, employee_id, template_path in records:
                 if os.path.exists(template_path):
                     with open(template_path, "rb") as tpl_file:
                         db_template = tpl_file.read()
-
                     result = self.zkfp.DBMatch(captured_template, db_template)
                     print(f"Match result: {result}")
-
-                    threshold = 50  # Adjust based on testing
+                    threshold = 50
                     if result >= threshold and result > best_score:
                         best_score = result
                         matched_employee_id = employee_id
-
             if best_score > 0:
-                self.zkfp.Light('green')
+                try:
+                    self.zkfp.Light('green')
+                except Exception as e:
+                    print(f"Error setting light to green: {e}")
                 self.signals.update_status.emit("Match found!")
                 self.signals.match_found.emit(matched_employee_id)
             else:
-                self.zkfp.Light('red')
+                try:
+                    self.zkfp.Light('red')
+                except Exception as e:
+                    print(f"Error setting light to red: {e}")
                 self.signals.update_status.emit("No match found. Please try again.")
                 callback(None)
         except Exception as e:
             print(f"Error during fingerprint comparison: {str(e)}")
             self.signals.update_status.emit("Error during fingerprint scan. Please try again.")
             callback(None)
-
+            
 class EALS:
     def __init__(self):
         self.db = DatabaseConnection()
@@ -526,1424 +620,18 @@ class EALS:
         global global_home_ui
         global_home_ui = self.home.home_ui
         global_home_ui.showMaximized()
-
+        
     def __del__(self):
         self.db.close()
-
+        
     def goto_admin_ui(self):
         global_home_ui.close()
         self.admin = Admin(self.db)
         self.admin.admin_ui.showMaximized()
-
-class Feedback:
-    def __init__(self, db, hr_data):
-        self.db = db
-        self.system_logs = SystemLogs(db)
-        self.hr_data = hr_data
-        self.loader = QUiLoader()
-        self.feedback_ui = self.loader.load("ui/feedback.ui")
-        self.feedback_ui.setWindowTitle("Send Feedback")
-        self.feedback_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-        self.feedback_ui.setWindowModality(Qt.ApplicationModal)
         
-        # Connect save button
-        self.feedback_ui.save_feedback_btn.clicked.connect(self.save_feedback)
-        self.feedback_ui.discard_feedback_btn.clicked.connect(self.discard_feedback)
-        
-        
-    def discard_feedback(self):
-        self.system_logs.log_system_action("HR discarded feedback draft", "Employee")
-
-        self.feedback_ui.feedback_title_box.clear()
-        self.feedback_ui.feedback_box.clear()
-
-        self.feedback_ui.close()
-        
-    def save_feedback(self):
-        title = self.feedback_ui.feedback_title_box.text().strip()
-        message = self.feedback_ui.feedback_box.toPlainText().strip()
-        
-        # Validate title length
-        if len(title) < 5 or len(title) > 50:
-            self.show_error("Invalid Title", "Title must be between 5 and 50 characters long.")
-            return
-            
-        # Validate message length
-        if len(message) < 20 or len(message) > 500:
-            self.show_error("Invalid Message", "Message must be between 20 and 500 characters long.")
-            return
-                
-        try:
-            self.db.execute_query('''
-                INSERT INTO feedback (title, message, created_by)
-                VALUES (?, ?, ?)
-            ''', (title, message, self.hr_data["employee_id"]))
-            
-            self.feedback_ui.feedback_title_box.clear()
-            self.feedback_ui.feedback_box.clear()
-            self.feedback_ui.close()
-            self.system_logs.log_system_action(f"HR submitted feedback: {title}", "Employee")
-            self.show_success( "Success", "Feedback submitted successfully.")
-            
-        except sqlite3.Error as e:
-            print(f"Database error while saving feedback: {e}")
-            self.show_error("Error", "Failed to save feedback. Please try again.")
-            
-    def show_success(self, title, message):
-        chime.theme('chime')
-        chime.success()
-        toast = Toast(self.feedback_ui)
-        toast.setTitle(title)
-        toast.setText(message)
-        toast.setDuration(2000)  # Duration in milliseconds
-        toast.setOffset(25, 35)  
-        toast.setBorderRadius(6)  
-        toast.applyPreset(ToastPreset.SUCCESS)  
-        toast.setBackgroundColor(QColor('#FFFFFF')) 
-        toast.setPosition(ToastPosition.TOP_RIGHT)  
-        toast.show() 
-            
-    def show_error(self, title, message):
-        chime.theme('big-sur')
-        chime.warning()
-        toast = Toast(self.feedback_ui)
-        toast.setTitle(title)
-        toast.setText(message)
-        toast.setDuration(2000)  # Duration in milliseconds
-        toast.setOffset(25, 35)  
-        toast.setBorderRadius(6)  
-        toast.applyPreset(ToastPreset.ERROR)  
-        toast.setBackgroundColor(QColor('#FFFFFF'))
-        toast.setPosition(ToastPosition.TOP_RIGHT)  
-        toast.show()  
-
-class HR:
-    def __init__(self, db, hr_data):
-        self.db = db
-        self.system_logs = SystemLogs(db)
-        self.hr_data = hr_data
-        self.loader = QUiLoader()
-        self.hr_ui = self.loader.load("ui/hr.ui")
-        self.hr_ui.setWindowIcon(QIcon('resources/logo.ico'))
-        self.hr_ui.setWindowTitle("EALS - HR")
-        self.hr_ui.hr_home_tabs.setCurrentWidget(self.hr_ui.hr_dashboard)
-        self.hr_ui.hr_employee_sc_pages.setCurrentWidget(self.hr_ui.hr_employee_dashboard_page)
-        self.hr_ui.hr_employee_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.hr_ui.hr_employee_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.hr_ui.hr_employee_search_box.textChanged.connect(self.filter_hr_employee_table)
-        self.hr_ui.hr_employee_sort_box.currentIndexChanged.connect(self.sort_hr_employee_table)
-        self.hr_ui.hr_employee_view_back.clicked.connect(self.goto_hr_dashboard)
-        self.hr_ui.hr_logout_btn.clicked.connect(self.handle_logout)
-        self.hr_ui.hr_employee_view_btn.clicked.connect(self.goto_hr_employee_view)
-        self.hr_ui.send_feedback_btn.clicked.connect(self.show_feedback_form)
-
-        self.hr_ui.hr_attedance_logs_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.hr_ui.hr_attedance_logs_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
-
-        self.hr_ui.hr_attedance_logs_search.textChanged.connect(self.filter_hr_attendance_logs_table)
-        self.hr_ui.hr_attedance_logs_sort.currentIndexChanged.connect(self.sort_hr_attendance_logs_table)
-
-        self.hr_ui.hr_employee_logs_tbl.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.hr_ui.hr_employee_logs_tbl.setSelectionMode(QAbstractItemView.SingleSelection)
-
-        self.hr_employees = []
-        self.load_hr_employee_table()
-        self.load_hr_attendance_logs_table()
-        self.update_date_today()
-        self.check_net()
-
-        self.hr_ui.dashboard_nav_btn.clicked.connect(self.handle_hr_dashboard_nav)
-        self.hr_ui.hr_dashboard_pages.setCurrentWidget(self.hr_ui.db_page_1)
-        self.hr_ui.dashboard_nav_btn.setText("Next")
-
-        # --- HR CHARTS SETUP ---
-        self.chart_view = None
-        self.setup_attendance_area_chart()
-        if hasattr(self.hr_ui, "chart_layout1") and self.chart_view:
-            self.hr_ui.chart_layout1.addWidget(self.chart_view, 0, 0)
-
-        self.avg_work_hours_chart_view = None
-        self.setup_avg_work_hours_line_chart()
-        if hasattr(self.hr_ui, "chart_layout2") and self.avg_work_hours_chart_view:
-            self.hr_ui.chart_layout2.addWidget(self.avg_work_hours_chart_view, 0, 0)
-
-        self.pie_chart_view = None
-        self.setup_attendance_pie_chart()
-        if hasattr(self.hr_ui, "chart_layout3") and self.pie_chart_view:
-            self.hr_ui.chart_layout3.addWidget(self.pie_chart_view, 0, 0)
-
-        # Change: Top 10 Presents Bar Chart (chart_layout4)
-        self.top_present_chart_view = None
-        self.setup_top_present_bar_chart()
-        if hasattr(self.hr_ui, "chart_layout4") and self.top_present_chart_view:
-            self.hr_ui.chart_layout4.addWidget(self.top_present_chart_view, 0, 0)
-
-        # Add: Top 10 Late Bar Chart (chart_layout5)
-        self.top_late_chart_view = None
-        self.setup_top_late_bar_chart()
-        if hasattr(self.hr_ui, "chart_layout5") and self.top_late_chart_view:
-            self.hr_ui.chart_layout5.addWidget(self.top_late_chart_view, 0, 0)
-        # --- END HR CHARTS SETUP ---
-
-        self.announcement = Announcement(db, hr_data, self.hr_ui)
-
-        # Add report generation button connection
-        self.hr_ui.generate_report_btn.clicked.connect(self.generate_report)
-        self.report_generator = ReportGeneration(self.db)
-
-    def generate_report(self):
-        file_dialog = QFileDialog()
-        file_dialog.setDefaultSuffix("pdf")
-        output_path, _ = file_dialog.getSaveFileName(
-            self.hr_ui,
-            "Save Report",
-            "",
-            "PDF Files (*.pdf)"
-        )
-        
-        if output_path:
-            try:
-                self.report_generator.generate_report(output_path)
-                self.system_logs.log_system_action(f"HR generated report: {output_path}", "Employee")
-                self.show_success("Report Generated", "The report has been generated successfully!")
-            except Exception as e:
-                print(f"Error generating report: {e}")
-                self.show_error("Report Generation Failed", "Failed to generate the report. Please try again.")
-
-    def setup_attendance_area_chart(self):
-        self.chart = QChart()
-        self.present_series = QLineSeries()
-        self.absent_series = QLineSeries()
-        self.present_series.setName("Present")
-        self.absent_series.setName("Absent")
-
-        self.present_area = QAreaSeries(self.present_series)
-        self.present_area.setName("Present")
-        self.present_area.setColor(QColor(128, 173, 246, 180))
-        self.present_area.setBorderColor(QColor(128, 173, 246))
-        self.present_area.setOpacity(0.6)
-
-        self.absent_area = QAreaSeries(self.absent_series)
-        self.absent_area.setName("Absent")
-        self.absent_area.setColor(QColor(48, 9, 154, 180))
-        self.absent_area.setBorderColor(QColor(48, 9, 154))
-        self.absent_area.setOpacity(0.6)
-
-        self.chart.setBackgroundBrush(QColor(239, 239, 239))
-
-        self.chart.addSeries(self.present_area)
-        self.chart.addSeries(self.absent_area)
-
-        self.axis_x = QValueAxis()
-        self.axis_x.setTitleText("Day of Month")
-        self.axis_x.setLabelFormat("%d")
-        self.axis_y = QValueAxis()
-        self.axis_y.setTitleText("Count")
-        self.chart.addAxis(self.axis_x, Qt.AlignBottom)
-        self.chart.addAxis(self.axis_y, Qt.AlignLeft)
-        self.present_area.attachAxis(self.axis_x)
-        self.present_area.attachAxis(self.axis_y)
-        self.absent_area.attachAxis(self.axis_x)
-        self.absent_area.attachAxis(self.axis_y)
-
-        self.chart.legend().setVisible(True)
-        self.chart.legend().setAlignment(Qt.AlignBottom)
-
-        self.chart_view = QChartView(self.chart)
-        self.chart_view.setRenderHint(QPainter.Antialiasing)
-
-        self.update_attendance_area_chart()
-
-    def update_attendance_area_chart(self):
-        self.present_series.clear()
-        self.absent_series.clear()
-        try:
-            cursor = self.db.execute_query(
-                """
-                SELECT date(created_at) as log_date, present_count, absent_count
-                FROM system_logs
-                WHERE date(created_at) >= date('now', '-6 days')
-                ORDER BY date(created_at)
-                """
-            )
-            data = cursor.fetchall() if cursor else []
-            if not data:
-                return
-
-            dates = []
-            presents = []
-            absents = []
-            max_y = 1
-
-            for row in data:
-                date_str, present, absent = row
-                try:
-                    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-                    dates.append(date_obj.strftime("%d"))
-                    presents.append(int(present))
-                    absents.append(int(absent))
-                    max_y = max(max_y, int(present), int(absent))
-                except Exception:
-                    continue
-
-            if not dates:
-                return
-
-            self.chart.removeAxis(self.axis_x)
-            axis_x = QCategoryAxis()
-            axis_x.setTitleText("Day of Month")
-            axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
-            self.axis_x = axis_x
-
-            point_count = len(dates)
-            for i in range(point_count):
-                self.present_series.append(i, presents[i])
-                self.absent_series.append(i, absents[i])
-                axis_x.append(dates[i], i)
-
-            self.axis_x.setRange(0, point_count - 1)
-            self.axis_y.setRange(0, max_y)
-            self.axis_y.setTickCount(max_y + 1)
-            self.axis_y.setLabelFormat("%d")
-
-            self.chart.addAxis(self.axis_x, Qt.AlignBottom)
-            self.present_area.attachAxis(self.axis_x)
-            self.absent_area.attachAxis(self.axis_x)
-        except Exception as e:
-            print(f"Error updating HR attendance area chart: {e}")
-
-    def setup_avg_work_hours_line_chart(self):
-        self.avg_chart = QChart()
-        self.bar_series = QBarSeries()
-        self.line_series = QLineSeries()
-        self.bar_set = QBarSet("Actual")
-        self.bar_series.append(self.bar_set)
-        self.line_series.setName("Average")
-
-        pen = self.line_series.pen()
-        pen.setWidth(3)
-        pen.setColor(QColor(255, 140, 0))
-        self.line_series.setPen(pen)
-
-        self.avg_chart.addSeries(self.bar_series)
-        self.avg_chart.addSeries(self.line_series)
-        self.avg_chart.setBackgroundBrush(QColor(239, 239, 239))
-
-        self.avg_axis_x = QCategoryAxis()
-        self.avg_axis_x.setTitleText("Day")
-        self.avg_axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
-
-        self.avg_axis_y = QValueAxis()
-        self.avg_axis_y.setTitleText("Hours")
-        self.avg_axis_y.setLabelFormat("%.1f")
-        self.avg_axis_y.setRange(0, 12)
-
-        self.avg_chart.addAxis(self.avg_axis_x, Qt.AlignBottom)
-        self.avg_chart.addAxis(self.avg_axis_y, Qt.AlignLeft)
-        self.bar_series.attachAxis(self.avg_axis_x)
-        self.bar_series.attachAxis(self.avg_axis_y)
-        self.line_series.attachAxis(self.avg_axis_x)
-        self.line_series.attachAxis(self.avg_axis_y)
-
-        self.avg_chart.legend().setVisible(True)
-        self.avg_chart.legend().setAlignment(Qt.AlignBottom)
-
-        self.avg_work_hours_chart_view = QChartView(self.avg_chart)
-        self.avg_work_hours_chart_view.setRenderHint(QPainter.Antialiasing)
-
-        self.update_avg_work_hours_line_chart()
-
-    def update_avg_work_hours_line_chart(self):
-        self.bar_set.remove(0, self.bar_set.count())
-        self.line_series.clear()
-        self.avg_chart.removeAxis(self.avg_axis_x)
-        self.avg_axis_x = QCategoryAxis()
-        self.avg_axis_x.setTitleText("Day")
-        self.avg_axis_x.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
-
-        try:
-            cursor = self.db.execute_query(
-                """
-                SELECT date(created_at) as log_date, average_work_hours
-                FROM system_logs
-                WHERE date(created_at) >= date('now', '-6 days')
-                ORDER BY date(created_at)
-                """
-            )
-            data = cursor.fetchall() if cursor else []
-            if not data:
-                return
-
-            days = []
-            hours = []
-            max_hour = 1
-
-            for idx, row in enumerate(data):
-                date_str, avg_hours = row
-                date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-                day_label = date_obj.strftime("%a")
-                days.append(day_label)
-                hours_val = float(avg_hours) if avg_hours is not None else 0
-                hours.append(hours_val)
-                max_hour = max(max_hour, hours_val)
-
-            for val in hours:
-                self.bar_set << val
-
-            color = QColor(112, 205, 152)
-            color.setAlphaF(0.6)
-            self.bar_set.setColor(color)
-
-            avg_val = sum(hours) / len(hours) if hours else 0
-
-            for i in range(len(days)):
-                self.line_series.append(i, avg_val)
-
-            for i, label in enumerate(days):
-                self.avg_axis_x.append(label, i)
-
-            self.avg_axis_x.setRange(0, len(days) - 1)
-            self.avg_chart.addAxis(self.avg_axis_x, Qt.AlignBottom)
-            self.bar_series.attachAxis(self.avg_axis_x)
-            self.line_series.attachAxis(self.avg_axis_x)
-            self.avg_axis_y.setRange(0, max(8, int(max_hour + 1)))
-            self.avg_axis_y.setTickCount(min(13, int(max_hour + 2)))
-        except Exception as e:
-            print(f"Error updating HR avg work hours line chart: {e}")
-
-    def setup_attendance_pie_chart(self):
-        self.pie_chart = QChart()
-        self.pie_series = QPieSeries()
-        self.pie_chart.addSeries(self.pie_series)
-        self.pie_chart.setBackgroundBrush(QColor(239, 239, 239))
-        self.pie_chart.legend().setVisible(True)
-        self.pie_chart.legend().setAlignment(Qt.AlignBottom)
-        self.pie_chart_view = QChartView(self.pie_chart)
-        self.pie_chart_view.setRenderHint(QPainter.Antialiasing)
-        self.update_attendance_pie_chart()
-
-    def update_attendance_pie_chart(self):
-        self.pie_series.clear()
-        try:
-            today_date = datetime.now().strftime("%Y-%m-%d")
-            cursor = self.db.execute_query(
-                "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
-                (today_date,)
-            )
-            present = cursor.fetchone()[0] if cursor else 0
-
-            cursor = self.db.execute_query(
-                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND employee_id NOT IN (SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)",
-                (today_date,)
-            )
-            absent = cursor.fetchone()[0] if cursor else 0
-
-            total = present + absent
-            if total == 0:
-                self.pie_series.append("No Data", 1)
-                self.pie_series.slices()[0].setColor(QColor(200, 200, 200))
-                self.pie_series.slices()[0].setLabelVisible(True)
-            else:
-                present_pct = (present / total) * 100
-                absent_pct = (absent / total) * 100
-                present_slice = self.pie_series.append(f"Present ({present_pct:.1f}%)", present)
-                absent_slice = self.pie_series.append(f"Absent ({absent_pct:.1f}%)", absent)
-                present_slice.setColor(QColor(255, 174, 53))
-                absent_slice.setColor(QColor(240, 86, 68))
-                present_slice.setLabelVisible(True)
-                absent_slice.setLabelVisible(True)
-        except Exception as e:
-            print(f"Error updating HR attendance pie chart: {e}")
-
-    def setup_top_present_bar_chart(self):
-        # Top 10 employees by presence count (horizontal bar chart, modern look, 60% transparency)
-        self.top_present_chart = QChart()
-        self.top_present_series = QHorizontalBarSeries()
-        self.top_present_set = QBarSet("Presents")
-        self.top_present_series.append(self.top_present_set)
-        # Modern color with 60% transparency
-        present_color = QColor(76, 175, 80)  # Material green
-        present_color.setAlphaF(0.6)
-        self.top_present_set.setColor(present_color)
-        self.top_present_chart.addSeries(self.top_present_series)
-        self.top_present_chart.setBackgroundBrush(QColor(245, 245, 245))
-        self.top_present_chart.setTitleFont(self.hr_ui.font())
-        self.top_present_chart.setDropShadowEnabled(True)
-
-        self.top_present_axis_y = QBarCategoryAxis()
-        self.top_present_axis_x = QValueAxis()
-        self.top_present_axis_x.setTitleText("Presence Count")
-        self.top_present_axis_x.setLabelFormat("%d")
-        self.top_present_chart.addAxis(self.top_present_axis_y, Qt.AlignLeft)
-        self.top_present_chart.addAxis(self.top_present_axis_x, Qt.AlignBottom)
-        self.top_present_series.attachAxis(self.top_present_axis_y)
-        self.top_present_series.attachAxis(self.top_present_axis_x)
-        self.top_present_chart.legend().setVisible(False)
-
-        self.top_present_chart_view = QChartView(self.top_present_chart)
-        self.top_present_chart_view.setRenderHint(QPainter.Antialiasing)
-        self.update_top_present_bar_chart()
-
-    def update_top_present_bar_chart(self):
-        self.top_present_set.remove(0, self.top_present_set.count())
-        self.top_present_axis_y.clear()
-        try:
-            cursor = self.db.execute_query(
-                """
-                SELECT e.last_name, e.first_name, e.middle_initial, COUNT(a.log_id) as present_count
-                FROM Employee e
-                LEFT JOIN attendance_logs a ON e.employee_id = a.employee_id AND a.remarks = 'Clock In'
-                WHERE e.is_hr = 0
-                GROUP BY e.employee_id
-                ORDER BY present_count DESC
-                LIMIT 10
-                """
-            )
-            data = cursor.fetchall() if cursor else []
-            categories = []
-            max_present = 1
-            for row in data:
-                last, first, mi, count = row
-                name = f"{last}, {first} {mi or ''}".strip()
-                categories.append(name)
-                val = int(count or 0)
-                self.top_present_set << val
-                max_present = max(max_present, val)
-            self.top_present_axis_y.append(categories)
-            self.top_present_axis_x.setRange(0, max(1, max_present))
-        except Exception as e:
-            print(f"Error updating top present bar chart: {e}")
-
-    def setup_top_late_bar_chart(self):
-        # Top 10 employees by lateness count (horizontal bar chart, modern look, 60% transparency)
-        self.top_late_chart = QChart()
-        self.top_late_series = QHorizontalBarSeries()
-        self.top_late_set = QBarSet("Lates")
-        self.top_late_series.append(self.top_late_set)
-        # Modern color with 60% transparency
-        late_color = QColor(244, 67, 54)  # Material red
-        late_color.setAlphaF(0.6)
-        self.top_late_set.setColor(late_color)
-        self.top_late_chart.addSeries(self.top_late_series)
-        self.top_late_chart.setBackgroundBrush(QColor(245, 245, 245))
-        self.top_late_chart.setTitleFont(self.hr_ui.font())
-        self.top_late_chart.setDropShadowEnabled(True)
-
-        self.top_late_axis_y = QBarCategoryAxis()
-        self.top_late_axis_x = QValueAxis()
-        self.top_late_axis_x.setTitleText("Lateness Count")
-        self.top_late_axis_x.setLabelFormat("%d")
-        self.top_late_chart.addAxis(self.top_late_axis_y, Qt.AlignLeft)
-        self.top_late_chart.addAxis(self.top_late_axis_x, Qt.AlignBottom)
-        self.top_late_series.attachAxis(self.top_late_axis_y)
-        self.top_late_series.attachAxis(self.top_late_axis_x)
-        self.top_late_chart.legend().setVisible(False)
-
-        self.top_late_chart_view = QChartView(self.top_late_chart)
-        self.top_late_chart_view.setRenderHint(QPainter.Antialiasing)
-        self.update_top_late_bar_chart()
-
-    def update_top_late_bar_chart(self):
-        self.top_late_set.remove(0, self.top_late_set.count())
-        self.top_late_axis_y.clear()
-        try:
-            cursor = self.db.execute_query(
-                "SELECT last_name, first_name, middle_initial, late_count FROM Employee WHERE is_hr = 0 ORDER BY CAST(late_count AS INTEGER) DESC LIMIT 10"
-            )
-            data = cursor.fetchall() if cursor else []
-            categories = []
-            max_late = 1
-            for row in data:
-                last, first, mi, count = row
-                name = f"{last}, {first} {mi or ''}".strip()
-                categories.append(name)
-                val = int(count or 0)
-                self.top_late_set << val
-                max_late = max(max_late, val)
-            self.top_late_axis_y.append(categories)
-            self.top_late_axis_x.setRange(0, max(1, max_late))
-        except Exception as e:
-            print(f"Error updating top late bar chart: {e}")
-
-    def show_feedback_form(self):
-        self.system_logs.log_system_action("HR opened feedback form", "Employee")
-        self.feedback = Feedback(self.db, self.hr_data)
-        self.feedback.feedback_ui.show()
-        
-    def update_hr_dashboard_labels(self):
-        try:
-            cursor = self.db.execute_query("SELECT COUNT(*) FROM Employee")
-            total_employees = cursor.fetchone()[0] if cursor else 0
-
-            cursor = self.db.execute_query("SELECT COUNT(*) FROM Employee WHERE status = 'Active'")
-            active_employees = cursor.fetchone()[0] if cursor else 0
-
-            today_date = datetime.now().strftime("%Y-%m-%d")
-            cursor = self.db.execute_query(
-                "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs "
-                "WHERE date = ? AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
-                (today_date,)
-            )
-            logged_employees = cursor.fetchone()[0] if cursor else 0
-
-            cursor = self.db.execute_query(
-                "SELECT COUNT(DISTINCT employee_id) FROM attendance_logs "
-                "WHERE date = ? AND is_late = 1 AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)", 
-                (today_date,)
-            )
-            late_employees = cursor.fetchone()[0] if cursor else 0
-
-            cursor = self.db.execute_query(
-                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND employee_id NOT IN ("
-                "SELECT DISTINCT employee_id FROM attendance_logs WHERE date = ?)", 
-                (today_date,)
-            )
-            absent_employees = cursor.fetchone()[0] if cursor else 0
-
-            # --- NEW: Shift and overtime labels (copied from Admin) ---
-            # Morning shift
-            cursor = self.db.execute_query(
-                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '6am to 2pm'"
-            )
-            morning_total = cursor.fetchone()[0] if cursor else 0
-            cursor = self.db.execute_query(
-                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
-                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
-                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '6am to 2pm' AND a.date = ? AND a.remarks = 'Clock In'",
-                (today_date,)
-            )
-            morning_present = cursor.fetchone()[0] if cursor else 0
-
-            # Afternoon shift
-            cursor = self.db.execute_query(
-                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '2pm to 10pm'"
-            )
-            afternoon_total = cursor.fetchone()[0] if cursor else 0
-            cursor = self.db.execute_query(
-                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
-                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
-                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '2pm to 10pm' AND a.date = ? AND a.remarks = 'Clock In'",
-                (today_date,)
-            )
-            afternoon_present = cursor.fetchone()[0] if cursor else 0
-
-            # Night shift
-            cursor = self.db.execute_query(
-                "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '10pm to 6am'"
-            )
-            night_total = cursor.fetchone()[0] if cursor else 0
-            cursor = self.db.execute_query(
-                "SELECT COUNT(DISTINCT e.employee_id) FROM Employee e "
-                "JOIN attendance_logs a ON e.employee_id = a.employee_id "
-                "WHERE e.is_hr = 0 AND e.status = 'Active' AND e.schedule = '10pm to 6am' AND a.date = ? AND a.remarks = 'Clock In'",
-                (today_date,)
-            )
-            night_present = cursor.fetchone()[0] if cursor else 0
-
-            # --- NEW: Average overtime calculation ---
-            cursor = self.db.execute_query(
-                "SELECT employee_id FROM attendance_logs WHERE date = ? AND remarks = 'Clock In' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
-                (today_date,)
-            )
-            employee_ids = [row[0] for row in cursor.fetchall()] if cursor else []
-            total_overtime = 0
-            overtime_count = 0
-            for emp_id in employee_ids:
-                cur = self.db.execute_query(
-                    "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ? ORDER BY time ASC",
-                    (emp_id, today_date)
-                )
-                logs = cur.fetchall() if cur else []
-                clock_in_time = None
-                clock_out_time = None
-                for log in logs:
-                    if log[1] == "Clock In" and not clock_in_time:
-                        clock_in_time = log[0]
-                    elif log[1] == "Clock Out":
-                        clock_out_time = log[0]
-                if clock_in_time and clock_out_time:
-                    try:
-                        t1 = datetime.strptime(f"{today_date} {clock_in_time}", "%Y-%m-%d %H:%M:%S")
-                        t2 = datetime.strptime(f"{today_date} {clock_out_time}", "%Y-%m-%d %H:%M:%S")
-                        worked_hours = (t2 - t1).total_seconds() / 3600
-                        overtime = worked_hours - 8
-                        if overtime > 0:
-                            total_overtime += overtime
-                            overtime_count += 1
-                    except Exception:
-                        continue
-            ave_overtime = round(total_overtime / overtime_count, 2) if overtime_count > 0 else 0
-
-            # --- Set HR dashboard labels ---
-            self.hr_ui.hr_total_employee_lbl.setText(f"{total_employees}/{total_employees}")
-            self.hr_ui.hr_active_employee_lbl.setText(str(active_employees))
-            self.hr_ui.hr_logged_employee_lbl.setText(str(logged_employees))
-            self.hr_ui.hr_late_employee_lbl.setText(str(late_employees))
-            self.hr_ui.hr_absent_employee_lbl.setText(str(absent_employees))
-
-            # --- Set new shift and overtime labels ---
-            if hasattr(self.hr_ui, "morning_shift_lbl"):
-                self.hr_ui.morning_shift_lbl.setText(f"{morning_present}/{morning_total}")
-            if hasattr(self.hr_ui, "afternoon_shift_lbl"):
-                self.hr_ui.afternoon_shift_lbl.setText(f"{afternoon_present}/{afternoon_total}")
-            if hasattr(self.hr_ui, "night_shift_lbl"):
-                self.hr_ui.night_shift_lbl.setText(f"{night_present}/{night_total}")
-            if hasattr(self.hr_ui, "ave_overtime_lbl"):
-                self.hr_ui.ave_overtime_lbl.setText(str(ave_overtime))
-
-        except sqlite3.Error as e:
-            print(f"Database error while updating HR dashboard labels: {e}")
-
-    def update_date_today(self):
-        current_date = datetime.now()
-        formatted_date = current_date.strftime("%a, %b %d, %Y")
-        self.hr_ui.date_today.setText(formatted_date)
-
-    def load_hr_employee_table(self):
-        self.system_logs.log_system_action("Load employees into the HR employee table.", "Employee")
-        try:
-            cursor = self.db.execute_query("SELECT * FROM Employee WHERE is_hr = 0")
-            employees = cursor.fetchall() if cursor else []
-
-            self.hr_employees = []
-            self.hr_ui.hr_employee_tbl.setRowCount(0)
-            for employee in employees:
-                employee_data = {
-                    "employee_id": employee[0],
-                    "first_name": employee[1],
-                    "last_name": employee[2],
-                    "middle_initial": employee[3],
-                    "department": employee[6],
-                    "position": employee[7],
-                    "status": employee[10],
-                    "profile_picture": employee[13]
-                }
-                self.hr_employees.append(employee_data)
-                self.add_hr_employee_to_table(employee_data)
-                self.update_hr_dashboard_labels()
-        except sqlite3.Error as e:
-            self.system_logs.log_system_action(f"Database error while loading HR employees: {e}", "Employee")
-
-    def add_hr_employee_to_table(self, employee_data):
-        row_position = self.hr_ui.hr_employee_tbl.rowCount()
-        self.hr_ui.hr_employee_tbl.insertRow(row_position)
-        middle_initial = f" {employee_data['middle_initial']}." if employee_data['middle_initial'] else ""
-        full_name = f"{employee_data['last_name']}, {employee_data['first_name']}{middle_initial}"
-        dept_pos = f"{employee_data['department']} / {employee_data['position']}"
-
-        name_item = QTableWidgetItem(full_name)
-        dept_pos_item = QTableWidgetItem(dept_pos)
-        status_item = QTableWidgetItem(employee_data.get('status', 'Active'))
-
-        name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
-        dept_pos_item.setFlags(dept_pos_item.flags() & ~Qt.ItemIsEditable)
-        status_item.setFlags(status_item.flags() & ~Qt.ItemIsEditable)
-
-        self.hr_ui.hr_employee_tbl.setItem(row_position, 0, name_item)
-        self.hr_ui.hr_employee_tbl.setItem(row_position, 1, dept_pos_item)
-        self.hr_ui.hr_employee_tbl.setItem(row_position, 2, status_item)
-
-        self.hr_ui.hr_employee_tbl.resizeColumnsToContents()
-
-    def filter_hr_employee_table(self):
-        search_text = self.hr_ui.hr_employee_search_box.text().lower()
-        for row in range(self.hr_ui.hr_employee_tbl.rowCount()):
-            self.hr_ui.hr_employee_tbl.setRowHidden(row, False)
-
-        if not search_text:
-            return
-
-        for row in range(self.hr_ui.hr_employee_tbl.rowCount()):
-            match_found = False
-            for col in range(self.hr_ui.hr_employee_tbl.columnCount()):
-                item = self.hr_ui.hr_employee_tbl.item(row, col)
-                if item and search_text in item.text().lower():
-                    match_found = True
-                    break
-            self.hr_ui.hr_employee_tbl.setRowHidden(row, not match_found)
-
-    def sort_hr_employee_table(self):
-        sort_option = self.hr_ui.hr_employee_sort_box.currentText()
-        if sort_option == "By Name:":
-            self.hr_employees.sort(key=lambda x: (x["last_name"].lower(), x["first_name"].lower()))
-        elif sort_option == "By Department:":
-            self.hr_employees.sort(key=lambda x: x["department"].lower())
-        elif sort_option == "By Position:":
-            self.hr_employees.sort(key=lambda x: x["department"].lower())
-        elif sort_option == "By Status:":
-            self.hr_employees.sort(key=lambda x: 0 if x["status"].lower() == "active" else 1)
-
-        self.hr_ui.hr_employee_tbl.setRowCount(0)
-        for employee_data in self.hr_employees:
-            self.add_hr_employee_to_table(employee_data)
-
-    def goto_hr_employee_view(self):
-        self.system_logs.log_system_action("The HR, has selected an employee to view.", "Employee")
-        if selected := self.hr_ui.hr_employee_tbl.selectedIndexes():
-            row = selected[0].row()
-            employee_data = self.hr_employees[row]
-            self.display_hr_employee_view(employee_data)
-            view_page = self.hr_ui.hr_employee_view_page
-            page_index = self.hr_ui.hr_employee_sc_pages.indexOf(view_page)
-            self.hr_ui.hr_employee_sc_pages.setCurrentIndex(page_index)
-
-    def display_hr_employee_view(self, employee_data):
-        self.hr_ui.hr_view_employee_first_name.setText(employee_data["first_name"])
-        self.hr_ui.hr_view_employee_last_name.setText(employee_data["last_name"])
-        self.hr_ui.hr_view_employee_mi.setText(employee_data["middle_initial"])
-        self.hr_ui.hr_view_employee_department_box.setText(employee_data["department"])
-        self.hr_ui.hr_view_employee_position_box.setText(employee_data["position"])
-        self.hr_ui.hr_view_employee_accountid.setText(employee_data["employee_id"])
-        self.load_hr_employee_attendance_logs(employee_data["employee_id"])
-        self.display_picture(self.hr_ui.hr_view_employee_picture, employee_data['profile_picture'])
-        
-    def display_picture(self, label, picture_path):
-        if (picture_path and os.path.exists(picture_path)):
-            pixmap = QPixmap(picture_path)
-            pixmap = pixmap.scaled(170, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            label.setPixmap(pixmap)
-        else:
-            label.setPixmap(QPixmap())
-
-    def goto_hr_dashboard(self):
-        self.system_logs.log_system_action("Going back to the HR Employee dashboard.", "Employee")
-        dashboard_page = self.hr_ui.hr_employee_sc_pages.indexOf(self.hr_ui.hr_employee_dashboard_page)
-        self.hr_ui.hr_employee_sc_pages.setCurrentIndex(dashboard_page)
-
-    def handle_logout(self):
-        current_time = datetime.now()
-        current_date = current_time.strftime("%Y-%m-%d")
-        self.db.execute_query("INSERT INTO attendance_logs (employee_id, date, time, remarks) VALUES (?, ?, ?, ?)",
-                              (self.hr_data["employee_id"], current_date, current_time.strftime("%H:%M:%S"), "Clock Out"))
-        self.hr_ui.close()
-        global_home_ui.showMaximized()
-        self.system_logs.log_system_action("The HR logged out.", "Employee")
-
-    def load_hr_attendance_logs_table(self):
-        self.system_logs.log_system_action("Load all attendance logs for employees only into the table.", "AttendanceLog")
-        try:
-            cursor = self.db.execute_query(
-                "SELECT employee_id, remarks, date, time FROM attendance_logs WHERE employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)"
-            )
-            logs = cursor.fetchall() if cursor else []
-
-            self.hr_ui.hr_attedance_logs_tbl.setRowCount(0)
-            for log in logs:
-                self.add_attendance_log_to_table(self.hr_ui.hr_attedance_logs_tbl, log)
-        except sqlite3.Error as e:
-            self.system_logs.log_system_action(f"Database error while loading HR attendance logs: {e}", "AttendanceLog")
-            print(f"Database error while loading HR attendance logs: {e}")
-
-    def add_attendance_log_to_table(self, table, log):
-        row_position = table.rowCount()
-        table.insertRow(row_position)
-
-        account_id_item = QTableWidgetItem(log[0])
-        remarks_item = QTableWidgetItem(log[1])
-        date_item = QTableWidgetItem(log[2])
-        time_item = QTableWidgetItem(log[3])
-
-        account_id_item.setFlags(account_id_item.flags() & ~Qt.ItemIsEditable)
-        remarks_item.setFlags(remarks_item.flags() & ~Qt.ItemIsEditable)
-        date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
-        time_item.setFlags(time_item.flags() & ~Qt.ItemIsEditable)
-
-        table.setItem(row_position, 0, account_id_item)
-        table.setItem(row_position, 1, remarks_item)
-        table.setItem(row_position, 2, date_item)
-        table.setItem(row_position, 3, time_item)
-
-        table.resizeColumnsToContents()
-
-    def filter_hr_attendance_logs_table(self):
-        search_text = self.hr_ui.hr_attedance_logs_search.text().lower()
-        for row in range(self.hr_ui.hr_attedance_logs_tbl.rowCount()):
-            self.hr_ui.hr_attedance_logs_tbl.setRowHidden(row, False)
-
-        if not search_text:
-            return
-
-        for row in range(self.hr_ui.hr_attedance_logs_tbl.rowCount()):
-            match_found = False
-            for col in range(self.hr_ui.hr_attedance_logs_tbl.columnCount()):
-                item = self.hr_ui.hr_attedance_logs_tbl.item(row, col)
-                if item and search_text in item.text().lower():
-                    match_found = True
-                    break
-            self.hr_ui.hr_attedance_logs_tbl.setRowHidden(row, not match_found)
-
-    def sort_hr_attendance_logs_table(self):
-        sort_option = self.hr_ui.hr_attedance_logs_sort.currentText()
-
-        logs = []
-        for row in range(self.hr_ui.hr_attedance_logs_tbl.rowCount()):
-            log = [
-                self.hr_ui.hr_attedance_logs_tbl.item(row, col).text()
-                for col in range(self.hr_ui.hr_attedance_logs_tbl.columnCount())
-            ]
-            logs.append(log)
-
-        if sort_option == "By Date:":
-            logs.sort(key=lambda x: x[2]) 
-        elif sort_option == "By Time:":
-            logs.sort(key=lambda x: x[3]) 
-        elif sort_option == "By Account ID:":
-            logs.sort(key=lambda x: x[0])  
-        elif sort_option == "By Remarks:":
-            logs.sort(key=lambda x: x[1])  
-
-        self.hr_ui.hr_attedance_logs_tbl.setRowCount(0)
-        for log in logs:
-            self.add_attendance_log_to_table(self.hr_ui.hr_attedance_logs_tbl, log)
-
-    def load_hr_employee_attendance_logs(self, employee_id):
-        self.system_logs.log_system_action("Load attendance logs for the selected employee.", "AttendanceLog")
-        try:
-            cursor = self.db.execute_query(
-                "SELECT date, time, remarks FROM attendance_logs WHERE employee_id = ?", (employee_id,)
-            )
-            logs = cursor.fetchall() if cursor else []
-
-            self.hr_ui.hr_employee_logs_tbl.setRowCount(0)
-            for log in logs:
-                self.add_log_to_table(self.hr_ui.hr_employee_logs_tbl, log)
-        except sqlite3.Error as e:
-            self.system_logs.log_system_action(f"Database error while loading HR employee attendance logs: {e}", "AttendanceLog")
-            print(f"Database error while loading HR employee attendance logs: {e}")
-
-    def add_log_to_table(self, table, log):
-
-        row_position = table.rowCount()
-        table.insertRow(row_position)
-
-        date_item = QTableWidgetItem(log[0])
-        time_item = QTableWidgetItem(log[1])
-        remarks_item = QTableWidgetItem(log[2])
-
-        date_item.setFlags(date_item.flags() & ~Qt.ItemIsEditable)
-        time_item.setFlags(time_item.flags() & ~Qt.ItemIsEditable)
-        remarks_item.setFlags(remarks_item.flags() & ~Qt.ItemIsEditable)
-
-        table.setItem(row_position, 0, date_item)
-        table.setItem(row_position, 1, time_item)
-        table.setItem(row_position, 2, remarks_item)
-
-        table.resizeColumnsToContents()
-        
-    def check_net(self):
-        try:
-            socket.create_connection(("8.8.8.8", 53), timeout=5)
-            return True
-        except OSError:
-            toast = Toast(self.admin_ui)
-            toast.setTitle("No Internet Connection")
-            toast.setText("Please check your internet connection and try again.")
-            toast.setOffset(40, 45)
-            toast.setBorderRadius(6)
-            toast.applyPreset(ToastPreset.ERROR)
-            toast.setBackgroundColor(QColor('#ffb7b6'))
-            toast.setPosition(ToastPosition.TOP_RIGHT)
-            toast.setShowDurationBar(False)
-            toast.setDuration(0) 
-            toast.show()
-            return False
-
-    def handle_hr_dashboard_nav(self):
-
-        current_widget = self.hr_ui.hr_dashboard_pages.currentWidget()
-        if current_widget == self.hr_ui.db_page_1:
-            self.hr_ui.hr_dashboard_pages.setCurrentWidget(self.hr_ui.db_page_2)
-            self.hr_ui.dashboard_nav_btn.setText("Back")
-        else:
-            self.hr_ui.hr_dashboard_pages.setCurrentWidget(self.hr_ui.db_page_1)
-            self.hr_ui.dashboard_nav_btn.setText("Next")
-            
-    def show_success(self, title, message):
-        chime.theme('chime')
-        chime.success()
-        toast = Toast(self.hr_ui)
-        toast.setTitle(title)
-        toast.setText(message)
-        toast.setDuration(2000)
-        toast.setOffset(25, 35)
-        toast.setBorderRadius(6)
-        toast.applyPreset(ToastPreset.SUCCESS)
-        toast.setBackgroundColor(QColor('#FFFFFF'))
-        toast.setPositionRelativeToWidget(self.hr_ui.hr_home_tabs)
-        toast.setPosition(ToastPosition.TOP_RIGHT)
-        toast.show()
-
-    def show_error(self, title, message):
-        chime.theme('big-sur')
-        chime.warning()
-        toast = Toast(self.hr_ui)
-        toast.setTitle(title)
-        toast.setText(message)
-        toast.setDuration(2000)
-        toast.setOffset(25, 35)
-        toast.setBorderRadius(6)
-        toast.applyPreset(ToastPreset.ERROR)
-        toast.setBackgroundColor(QColor('#FFFFFF'))
-        toast.setPositionRelativeToWidget(self.hr_ui.hr_home_tabs)
-        toast.setPosition(ToastPosition.TOP_RIGHT)
-        toast.show()
-    
-class ChangePassword(QObject):
-    passwordChanged = Signal(dict)  # Add signal with employee data
-
-    def __init__(self, db, user_id, user_type="admin"):
-        super().__init__()  # Initialize QObject
-        self.db = db
-        self.system_logs = SystemLogs(db)
-        self.user_id = user_id
-        self.user_type = user_type  
-        self.loader = QUiLoader()
-        self.change_pass_ui = self.loader.load("ui/change_pass.ui")
-        
-        self.cp_visible = False
-        self.np_visible = False
-        self.changepass_visible = False
-        
-        if user_type == "admin":
-            self.change_pass_ui.setWindowTitle("Change Admin Password")
-            self.system_logs.log_system_action("The admin change password prompt has been loaded.", "Admin")
-        else:
-            self.change_pass_ui.setWindowTitle("Change Employee Password")
-            self.system_logs.log_system_action("The employee change password prompt has been loaded.", "Employee")
-            
-        self.change_pass_ui.change_pass_note.setText("For security purposes, please enter your current password below, then choose a new password and confirm it. Make sure your new password is at least 8 characters long.")
-        self.change_pass_ui.change_pass_note.setStyleSheet("color: black; border: none;")
-        self.change_pass_ui.cp_visibility_btn.clicked.connect(self.toggle_cp_visibility)
-        self.change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
-        self.change_pass_ui.changepass_visibility_btn.clicked.connect(self.toggle_changepass_visibility)
-        self.change_pass_ui.admin_change_pass_btn.clicked.connect(self.validate_and_change_password)
-        self.change_pass_ui.admin_change_cancel_btn.clicked.connect(self.cancel_change_password)
-        self.change_pass_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-        self.change_pass_ui.setWindowModality(Qt.ApplicationModal)
-
-    def cancel_change_password(self):
-        self.system_logs.log_system_action(f"Password change cancelled by {self.user_type}.", "Admin" if self.user_type == "admin" else "Employee")
-        self.change_pass_ui.close()
-
-    def toggle_cp_visibility(self):
-        if self.cp_visible:
-            self.change_pass_ui.change_pass_cp_box.setEchoMode(QLineEdit.Password)
-        else:
-            self.change_pass_ui.change_pass_cp_box.setEchoMode(QLineEdit.Normal)
-        self.cp_visible = not self.cp_visible
-
-    def toggle_np_visibility(self):
-        if self.np_visible:
-            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Password)
-        else:
-            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Normal)
-        self.np_visible = not self.np_visible
-
-    def toggle_changepass_visibility(self):
-        if self.changepass_visible:
-            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Password)
-        else:
-            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Normal)
-        self.changepass_visible = not self.changepass_visible
-
-    def validate_and_change_password(self):
-        new_password = self.change_pass_ui.change_pass_np_box.text()
-        confirm_password = self.change_pass_ui.change_pass_confirm_box.text()
-        current_password = self.change_pass_ui.change_pass_cp_box.text()
-
-        try:
-            if self.user_type == "admin":
-                table = "Admin"
-                id_field = "admin_id"
-            else:
-                table = "Employee"
-                id_field = "employee_id"
-
-            cursor = self.db.execute_query(
-                "SELECT password FROM {} WHERE {} = ?".format(table, id_field),
-                (self.user_id,)
-            )
-            result = cursor.fetchone()
-
-            if not result:
-                chime.warning()
-                self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-            
-            try:
-                PASSWORD_HASHER.verify(result[0], current_password)
-            except argon2.exceptions.VerifyMismatchError:
-                chime.warning()
-                self.change_pass_ui.change_pass_note.setText("The current password you entered is incorrect.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            if not current_password or not new_password or not confirm_password:
-                chime.warning()
-                self.change_pass_ui.change_pass_note.setText("All password fields are required.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            if new_password != confirm_password:
-                chime.warning()
-                self.change_pass_ui.change_pass_note.setText("The new password and confirmation password do not match.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            if len(new_password) < 8:
-                chime.warning()
-                self.change_pass_ui.change_pass_note.setText("Your new password must be at least 8 characters long.")
-                self.change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
-                return
-
-            hashed_password = PASSWORD_HASHER.hash(new_password)
-
-            self.db.execute_query(
-                "UPDATE {} SET password = ?, password_changed = TRUE WHERE {} = ?".format(table, id_field),
-                (hashed_password, self.user_id)
-            )
-
-            self.system_logs.log_system_action(f"The {self.user_type} password has been changed.", "Admin" if self.user_type == "admin" else "Employee")
-            chime.theme('chime')
-            chime.success()
-            toast = Toast(self.change_pass_ui)
-            toast.setTitle("Password Changed Successfully")
-            toast.setText("Your password has been updated. Please use the new password for future logins.")
-            toast.setDuration(2000)
-            toast.setOffset(30, 70) 
-            toast.setBorderRadius(6) 
-            toast.applyPreset(ToastPreset.SUCCESS)  
-            toast.setBackgroundColor(QColor('#FFFFFF')) 
-            toast.setPosition(ToastPosition.TOP_RIGHT) 
-            toast.show()
-
-            if self.user_type == "employee":
-                cursor = self.db.execute_query("""
-                    SELECT * FROM Employee WHERE employee_id = ?
-                """, (self.user_id,))
-                if cursor:
-                    employee = cursor.fetchone()
-                    if employee:
-                        employee_data = {
-                            "employee_id": employee[0],
-                            "first_name": employee[1],
-                            "last_name": employee[2],
-                            "middle_initial": employee[3],
-                            "birthday": employee[4],
-                            "gender": employee[5],
-                            "department": employee[6],
-                            "position": employee[7],
-                            "schedule": employee[8],
-                            "is_hr": employee[9],
-                            "password_changed": True,  # Now changed
-                            "profile_picture": employee[13],
-                            "email": employee[14]
-                        }
-                        self.passwordChanged.emit(employee_data)
-
-            self.change_pass_ui.close()
-
-        except sqlite3.Error as e:
-            self.system_logs.log_system_action(
-                f"Database error during {self.user_type} password change", 
-                "Admin" if self.user_type == "admin" else "Employee"
-            )
-            print(f"Database error during password change: {e}")           
-
-class ForgotPassword:
-    def __init__(self, db):
-        self.db = db
-        self.system_logs = SystemLogs(db)
-        self.loader = QUiLoader()
-        self.forgot_pass_ui = self.loader.load("ui/forgot_password.ui")
-        self.forgot_pass_ui.setWindowTitle("Forgot Password")
-        self.forgot_pass_ui.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-        self.forgot_pass_ui.setWindowModality(Qt.ApplicationModal)
-
-        self.forgot_pass_ui.confirm_btn.clicked.connect(self.validate_account)
-        self.forgot_pass_ui.verify_code_btn.clicked.connect(self.verify_code)
-        self.forgot_pass_ui.fp_back_btn.clicked.connect(self.close_window)
-        self.forgot_pass_ui.fp_back2_btn.clicked.connect(self.go_back_to_page1)
-        
-        self.current_employee = None
-        self.verification_code = None
-        
-        self.setup_pin_inputs()
-    
-    def setup_pin_inputs(self):
-        self.forgot_pass_ui.pin_1.setMaxLength(1)
-        self.forgot_pass_ui.pin_2.setMaxLength(1)
-        self.forgot_pass_ui.pin_3.setMaxLength(1)
-        self.forgot_pass_ui.pin_4.setMaxLength(1)
-        
-        validator = QRegularExpressionValidator(QRegularExpression("[0-9]"))
-        self.forgot_pass_ui.pin_1.setValidator(validator)
-        self.forgot_pass_ui.pin_2.setValidator(validator)
-        self.forgot_pass_ui.pin_3.setValidator(validator)
-        self.forgot_pass_ui.pin_4.setValidator(validator)
-        
-        self.forgot_pass_ui.pin_1.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_1, self.forgot_pass_ui.pin_2))
-        self.forgot_pass_ui.pin_2.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_2, self.forgot_pass_ui.pin_3))
-        self.forgot_pass_ui.pin_3.textChanged.connect(lambda: self.move_focus_to_next(self.forgot_pass_ui.pin_3, self.forgot_pass_ui.pin_4))
-        self.forgot_pass_ui.pin_4.textChanged.connect(lambda: self.check_verification_ready())
-    
-    def move_focus_to_next(self, current, next_input):
-        if current.text():
-            next_input.setFocus()
-    
-    def check_verification_ready(self):
-
-        all_filled = bool(self.forgot_pass_ui.pin_1.text() and 
-                         self.forgot_pass_ui.pin_2.text() and 
-                         self.forgot_pass_ui.pin_3.text() and 
-                         self.forgot_pass_ui.pin_4.text())
-        self.forgot_pass_ui.verify_code_btn.setEnabled(all_filled)
-
-    def validate_account(self):
-        account_id = self.forgot_pass_ui.forgot_pass_id_box.text().strip()
-        birthday = self.forgot_pass_ui.forgot_pass_birthday_box.date().toString("yyyy-MM-dd")
-        email = self.forgot_pass_ui.forgot_pass_email_box.text().strip()
-
-        if not account_id or not birthday or not email:
-            missing_fields = []
-            if not account_id:
-                missing_fields.append("Account ID")
-            if not birthday:
-                missing_fields.append("Birthday")
-            if not email:
-                missing_fields.append("Email Address")
-            self.forgot_pass_ui.fp_page1_note.setText(f"Warning: Please fill in the following fields: {', '.join(missing_fields)}.")
-            self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
-            return
-
-        try:
-            cursor = self.db.execute_query(
-                "SELECT * FROM Employee WHERE employee_id = ?", 
-                (account_id,)
-            )
-            employee = cursor.fetchone()
-
-            if not employee:
-                self.forgot_pass_ui.fp_page1_note.setText("Warning: The provided Account ID does not exist.")
-                self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
-                return
-
-            if employee[4] != birthday or employee[14] != email:
-                self.forgot_pass_ui.fp_page1_note.setText("Warning: The provided information does not match our records. Please check your inputs.")
-                self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
-                return
-
-            self.current_employee = {
-                "employee_id": employee[0],
-                "email": employee[14]
-            }
-            
-            self.verification_code = ''.join([str(secrets.randbelow(10)) for _ in range(4)])
-            self.system_logs.log_system_action(
-                f"Password reset verification code generated for employee {account_id}", 
-                "Employee"
-            )
-            
-
-            chime.theme('chime')
-            chime.success()
-            toast = Toast(self.forgot_pass_ui)
-            toast.setTitle("Email Sent")
-            toast.setText(f"A verification code has been sent to {email}.")
-            toast.setDuration(2000)
-            toast.setOffset(30, 70)
-            toast.setBorderRadius(6)
-            toast.applyPreset(ToastPreset.SUCCESS)
-            toast.setBackgroundColor(QColor('#FFFFFF'))
-            toast.setPosition(ToastPosition.TOP_RIGHT)
-            toast.show()
-            
-            threading.Thread(
-                target=lambda: self.send_verification_email(self.current_employee["email"], self.verification_code),
-                daemon=True
-            ).start()
-
-
-            self.forgot_pass_ui.fp_stackedWidget.setCurrentWidget(self.forgot_pass_ui.fp_page_2)
-            
-            self.forgot_pass_ui.pin_1.clear()
-            self.forgot_pass_ui.pin_2.clear()
-            self.forgot_pass_ui.pin_3.clear()
-            self.forgot_pass_ui.pin_4.clear()
-            self.forgot_pass_ui.pin_1.setFocus()
-
-        except sqlite3.Error as e:
-            print(f"Database error during account validation: {e}")
-            self.forgot_pass_ui.fp_page1_note.setText("Error: An error occurred while validating your account. Please try again later.")
-            self.forgot_pass_ui.fp_page1_note.setStyleSheet("color: black; background-color: rgb(255, 249, 245); border: 1px solid rgb(138, 55, 7);")
-            
-    def send_verification_email(self, email, code):
-        try:
-            sender_email = "eals.tupc@gmail.com"  
-            sender_password = "buwl tszg dghr exln"  
-
-            message = MIMEMultipart()
-            message["From"] = sender_email
-            message["To"] = email
-            message["Subject"] = "EALS Verification Code"
-
-            # Get default header and footer images
-            header_img = os.path.join("resources", "theme_images", "default_theme_header.jpg")
-            footer_img = os.path.join("resources", "theme_images", "default_theme_footer.jpg")
-
-            # Create HTML email content with Google-like styling
-            html_header = '<img src="cid:headerimg" style="display:block; margin:auto; width:100%;"><br>' if os.path.exists(header_img) else ""
-            html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto; width:100%;">' if os.path.exists(footer_img) else ""
-            
-            html_content = f"""
-                <div style="margin: 20px auto; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
-                    <div style="background-color: #4285f4; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-                        <h2 style="margin: 0; text-align: center;">EALS Verification Code</h2>
-                    </div>
-                    <div style="background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <p style="color: #666666;">This verification code was sent to help you reset your EALS account password:</p>
-                        <div style="text-align: center; padding: 20px;">
-                            <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #202124;">{code}</span>
-                        </div>
-                        <p style="color: #666666;">Don't know why you received this?</p>
-                        <p style="color: #666666;">Someone requested a password reset for your EALS account. If this wasn't you, you can safely ignore this email.</p>
-                        <p style="color: #666666;">To protect your account, don't forward this email or give this code to anyone.</p>
-                        <br>
-                        <p style="color: #666666; margin-bottom: 0;">Best regards,<br>EALS Team</p>
-                    </div>
-                </div>
-            """
-
-            html_content = f"{html_header}{html_content}{html_footer}"
-
-            # Attach HTML content
-            message.attach(MIMEText(html_content, "html"))
-
-            # Attach header image if exists
-            if os.path.exists(header_img):
-                with open(header_img, "rb") as f:
-                    img = MIMEImage(f.read())
-                    img.add_header("Content-ID", "<headerimg>")
-                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
-                    message.attach(img)
-
-            # Attach footer image if exists
-            if os.path.exists(footer_img):
-                with open(footer_img, "rb") as f:
-                    img = MIMEImage(f.read())
-                    img.add_header("Content-ID", "<footerimg>")
-                    img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
-                    message.attach(img)
-
-            # Send email
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                server.login(sender_email, sender_password)
-                server.send_message(message)
-
-            print(f"Verification code sent to {email}")
-            return True
-        except Exception as e:
-            print(f"Error sending verification email: {e}")
-            return False
-
-    def verify_code(self):
-        entered_code = ''.join([
-            self.forgot_pass_ui.pin_1.text(),
-            self.forgot_pass_ui.pin_2.text(),
-            self.forgot_pass_ui.pin_3.text(),
-            self.forgot_pass_ui.pin_4.text()
-        ])
-
-        if entered_code == self.verification_code:
-            self.change_pass_ui = QUiLoader().load("ui/employee_change_pass.ui")
-            self.change_pass_ui.setWindowTitle("Change Password")
-            self.change_pass_ui.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
-
-            self.change_pass_ui.employee_change_pass_btn.clicked.connect(self.validate_and_change_password)
-            self.np_visible = False
-            self.cp_visible = False
-            self.change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
-            self.change_pass_ui.cp_visibility_btn.clicked.connect(self.toggle_cp_visibility)
-            self.forgot_pass_ui.close()
-            self.change_pass_ui.show()
-        else:
-            self.forgot_pass_ui.fp_page2_note.setText("Warning: The verification code you entered is incorrect. Please try again.")
-            self.forgot_pass_ui.fp_page2_note.setStyleSheet("color: black; background-color: yellow;")
-            
-    def toggle_np_visibility(self):
-        if self.np_visible:
-            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Password)
-        else:
-            self.change_pass_ui.change_pass_np_box.setEchoMode(QLineEdit.Normal)
-        self.np_visible = not self.np_visible
-
-    def toggle_cp_visibility(self):
-        if self.cp_visible:
-            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Password)
-        else:
-            self.change_pass_ui.change_pass_confirm_box.setEchoMode(QLineEdit.Normal)
-        self.cp_visible = not self.cp_visible
-
-    def validate_and_change_password(self):
-        new_password = self.change_pass_ui.change_pass_np_box.text()
-        confirm_password = self.change_pass_ui.change_pass_confirm_box.text()
-
-        if not new_password or not confirm_password:
-            chime.warning()
-            self.change_pass_ui.change_pass_note.setText("Note: All fields are required.")
-            self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
-            return
-
-        if new_password != confirm_password:
-            chime.warning()
-            self.change_pass_ui.change_pass_note.setText("Note: Passwords do not match.")
-            self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
-            return
-
-        if len(new_password) < 8:
-            chime.warning()
-            self.change_pass_ui.change_pass_note.setText("Note: Password must be at least 8 characters long.")
-            self.change_pass_ui.change_pass_note.setStyleSheet("color: red")
-            return
-
-        try:
-            hashed_password = PASSWORD_HASHER.hash(new_password)
-
-            self.db.execute_query(
-                "UPDATE Employee SET password = ?, password_changed = TRUE WHERE employee_id = ?",
-                (hashed_password, self.current_employee["employee_id"])
-            )
-            self.change_pass_ui.close()
-            
-            
-            chime.theme('chime')
-            chime.success()
-            toast = Toast(self.forgot_pass_ui)
-            toast.setTitle("Success")
-            toast.setText("Password changed successfully.")
-            toast.setDuration(2000)
-            toast.setOffset(30, 70)
-            toast.setBorderRadius(6)
-            toast.applyPreset(ToastPreset.SUCCESS)
-            toast.setBackgroundColor(QColor('#FFFFFF'))
-            toast.setPosition(ToastPosition.TOP_RIGHT)
-            toast.show()
-
-        except sqlite3.Error as e:
-            print(f"Database error during password change: {e}")
-            QMessageBox.critical(None, "Error", "Failed to change password. Please try again.")
-
-    def go_back_to_page1(self):
-        self.forgot_pass_ui.fp_stackedWidget.setCurrentWidget(self.forgot_pass_ui.fp_page_1)
-
-    def close_window(self):
-        self.forgot_pass_ui.close()
-
 class Home:
     password_changed = False
     failed_attempts = 0 
-
     def __init__(self, db):
         self.db = db
         self.system_logs = SystemLogs(db)
@@ -1951,62 +639,86 @@ class Home:
         self.home_ui = self.loader.load("ui/home.ui")
         self.home_ui.setWindowIcon(QIcon('resources/logo.ico'))
         self.home_ui.setWindowTitle("EALS")
-        
-        # Initialize signals first
         self.fp_signals = FingerprintSignals()
         self.fp_signals.match_found.connect(self.handle_fingerprint_match)
         self.fp_signals.update_display.connect(self.update_fingerprint_display)
         self.fp_signals.update_status.connect(self.update_fingerprint_status)
-        
-        # Initialize fingerprint logic
         self.fp_logic = FingerprintLogic(self.db)
         self.fp_logic.signals = self.fp_signals
-        
-        # Setup UI connections
         self.home_ui.home_login_btn.clicked.connect(self.handle_login)
         self.home_ui.bio1_next.clicked.connect(self.goto_bio2)
         self.home_ui.bio2_next.clicked.connect(self.goto_result_prompt)
-        self.home_ui.default_login_btn.clicked.connect(self.goto_default_login)
-        
-        # Check if there are enrolled employees
-        cursor = self.db.execute_query("SELECT COUNT(*) FROM fingerprints")
-        enrolled_count = cursor.fetchone()[0] if cursor else 0
-        
-        if enrolled_count > 0:
-            self.home_ui.main_page.setCurrentWidget(self.home_ui.bio_page)
-            self.initialize_bio_page()
-        else:
-            self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
-            
+        self.last_mode_switch_time = 0
+        self.device_cooldown_period = 5
+        self.device_transition_in_progress = False
+        self.home_ui.default_login_btn.clicked.connect(self.handle_default_login)
+        self.set_initial_page()
         self.admin_id = None
         self.admin_password = None
         self.check_initial_setup()
         self.update_date_today()
         self.employee_data = None  
-        self.source_page = None  # Add this to track where user came from
+        self.source_page = None
         self.system_logs.log_system_action("The home UI has been loaded.", "SystemSettings")
         self.home_ui.pass_visibility_button.clicked.connect(self.toggle_password_visibility)
         self.home_ui.forgot_pass_btn.clicked.connect(self.goto_forgot_password)
         self.password_visible = False
 
-    def initialize_bio_page(self):
-        if self.fp_logic.initialize_device():
-            self.fp_logic.signals = self.fp_signals  # Connect signals
-            self.home_ui.bio_note_lbl.setText("Sensor ready. Please tap your finger.")
-            self.start_fingerprint_scanning()
+    def set_initial_page(self):
+        cursor = self.db.execute_query(
+            "SELECT COUNT(*) FROM fingerprints WHERE template_path != '' AND template_path IS NOT NULL"
+        )
+        enrolled_count = cursor.fetchone()[0] if cursor else 0
+        
+        if enrolled_count > 0:
+            self.home_ui.main_page.setCurrentWidget(self.home_ui.bio_page)
+            self.initialize_bio_page()
+            self.system_logs.log_system_action("Showing biometric login page due to enrolled employees.", "SystemSettings")
         else:
+            self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
+            self.system_logs.log_system_action("Showing standard login page as no enrolled employees found.", "SystemSettings")
+
+    def initialize_bio_page(self):
+        if hasattr(self, 'fp_logic'):
+            try:
+                if self.fp_logic.device_open:
+                    self.fp_logic.terminate_device()
+                self.fp_logic.device_open = False
+                time.sleep(1)
+            except Exception as e:
+                print(f"Error while terminating existing device: {e}")
+                
+        try:
+            self.home_ui.bio_note_lbl.setText("Initializing sensor, please wait...")
+            QApplication.processEvents()
+            time.sleep(1)
+            if self.fp_logic.initialize_device():
+                self.fp_logic.signals = self.fp_signals
+                self.home_ui.bio_note_lbl.setText("Sensor ready. Please tap your finger.")
+                self.start_fingerprint_scanning()
+            else:
+                self.home_ui.bio_note_lbl.setText("Error initializing sensor. Please use default login.")
+                self.show_error("Device Error", "Failed to initialize fingerprint device.")
+        except Exception as e:
+            print(f"Error initializing fingerprint device: {e}")
             self.home_ui.bio_note_lbl.setText("Error initializing sensor. Please use default login.")
-            
+            self.show_error("Device Error", f"Failed to initialize fingerprint device: {str(e)}")
+
     def start_fingerprint_scanning(self):
         def scan_result_callback(matched_employee_id):
             if matched_employee_id:
                 self.fp_signals.match_found.emit(matched_employee_id)
-                
-        threading.Thread(
-            target=self.fp_logic.compare_1_1,
-            args=(self.home_ui.biometric_display_lbl, self.home_ui.bio_note_lbl, scan_result_callback),
-            daemon=True
-        ).start()
+            else:
+                QTimer.singleShot(1000, lambda: self.start_fingerprint_scanning())
+        if hasattr(self, 'fp_logic') and self.fp_logic.device_open:  
+            threading.Thread(
+                target=self.fp_logic.compare_1_1,
+                args=(self.home_ui.biometric_display_lbl, self.home_ui.bio_note_lbl, scan_result_callback),
+                daemon=True
+            ).start()
+        else:
+            print("Cannot start scanning - device not open")
+            self.home_ui.bio_note_lbl.setText("Sensor not ready. Please reinitialize.")
 
     def handle_fingerprint_match(self, employee_id):
         cursor = self.db.execute_query("""
@@ -2016,7 +728,7 @@ class Home:
         if cursor:
             result = cursor.fetchone()
             if result:
-                if result[10] == "Inactive":  # Check if employee is inactive
+                if result[10] == "Inactive":
                     self.show_error("Access Denied", "Your account is inactive. Please contact HR.")
                     return
 
@@ -2036,18 +748,15 @@ class Home:
                     "email": result[14]
                 }
 
-                # Check if HR
                 if self.employee_data["is_hr"]:
                     if self.validate_hr_attendance(self.employee_data):
                         self.goto_hr_ui(self.employee_data)
                     return
 
-                # Get current time and schedule
                 current_time = datetime.now()
                 current_hour = current_time.hour
                 schedule_start, schedule_end = self.parse_schedule(self.employee_data["schedule"])
 
-                # Check attendance status
                 current_date = current_time.strftime("%Y-%m-%d")
                 cursor = self.db.execute_query(
                     "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ? ORDER BY time DESC LIMIT 1",
@@ -2066,7 +775,7 @@ class Home:
                     self.employee_data["is_late"] = datetime.now() > late_threshold
 
                 self.update_bio_page_info()
-                self.source_page = "bio_page"  # Set source when coming from bio
+                self.source_page = "bio_page"
                 if not self.employee_data["password_changed"]:
                     QTimer.singleShot(2000, lambda: self.show_change_password_dialog())
                 else:
@@ -2110,48 +819,103 @@ class Home:
     def on_password_changed(self):
         self.goto_result_prompt()
 
+    def handle_default_login(self):
+        if self.device_transition_in_progress or not self.home_ui.default_login_btn.isEnabled():
+            return
+
+        current_time = time.time()
+        elapsed_time = current_time - self.last_mode_switch_time
+
+        if (elapsed_time < self.device_cooldown_period): 
+            remaining_time = round(self.device_cooldown_period - elapsed_time)
+            self.show_warning("Please Wait", f"Device needs {remaining_time} more seconds to initialize. Please wait.")
+            return
+
+        self.device_transition_in_progress = True
+        self.home_ui.default_login_btn.setEnabled(False)
+        self.last_mode_switch_time = current_time
+
+        try:
+            self.goto_default_login()
+        except Exception as e:
+            print(f"Error in handle_default_login: {e}")
+            self.device_transition_in_progress = False
+            self.home_ui.default_login_btn.setEnabled(True)
+
     def goto_default_login(self):
+        if self.device_transition_in_progress is False:
+            return
+
         current_page = self.home_ui.main_page.currentWidget()
-        
         try:
             if current_page == self.home_ui.home_page:
-                # Going to bio page - first set page then handle device
                 self.home_ui.main_page.setCurrentWidget(self.home_ui.bio_page)
-                
+                self.home_ui.bio_note_lbl.setText("Initializing sensor, please wait...")
+                QApplication.processEvents()  # Force UI update
                 def safe_init():
                     try:
-                        # Create new ZKFP2 instance to ensure clean state
-                        self.fp_logic.zkfp = ZKFP2()
-                        self.fp_logic.device_open = False
+                        if hasattr(self, 'fp_logic'):
+                            if self.fp_logic.device_open:
+                                try:
+                                    self.fp_logic.terminate_device()
+                                    print("Device terminated successfully before reinitializing")
+                                    time.sleep(2)
+                                except Exception as e:
+                                    print(f"Error terminating device before reinit: {e}")
+
+                            self.fp_logic = FingerprintLogic(self.db)
+
+                        time.sleep(1)
                         
                         if self.fp_logic.initialize_device():
+                            self.fp_logic.signals = self.fp_signals
                             self.home_ui.bio_note_lbl.setText("Sensor ready. Please tap your finger.")
                             self.start_fingerprint_scanning()
                         else:
-                            self.home_ui.bio_note_lbl.setText("Error initializing sensor. Please use default login.")
-                            
+                            self.home_ui.bio_note_lbl.setText("Error initializing sensor. Please try again.")
+                            self.show_error("Device Error", "Failed to initialize fingerprint device.")
                     except Exception as e:
-                        print(f"Error in safe_init: {e}")
+                        print(f"Error initializing fingerprint device: {e}")
                         self.home_ui.bio_note_lbl.setText("Error initializing sensor. Please try again.")
-                
-                # Delay initialization 
-                QTimer.singleShot(1500, safe_init)
-                
-            else:
-                # Going to home page - first close device then switch page
-                if self.fp_logic.device_open:
-                    try:
-                        self.fp_logic.terminate_device()
-                    except Exception as e:
-                        print(f"Error terminating device: {e}")
+                        self.show_error("Device Error", f"Failed to initialize fingerprint device: {str(e)}")
                     finally:
-                        self.fp_logic.device_open = False
-                        
-                self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
-                        
+                        self.device_transition_in_progress = False
+                        self.home_ui.default_login_btn.setEnabled(True)
+                
+                # Allow a longer delay before init to ensure UI transition completes
+                QTimer.singleShot(2000, safe_init)
+            else:
+                # Going from biometric login to traditional login
+                if hasattr(self, 'fp_logic'):
+                    def cleanup_and_switch():
+                        try:
+                            if self.fp_logic.device_open:
+                                print("Terminating device before switching to traditional login")
+                                self.fp_logic.terminate_device()
+                                time.sleep(1)
+                        except Exception as e:
+                            print(f"Error terminating device: {e}")
+                        finally:
+                            self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
+                            self.device_transition_in_progress = False
+                            self.home_ui.default_login_btn.setEnabled(True)
+                            print("Successfully switched to traditional login")
+                            
+                    # Add this message to inform the user of the transition
+                    self.home_ui.bio_note_lbl.setText("Switching to traditional login...")
+                    QApplication.processEvents()  # Force UI update
+                    QTimer.singleShot(1000, cleanup_and_switch)
+                else:
+                    self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
+                    self.device_transition_in_progress = False
+                    self.home_ui.default_login_btn.setEnabled(True)
+
         except Exception as e:
-            print(f"Error switching pages: {e}")
+            print(f"Error in page transition: {e}")
+            self.device_transition_in_progress = False
+            self.home_ui.default_login_btn.setEnabled(True)
             self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
+            self.show_error("Navigation Error", "Error switching pages. Please try again.")
 
     def update_date_today(self):
         current_date = datetime.now()
@@ -2258,7 +1022,7 @@ class Home:
                             self.system_logs.log_system_action("A user is logged in as HR", "Employee")
                     else:
                         self.employee_data = employee_data
-                        self.source_page = "home_page"  # Set source when coming from login
+                        self.source_page = "home_page"
                         if self.validate_attendance():
                             self.system_logs.log_system_action("A user is logged in as an employee", "Employee")
                             self.goto_bio1()
@@ -2283,7 +1047,7 @@ class Home:
 
         response = dialog.exec()
         if response == QMessageBox.Yes:
-            self.goto_admin_change_pass_ui()  # Redirect to the new admin change password UI
+            self.goto_admin_change_pass_ui()
         else:
             Home.failed_attempts = 0
             
@@ -2300,7 +1064,6 @@ class Home:
         self.admin_change_pass_ui.np_visibility_btn.clicked.connect(self.toggle_np_visibility)
         self.admin_change_pass_ui.changepass_visibility_btn.clicked.connect(self.toggle_changepass_visibility)
 
-        # Connect the change password button
         self.admin_change_pass_ui.admin_change_pass_btn.clicked.connect(self.validate_and_change_admin_password)
 
         self.admin_change_pass_ui.show()
@@ -2335,7 +1098,6 @@ class Home:
                 self.admin_change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
             
-            # Fetch the default password from the database
             cursor = self.db.execute_query("SELECT default_pass FROM Admin WHERE admin_id = ?", (self.admin_id,))
             result = cursor.fetchone()
 
@@ -2346,7 +1108,6 @@ class Home:
 
             db_default_password = result[0]
 
-            # Verify the default password
             try:
                 PASSWORD_HASHER.verify(db_default_password, default_password)
             except argon2.exceptions.VerifyMismatchError:
@@ -2354,7 +1115,6 @@ class Home:
                 self.admin_change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
 
-            # Validate new password
             if not new_password or not confirm_password:
                 self.admin_change_pass_ui.change_pass_note.setText("Error: All fields are required.")
                 self.admin_change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
@@ -2370,7 +1130,6 @@ class Home:
                 self.admin_change_pass_ui.change_pass_note.setStyleSheet("color: red; border: none;")
                 return
 
-            # Hash the new password and update the database
             hashed_password = PASSWORD_HASHER.hash(new_password)
             self.db.execute_query(
                 "UPDATE Admin SET password = ?, password_changed = TRUE WHERE admin_id = ?",
@@ -2768,19 +1527,18 @@ class Home:
             result_prompt = self.home_ui.main_page.indexOf(self.home_ui.result_page)
             self.home_ui.main_page.setCurrentIndex(result_prompt)
 
-            # Modify the return timer to check source_page and reset bio page
             def return_to_source():
                 if self.source_page == "bio_page":
                     self.home_ui.main_page.setCurrentWidget(self.home_ui.bio_page)
-                    self.clear_bio_page()  # Clear displays
-                    self.start_fingerprint_scanning()  # Restart scanning
+                    self.clear_bio_page()
+                    self.start_fingerprint_scanning()
                 else:
                     self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
                 
                 self.home_ui.home_id_box.clear()
                 self.home_ui.home_pass_box.clear()
                 self.home_ui.home_pass_box.setEchoMode(QLineEdit.Password)
-                self.source_page = None  # Reset source page
+                self.source_page = None
 
             QTimer.singleShot(5000, return_to_source)
 
@@ -2960,8 +1718,8 @@ class Admin:
         self.admin_ui.employee_enroll_btn.clicked.connect(self.goto_employee_enroll)
         self.admin_ui.employee_enroll_cancel.clicked.connect(self.goto_employee_hr)
         self.admin_ui.employee_enroll_1.clicked.connect(self.goto_employee_enroll_2_with_validation)
-        self.admin_ui.employee_enroll_back1.clicked.connect(self.goto_employee_enroll)
-        self.admin_ui.employee_enroll_2.clicked.connect(self.goto_employee_enroll_3)
+        self.admin_ui.employee_enroll_back1.clicked.connect(self.handle_enrollment_back_button)
+        self.admin_ui.employee_enroll_2.clicked.connect(self.goto_employee_enroll_3_with_validation)
         self.admin_ui.employee_enroll_back2.clicked.connect(self.goto_employee_enroll_2)
         self.admin_ui.employee_enroll_3.clicked.connect(self.finalize_employee_enrollment)
 
@@ -3027,7 +1785,6 @@ class Admin:
         if hasattr(self.admin_ui, "chart_layout2") and self.avg_work_hours_chart_view:
             self.admin_ui.chart_layout2.addWidget(self.avg_work_hours_chart_view, 0, 0)
         
-        # --- PIE CHART SETUP ---
         self.pie_chart_view = None
         self.setup_attendance_pie_chart()
         if hasattr(self.admin_ui, "chart_layout3") and self.pie_chart_view:
@@ -3118,6 +1875,19 @@ class Admin:
 
     def goto_home(self):
         self.system_logs.log_system_action("The Admin logged out.", "Admin")
+        
+        if hasattr(self, 'fingerprint_logic') and self.fingerprint_logic.device_open:
+            try:
+                self.fingerprint_logic.terminate_device()
+            except Exception as e:
+                print(f"Error terminating device during logout: {e}")
+        
+        global global_home_ui
+        
+        if hasattr(global_home_ui, "main_page"):
+            home = Home(self.db)
+            global_home_ui = home.home_ui
+        
         global_home_ui.showMaximized()
         self.admin_ui.close()
 
@@ -3165,10 +1935,15 @@ class Admin:
             self.admin_ui.feedbacks_text_box.clear()
     
     def goto_employee_hr(self):
+        if hasattr(self, 'fingerprint_logic') and self.fingerprint_logic.device_open:
+            try:
+                self.fingerprint_logic.terminate_device()
+            except Exception as e:
+                print(f"Error terminating device: {e}")
+        
         self.system_logs.log_system_action("Goes to the employee HR page.", "Employee")
         employee_hr_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_hr_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_hr_page)
-
 
     def goto_employee_edit(self):
         self.system_logs.log_system_action("A selected employee is being edited.", "Employee")
@@ -3182,6 +1957,12 @@ class Admin:
         self.admin_ui.is_hr_no.setChecked(True)
         self.toggle_hr_fields()
 
+    def goto_employee_enroll_2_with_validation(self):
+        valid, result = self.validate_employee_data()
+        if valid:
+            self.current_employee_data = result
+            self.goto_employee_enroll_2()
+
     def goto_employee_enroll_2(self):
         if not hasattr(self, 'current_employee_data') or not self.current_employee_data:
             self.show_error("Enrollment Error", "Please register the employee first.")
@@ -3190,13 +1971,27 @@ class Admin:
         self.system_logs.log_system_action("Proceeding to fingerprint enrollment step 2.", "Employee")
         employee_enroll_2_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_enroll2_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_enroll_2_page)
-
+        
+        self.fingerprint_logic.cancel_registration()
         self.initialize_fp_device()
 
     def initialize_fp_device(self):
+        if self.fingerprint_logic.is_fingerprint_registered(self.current_employee_data["employee_id"]):
+            self.admin_ui.device_lbl.setText("Fingerprint already registered for this employee.")
+            self.admin_ui.fp_enrollment_note_lbl.setText("You can proceed to the next step.")
+            self.fingerprint_logic.enrollment_completed = True
+            return
+            
+        if self.fingerprint_logic.device_open:
+            try:
+                self.fingerprint_logic.terminate_device()
+            except Exception as e:
+                print(f"Error terminating device: {e}")
+            
         device_status = self.fingerprint_logic.initialize_device()
         if device_status:
             self.admin_ui.device_lbl.setText("Device initialized successfully.")
+            self.admin_ui.fp_enrollment_note_lbl.setText("Please follow the instructions to register a fingerprint.")
             self.fingerprint_logic.register_fingerprint(
                 self.current_employee_data["employee_id"],
                 self.admin_ui.fp_image_lbl,
@@ -3204,16 +1999,52 @@ class Admin:
             )
         else:
             self.admin_ui.device_lbl.setText("No device found. Please reinitialize.")
+            self.admin_ui.fp_enrollment_note_lbl.setText("Cannot proceed without fingerprint reader.")
 
     def handle_fp_device_rescan(self):
-        self.fingerprint_logic.terminate_device()
-        self.initialize_fp_device()
+        try:
+            self.fingerprint_logic.terminate_device()
+        except Exception as e:
+            print(f"Error terminating device: {e}")
+        
+        QTimer.singleShot(1000, self.initialize_fp_device)
+
+    def handle_enrollment_back_button(self):
+        if self.fingerprint_logic.enrollment_in_progress:
+            dialog = QMessageBox()
+            dialog.setIcon(QMessageBox.Warning)
+            dialog.setText("Fingerprint Registration In Progress")
+            dialog.setInformativeText("Canceling now will lose all progress. Are you sure?")
+            dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            dialog.setDefaultButton(QMessageBox.No)
+            
+            if dialog.exec() == QMessageBox.Yes:
+                self.fingerprint_logic.cancel_registration()
+                self.goto_employee_enroll()
+        else:
+            self.goto_employee_enroll()
+    
+    def goto_employee_enroll_3_with_validation(self):
+        if not self.fingerprint_logic.enrollment_completed:
+            if self.fingerprint_logic.is_fingerprint_registered(self.current_employee_data["employee_id"]):
+                self.goto_employee_enroll_3()
+            else:
+                self.show_error("Enrollment Error", "Please complete fingerprint registration before proceeding.")
+                self.admin_ui.fp_enrollment_note_lbl.setText("Fingerprint registration is required to continue.")
+        else:
+            self.goto_employee_enroll_3()
 
     def goto_employee_enroll_3(self):
+        if self.fingerprint_logic.device_open:
+            try:
+                self.fingerprint_logic.terminate_device()
+            except Exception as e:
+                print(f"Error terminating device: {e}")
+        
         self.system_logs.log_system_action("the enrollment proceed to the step 3.", "Employee")
         employee_enroll_3_page = self.admin_ui.admin_employee_sc_pages.indexOf(self.admin_ui.employee_enroll3_page)
         self.admin_ui.admin_employee_sc_pages.setCurrentIndex(employee_enroll_3_page)
-        
+
     def filter_employee_table(self):
         search_text = self.admin_ui.employee_search_box.text().lower()
         
@@ -3606,7 +2437,8 @@ class Admin:
 
         status = "Active"
         if self.selected_employee_type == "employee":
-            status_item = self.admin_ui.employee_list_tbl.item(self.selected_employee_index, 3)
+            row = self.selected_employee_index
+            status_item = self.admin_ui.employee_list_tbl.item(row, 3)
             if status_item:
                 status = status_item.text()
         elif self.selected_employee_type == "hr":
@@ -4083,14 +2915,12 @@ class Admin:
             print(f"Database error while saving employee data: {e}")
             return False
 
-    def goto_employee_enroll_2_with_validation(self):
-        valid, result = self.validate_employee_data()
-        if valid:
-            self.current_employee_data = result
-            self.goto_employee_enroll_2()
-
     def finalize_employee_enrollment(self):
         if hasattr(self, 'current_employee_data'):
+            if not self.fingerprint_logic.is_fingerprint_registered(self.current_employee_data["employee_id"]):
+                self.show_error("Enrollment Error", "Fingerprint registration is required. Please go back and complete it.")
+                return
+                
             employee_name = f"{self.current_employee_data['first_name']}_{self.current_employee_data['last_name']}"
             picture_path = self.save_picture(self.current_employee_data['profile_picture'], employee_name)
             if picture_path:
@@ -4246,7 +3076,6 @@ class Admin:
             )
             morning_present = cursor.fetchone()[0] if cursor else 0
 
-            # Afternoon shift
             cursor = self.db.execute_query(
                 "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '2pm to 10pm'"
             )
@@ -4259,7 +3088,6 @@ class Admin:
             )
             afternoon_present = cursor.fetchone()[0] if cursor else 0
 
-            # Night shift
             cursor = self.db.execute_query(
                 "SELECT COUNT(*) FROM Employee WHERE is_hr = 0 AND status = 'Active' AND schedule = '10pm to 6am'"
             )
@@ -4272,7 +3100,6 @@ class Admin:
             )
             night_present = cursor.fetchone()[0] if cursor else 0
 
-            # --- NEW: Average overtime calculation ---
             cursor = self.db.execute_query(
                 "SELECT employee_id FROM attendance_logs WHERE date = ? AND remarks = 'Clock In' AND employee_id IN (SELECT employee_id FROM Employee WHERE is_hr = 0)",
                 (today_date,)
@@ -4313,7 +3140,6 @@ class Admin:
             self.admin_ui.late_employee_lbl.setText(str(late_employees))
             self.admin_ui.absent_employee_lbl.setText(str(absent_employees))
 
-            # --- Set new shift and overtime labels ---
             if hasattr(self.admin_ui, "morning_shift_lbl"):
                 self.admin_ui.morning_shift_lbl.setText(f"{morning_present}/{morning_total}")
             if hasattr(self.admin_ui, "afternoon_shift_lbl"):
@@ -4682,13 +3508,13 @@ class Admin:
     def handle_retention(self, backup_dir, retention_frequency, retention_unit):
         try:
             now = datetime.now()
-            if retention_unit == "Hours":
+            if (retention_unit == "Hours"):
                 threshold = now - timedelta(hours=retention_frequency)
-            elif retention_unit == "Days":
+            elif (retention_unit == "Days"):
                 threshold = now - timedelta(days=retention_frequency)
-            elif retention_unit == "Weeks":
+            elif (retention_unit == "Weeks"):
                 threshold = now - timedelta(weeks=retention_frequency)
-            elif retention_unit == "Months":
+            elif (retention_unit == "Months"):
                 threshold = now - timedelta(days=retention_frequency * 30)  
             else:
                 return
@@ -4975,12 +3801,11 @@ class Admin:
                 hours.append(hours_val)
                 max_hour = max(max_hour, hours_val)
 
-            # Add bar values
             for val in hours:
                 self.bar_set << val
                 
             color = QColor(112, 205, 152)
-            color.setAlphaF(0.6)  # 0.6 opacity
+            color.setAlphaF(0.6)
             self.bar_set.setColor(color)
 
             avg_val = sum(hours) / len(hours) if hours else 0
@@ -5043,1145 +3868,6 @@ class Admin:
                 absent_slice.setLabelVisible(True)
         except Exception as e:
             print(f"Error updating attendance pie chart: {e}")
-
-class Announcement:
-    def __init__(self, db, hr_data, hr_ui):
-        self.db = db
-        self.hr_data = hr_data
-        self.hr_ui = hr_ui
-        self.attachments = []
-        self.edit_radio_buttons = []
-        
-        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_page)
-
-        self.hr_ui.employee_send_all_btn.toggled.connect(self.toggle_send_all)
-        self.hr_ui.employee_choose_btn.toggled.connect(self.toggle_choose_employee)
-        self.hr_ui.email_employee_search_box.textChanged.connect(self.filter_employee_table)
-        self.hr_ui.email_employee_sort_box.currentIndexChanged.connect(self.sort_employee_table)
-        self.hr_ui.save_as_template_btn.clicked.connect(self.save_as_template)
-        self.hr_ui.import_btn.clicked.connect(self.import_template)
-        self.hr_ui.attach_btn.clicked.connect(self.attach_files)
-        self.hr_ui.send_email_btn.clicked.connect(self.send_announcement_email)
-        self.hr_ui.email_view_btn.clicked.connect(self.view_selected_sched_email)
-        self.hr_ui.edit_email_btn.clicked.connect(self.edit_selected_sched_email)
-        self.hr_ui.delete_email_btn.clicked.connect(self.delete_selected_sched_email)
-        self.hr_ui.view_email_back_btn.clicked.connect(self.back_from_view_email)
-        self.hr_ui.edit_email_back_btn.clicked.connect(self.back_from_edit_email)
-        self.hr_ui.save_email_btn.clicked.connect(self.save_edited_email)
-
-        self.hr_ui.view_employee_send_all_btn.toggled.connect(self.toggle_view_send_all)
-        self.hr_ui.view_employee_choose_btn.toggled.connect(self.toggle_view_choose_employee)
-        self.hr_ui.edit_employee_send_all_btn.toggled.connect(self.toggle_edit_send_all)
-        self.hr_ui.edit_employee_choose_btn.toggled.connect(self.toggle_edit_choose_employee)
-
-        self.radio_buttons = []  # Track radio buttons for single selection
-
-        self.load_employee_table()
-        self.toggle_send_all()  # Set initial state
-
-        # --- Scheduled emails UI connections ---
-        self.hr_ui.sched_email_search_box.textChanged.connect(self.filter_sched_email_table)
-        self.hr_ui.sched_email_sort_box.currentIndexChanged.connect(self.sort_sched_email_table)
-        self.load_sched_email_table()
-
-        # Ensure table is only enabled when choose is checked
-        self.hr_ui.selectable_employee_list_tbl.setEnabled(self.hr_ui.employee_choose_btn.isChecked())
-        self.hr_ui.employee_choose_btn.toggled.connect(self.toggle_choose_employee)
-
-    def show_success(self, title, message):
-        chime.theme('chime')
-        chime.success()
-        toast = Toast(self.hr_ui)
-        toast.setTitle(title)
-        toast.setText(message)
-        toast.setDuration(2000)
-        toast.setOffset(25, 35)
-        toast.setBorderRadius(6)
-        toast.applyPreset(ToastPreset.SUCCESS)
-        toast.setBackgroundColor(QColor('#FFFFFF'))
-        toast.setPositionRelativeToWidget(self.hr_ui.hr_home_tabs)
-        toast.setPosition(ToastPosition.TOP_RIGHT)
-        toast.show()
-
-    def show_error(self, title, message):
-        chime.theme('big-sur')
-        chime.warning()
-        toast = Toast(self.hr_ui)
-        toast.setTitle(title)
-        toast.setText(message)
-        toast.setDuration(2000)
-        toast.setOffset(25, 35)
-        toast.setBorderRadius(6)
-        toast.applyPreset(ToastPreset.ERROR)
-        toast.setBackgroundColor(QColor('#FFFFFF'))
-        toast.setPositionRelativeToWidget(self.hr_ui.hr_home_tabs)
-        toast.setPosition(ToastPosition.TOP_RIGHT)
-        toast.show()
-
-    def show_warning(self, title, message):
-        chime.warning()
-        toast = Toast(self.hr_ui)
-        toast.setTitle(title)
-        toast.setText(message)
-        toast.setDuration(2000)
-        toast.setOffset(25, 35)
-        toast.setBorderRadius(6)
-        toast.applyPreset(ToastPreset.WARNING)
-        toast.setBackgroundColor(QColor('#FFFFFF'))
-        toast.setPositionRelativeToWidget(self.hr_ui.hr_home_tabs)
-        toast.setPosition(ToastPosition.TOP_RIGHT)
-        toast.show()
-
-    def toggle_view_send_all(self):
-        self.hr_ui.view_email_employee_list_tbl.setDisabled(self.hr_ui.view_employee_send_all_btn.isChecked())
-        if self.hr_ui.view_employee_send_all_btn.isChecked():
-            self.load_view_email_employee_table("All")
-
-    def toggle_view_choose_employee(self):
-        self.hr_ui.view_email_employee_list_tbl.setEnabled(self.hr_ui.view_employee_choose_btn.isChecked())
-        if self.hr_ui.view_employee_choose_btn.isChecked():
-            self.load_view_email_employee_table("Selected")
-
-    def toggle_edit_send_all(self):
-        self.hr_ui.edit_email_employee_list_tbl.setDisabled(self.hr_ui.edit_employee_send_all_btn.isChecked())
-        if self.hr_ui.edit_employee_send_all_btn.isChecked():
-            self.load_edit_email_employee_table("All")
-    
-    def toggle_edit_choose_employee(self):
-        self.hr_ui.edit_email_employee_list_tbl.setEnabled(self.hr_ui.edit_employee_choose_btn.isChecked())
-        if self.hr_ui.edit_employee_choose_btn.isChecked():
-            self.load_edit_email_employee_table("Selected")
-
-    def load_view_email_employee_table(self, sending_type):
-        tbl = self.hr_ui.view_email_employee_list_tbl
-        tbl.setRowCount(0)
-        if sending_type == "All":
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
-        else:
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE employee_id = ?", (self.hr_data["employee_id"],))
-        employees = cursor.fetchall() if cursor else []
-        for emp in employees:
-            row = tbl.rowCount()
-            tbl.insertRow(row)
-            mi = f" {emp[3]}." if emp[3] else ""
-            name = f"{emp[2]}, {emp[1]}{mi}"
-            tbl.setItem(row, 0, QTableWidgetItem(name))
-            tbl.setItem(row, 1, QTableWidgetItem(emp[0]))
-            tbl.setItem(row, 2, QTableWidgetItem(f"{emp[4]} / {emp[5]}"))
-        tbl.resizeColumnsToContents()
-
-    def load_edit_email_employee_table(self, sending_type):
-        tbl = self.hr_ui.edit_email_employee_list_tbl
-        tbl.setRowCount(0)
-        if sending_type == "All":
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
-        else:
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE employee_id = ?", (self.hr_data["employee_id"],))
-        employees = cursor.fetchall() if cursor else []
-        for emp in employees:
-            row = tbl.rowCount()
-            tbl.insertRow(row)
-            mi = f" {emp[3]}." if emp[3] else ""
-            name = f"{emp[2]}, {emp[1]}{mi}"
-            tbl.setItem(row, 0, QTableWidgetItem(name))
-            tbl.setItem(row, 1, QTableWidgetItem(emp[0]))
-            tbl.setItem(row, 2, QTableWidgetItem(f"{emp[4]} / {emp[5]}"))
-        tbl.resizeColumnsToContents()
-
-    def toggle_send_all(self):
-        # If send all is checked, disable table
-        self.hr_ui.selectable_employee_list_tbl.setDisabled(self.hr_ui.employee_send_all_btn.isChecked())
-        # If send all is checked, also unselect all radios
-        if self.hr_ui.employee_send_all_btn.isChecked():
-            for radio in self.radio_buttons:
-                radio.setChecked(False)
-
-    def toggle_choose_employee(self):
-        # Only enable table if choose is checked
-        enabled = self.hr_ui.employee_choose_btn.isChecked()
-        self.hr_ui.selectable_employee_list_tbl.setEnabled(enabled)
-        if not enabled:
-            for radio in self.radio_buttons:
-                radio.setChecked(False)
-
-    def load_sched_email_table(self):
-        tbl = self.hr_ui.sched_email_list_tbl
-        tbl.setRowCount(0)
-        cursor = self.db.execute_query(
-            "SELECT subject, created_at, schedule_frequency FROM announcements WHERE schedule_enabled = 1 ORDER BY created_at DESC"
-        )
-        self.sched_email_entries = cursor.fetchall() if cursor else []
-        for entry in self.sched_email_entries:
-            row = tbl.rowCount()
-            tbl.insertRow(row)
-            tbl.setItem(row, 0, QTableWidgetItem(entry[0]))  # Subject
-            tbl.setItem(row, 1, QTableWidgetItem(str(entry[1])))  # Created at
-            tbl.setItem(row, 2, QTableWidgetItem(str(entry[2])))  # Frequency
-
-    def filter_sched_email_table(self):
-        search_text = self.hr_ui.sched_email_search_box.text().lower()
-        tbl = self.hr_ui.sched_email_list_tbl
-        for row in range(tbl.rowCount()):
-            show = False
-            for col in range(tbl.columnCount()):
-                item = tbl.item(row, col)
-                if item and search_text in item.text().lower():
-                    show = True
-                    break
-            tbl.setRowHidden(row, not show)
-
-    def sort_sched_email_table(self):
-        sort_option = self.hr_ui.sched_email_sort_box.currentText()
-        tbl = self.hr_ui.sched_email_list_tbl
-        # Gather all rows
-        rows = []
-        for row in range(tbl.rowCount()):
-            row_data = [tbl.item(row, col).text() if tbl.item(row, col) else "" for col in range(tbl.columnCount())]
-            rows.append(row_data)
-        # Sort
-        if sort_option == "By Subject:":
-            rows.sort(key=lambda x: x[0].lower())
-        elif sort_option == "By Created Date:":
-            rows.sort(key=lambda x: x[1], reverse=True)
-        elif sort_option == "By Frequency:":
-            rows.sort(key=lambda x: x[2].lower())
-        # Repopulate
-        tbl.setRowCount(0)
-        for row_data in rows:
-            row = tbl.rowCount()
-            tbl.insertRow(row)
-            for col, val in enumerate(row_data):
-                tbl.setItem(row, col, QTableWidgetItem(val))
-        tbl.resizeColumnsToContents()
-    
-    def load_employee_table(self):
-        cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
-        employees = cursor.fetchall() if cursor else []
-        tbl = self.hr_ui.selectable_employee_list_tbl
-        tbl.setRowCount(0)
-        self.employee_list = []
-        self.radio_buttons = []
-        for emp in employees:
-            emp_data = {
-                "employee_id": emp[0],
-                "first_name": emp[1],
-                "last_name": emp[2],
-                "middle_initial": emp[3],
-                "department": emp[4],
-                "position": emp[5]
-            }
-            self.employee_list.append(emp_data)
-            row = tbl.rowCount()
-            tbl.insertRow(row)
-            # Add radio button for selection
-            radio = QRadioButton()
-            radio.setStyleSheet("background-color: white;")  # Set white background
-            radio.toggled.connect(lambda checked, r=row: self.handle_radio_selected(r, checked))
-            self.radio_buttons.append(radio)
-            tbl.setCellWidget(row, 0, radio)
-            # Name
-            mi = f" {emp_data['middle_initial']}." if emp_data['middle_initial'] else ""
-            name = f"{emp_data['last_name']}, {emp_data['first_name']}{mi}"
-            tbl.setItem(row, 1, QTableWidgetItem(name))
-            tbl.setItem(row, 2, QTableWidgetItem(emp_data['employee_id']))
-            tbl.setItem(row, 3, QTableWidgetItem(f"{emp_data['department']} / {emp_data['position']}"))
-        tbl.resizeColumnsToContents()
-
-    def handle_radio_selected(self, row, checked):
-        if checked:
-            # Uncheck all other radios
-            for idx, radio in enumerate(self.radio_buttons):
-                if idx != row:
-                    radio.setChecked(False)
-
-    def filter_employee_table(self):
-        search_text = self.hr_ui.email_employee_search_box.text().lower()
-        tbl = self.hr_ui.selectable_employee_list_tbl
-        for row in range(tbl.rowCount()):
-            show = False
-            for col in range(1, tbl.columnCount()):
-                item = tbl.item(row, col)
-                if item and search_text in item.text().lower():
-                    show = True
-                    break
-            tbl.setRowHidden(row, not show)
-
-    def sort_employee_table(self):
-        sort_option = self.hr_ui.email_employee_sort_box.currentText()
-        if sort_option == "By Name:":
-            self.employee_list.sort(key=lambda x: (x["last_name"].lower(), x["first_name"].lower()))
-        elif sort_option == "By Account ID:":
-            self.employee_list.sort(key=lambda x: x["employee_id"])
-        elif sort_option == "By Department:":
-            self.employee_list.sort(key=lambda x: x["department"].lower())
-        # Re-populate table
-        self.hr_ui.selectable_employee_list_tbl.setRowCount(0)
-        self.radio_buttons = []
-        for emp_data in self.employee_list:
-            row = self.hr_ui.selectable_employee_list_tbl.rowCount()
-            self.hr_ui.selectable_employee_list_tbl.insertRow(row)
-            radio = QRadioButton()
-            radio.setStyleSheet("background-color: white;")  # Set white background
-            radio.toggled.connect(lambda checked, r=row: self.handle_radio_selected(r, checked))
-            self.radio_buttons.append(radio)
-            self.hr_ui.selectable_employee_list_tbl.setCellWidget(row, 0, radio)
-            mi = f" {emp_data['middle_initial']}." if emp_data['middle_initial'] else ""
-            name = f"{emp_data['last_name']}, {emp_data['first_name']}{mi}"
-            self.hr_ui.selectable_employee_list_tbl.setItem(row, 1, QTableWidgetItem(name))
-            self.hr_ui.selectable_employee_list_tbl.setItem(row, 2, QTableWidgetItem(emp_data["employee_id"]))
-            self.hr_ui.selectable_employee_list_tbl.setItem(row, 3, QTableWidgetItem(f"{emp_data['department']} / {emp_data['position']}"))
-        self.hr_ui.selectable_employee_list_tbl.resizeColumnsToContents()
-
-    def get_theme_images(self):
-
-        theme_map = {
-            "Default": ("default_theme_header.jpg", "default_theme_footer.jpg"),
-            "Christmass Design": ("xmass_theme_header.jpg", "xmass_theme_footer.jpg"),
-            "Design 1": ("theme1_header.jpg", "theme1_footer.jpg"),
-            "Design 2": ("theme2_header.jpg", "theme2_footer.jpg"),
-        }
-        theme = "Default"  
-        if self.hr_ui.set_theme_btn.isChecked():
-            theme = self.hr_ui.theme_design_box.currentText()
-        header, footer = theme_map.get(theme, theme_map["Default"])
-        header_path = os.path.join("resources", "theme_images", header)
-        footer_path = os.path.join("resources", "theme_images", footer)
-        return header_path, footer_path
-
-    def attach_files(self):
-        valid_exts = ('.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.zip')
-        files, _ = QFileDialog.getOpenFileNames(self.hr_ui, "Select Attachments", "", 
-            "Allowed Files (*.pdf *.jpg *.jpeg *.png *.doc *.docx *.xls *.xlsx *.txt *.csv *.zip)")
-        if files:
-            valid_files = [f for f in files if os.path.splitext(f)[1].lower() in valid_exts]
-            if len(valid_files) < len(files):
-                QMessageBox.warning(self.hr_ui, "Attachment Error", "Some files were not added because they are not supported by Gmail.")
-            for f in valid_files:
-                if f not in self.attachments:
-                    self.attachments.append(f)
-            self.update_attachments_list()
-
-    def update_attachments_list(self):
-        lw: QListWidget = self.hr_ui.attachments_list
-        lw.clear()
-        for file_path in self.attachments:
-            fname = os.path.basename(file_path)
-            item_widget = QWidget()
-            hbox = QHBoxLayout(item_widget)
-            hbox.setContentsMargins(0, 0, 0, 0)
-            label = QLabel(fname)
-            btn = QPushButton("✕")
-            btn.setFixedSize(20, 20)
-            btn.setStyleSheet("color: red; background: transparent; border: none; font-weight: bold;")
-            btn.clicked.connect(lambda _, f=file_path: self.remove_attachment(f))
-            hbox.addWidget(label)
-            hbox.addWidget(btn)
-            hbox.addStretch()
-            item_widget.setLayout(hbox)
-            item = QListWidgetItem()
-            item.setSizeHint(item_widget.sizeHint())
-            lw.addItem(item)
-            lw.setItemWidget(item, item_widget)
-
-    def remove_attachment(self, file_path):
-        if file_path in self.attachments:
-            if os.path.commonpath([os.path.abspath(file_path), os.path.abspath("resources/email_files")]) == os.path.abspath("resources/email_files"):
-                try:
-                    os.remove(file_path)
-                except Exception:
-                    pass
-            self.attachments.remove(file_path)
-            self.update_attachments_list()
-
-    def save_as_template(self):
-        # Save current announcement as a template (JSON)
-        template_dir = "resources/email_templates"
-        if not os.path.exists(template_dir):
-            os.makedirs(template_dir)
-        subject = self.hr_ui.email_subject.text()
-        message = self.hr_ui.email_message.toPlainText()
-        schedule = self.hr_ui.set_schedule_btn.isChecked()
-        schedule_freq = self.hr_ui.schedule_frequency_box.currentText() if schedule else ""
-        theme = self.hr_ui.set_theme_btn.isChecked()
-        theme_type = self.hr_ui.theme_design_box.currentText() if theme else ""
-        template = {
-            "subject": subject,
-            "message": message,
-            "schedule": schedule,
-            "schedule_frequency": schedule_freq,
-            "theme": theme,
-            "theme_type": theme_type
-        }
-        fname, _ = QFileDialog.getSaveFileName(self.hr_ui, "Save Template", template_dir, "JSON Files (*.json)")
-        if fname:
-            with open(fname, "w", encoding="utf-8") as f:
-                json.dump(template, f)
-
-    def import_template(self):
-        template_dir = "resources/email_templates"
-        fname, _ = QFileDialog.getOpenFileName(self.hr_ui, "Import Template", template_dir, "JSON Files (*.json)")
-        if fname:
-            with open(fname, "r", encoding="utf-8") as f:
-                template = json.load(f)
-            self.hr_ui.email_subject.setText(template.get("subject", ""))
-            self.hr_ui.email_message.setPlainText(template.get("message", ""))
-            if template.get("schedule", False):
-                self.hr_ui.set_schedule_btn.setChecked(True)
-                self.hr_ui.schedule_frequency_box.setCurrentText(template.get("schedule_frequency", "Daily"))
-            else:
-                self.hr_ui.set_schedule_btn.setChecked(False)
-            if template.get("theme", False):
-                self.hr_ui.set_theme_btn.setChecked(True)
-                self.hr_ui.theme_design_box.setCurrentText(template.get("theme_type", ""))
-            else:
-                self.hr_ui.set_theme_btn.setChecked(False)
-
-    def compose_html_body(self, message, subject, header_img, footer_img):
-        html_header = '<img src="cid:headerimg" style="display:block; margin:auto; width:100%;"><br>' if os.path.exists(header_img) else ""
-        
-        html_content = f"""
-            <div style="margin: 20px auto; padding: 20px; max-width: 600px; font-family: Arial, sans-serif;">
-                <div style="background-color: #4285f4; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-                    <h2 style="margin: 0; text-align: center;">{subject}</h2>
-                </div>
-                <div style="background-color: #ffffff; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <div style="color: #666666; line-height: 1.6;">
-                        {message}
-                    </div>
-                    <br>
-                    <div style="color: #666666; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-                        <p style="margin-bottom: 0;">Best regards,<br>EALS HR Team</p>
-                    </div>
-                </div>
-            </div>
-        """
-        html_footer = '<br><img src="cid:footerimg" style="display:block; margin:auto; width:100%;">' if os.path.exists(footer_img) else ""
-        return f"{html_header}{html_content}{html_footer}"
-
-    def send_emails(self, recipients, subject, message, header_img, footer_img):
-        sender_email = "eals.tupc@gmail.com"
-        sender_password = "buwl tszg dghr exln"
-        
-        for recipient in recipients:
-            try:
-                msg = MIMEMultipart()
-                msg["From"] = sender_email
-                msg["To"] = recipient
-                msg["Subject"] = subject
-
-                # Attach header image
-                if os.path.exists(header_img):
-                    with open(header_img, "rb") as f:
-                        img = MIMEImage(f.read())
-                        img.add_header("Content-ID", "<headerimg>")
-                        img.add_header("Content-Disposition", "inline", filename=os.path.basename(header_img))
-                        msg.attach(img)
-
-                # Attach footer image
-                if os.path.exists(footer_img):
-                    with open(footer_img, "rb") as f:
-                        img = MIMEImage(f.read())
-                        img.add_header("Content-ID", "<footerimg>")
-                        img.add_header("Content-Disposition", "inline", filename=os.path.basename(footer_img))
-                        msg.attach(img)
-
-                # Attach HTML content
-                html_body = self.compose_html_body(message, subject, header_img, footer_img)
-                msg.attach(MIMEText(html_body, "html"))
-
-                # Attach files
-                for file_path in self.attachments:
-                    try:
-                        with open(file_path, "rb") as f:
-                            from email.mime.base import MIMEBase
-                            from email import encoders
-                            part = MIMEBase("application", "octet-stream")
-                            part.set_payload(f.read())
-                            encoders.encode_base64(part)
-                            part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(file_path)}")
-                            msg.attach(part)
-                    except Exception as e:
-                        print(f"Attachment error: {file_path}: {e}")
-                        continue
-
-                # Send email
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                    server.login(sender_email, sender_password)
-                    server.send_message(msg)
-                
-
-            except Exception as e:
-                print(f"Error sending announcement email to {recipient}: {e}")
-
-    def send_announcement_email(self):
-        subject = self.hr_ui.email_subject.text()
-        message = self.hr_ui.email_message.toPlainText()
-        # --- Failsafe checks ---
-        if not subject.strip():
-            self.show_error("Missing Subject", "Please enter a subject for the announcement.")
-            return
-        if not message.strip():
-            self.show_error("Missing Message", "Please enter a message for the announcement.")
-            return
-        if not (self.hr_ui.employee_send_all_btn.isChecked() or self.hr_ui.employee_choose_btn.isChecked()):
-            self.show_error("No Recipient Type", "Please select either 'Send to All' or 'Choose Employee'.")
-            return
-        if self.hr_ui.employee_choose_btn.isChecked():
-            selected = any(radio.isChecked() for radio in self.radio_buttons)
-            if not selected:
-                self.show_error("No Employee Selected", "Please select at least one employee from the table.")
-                return
-        schedule_enabled = self.hr_ui.set_schedule_btn.isChecked()
-        schedule_frequency = self.hr_ui.schedule_frequency_box.currentText() if schedule_enabled else None
-        theme_enabled = self.hr_ui.set_theme_btn.isChecked()
-        theme_type = self.hr_ui.theme_design_box.currentText() if theme_enabled else None
-        header_img, footer_img = self.get_theme_images()
-
-        sending_type = "All" if self.hr_ui.employee_send_all_btn.isChecked() else "Selected"
-        involved_employee = None
-        recipients = []
-        if sending_type == "All":
-            cursor = self.db.execute_query("SELECT email FROM Employee WHERE is_hr = 0 AND status = 'Active'")
-            recipients = [row[0] for row in cursor.fetchall()] if cursor else []
-        else:
-            tbl = self.hr_ui.selectable_employee_list_tbl
-            for row, radio in enumerate(self.radio_buttons):
-                if radio.isChecked():
-                    emp_id = tbl.item(row, 2).text()
-                    cursor = self.db.execute_query("SELECT email FROM Employee WHERE employee_id = ?", (emp_id,))
-                    result = cursor.fetchone()
-                    if result:
-                        recipients.append(result[0])
-                        involved_employee = emp_id
-                    break
-
-        # Save announcement to database and handle attachments
-        self.save_announcement_to_db(subject, message, sending_type, involved_employee, 
-                                   schedule_enabled, schedule_frequency, theme_enabled, theme_type)
-
-        # Send emails in background thread
-        QTimer.singleShot(0, lambda: self.show_success("Announcement Sent", f"Successfully sent announcement email."))
-        threading.Thread(
-            target=lambda: self.send_emails(recipients, subject, message, header_img, footer_img),
-            daemon=True
-        ).start()
-
-        # Clear form
-        self.clear_announcement_form()
-
-    def save_announcement_to_db(self, subject, message, sending_type, involved_employee, 
-                              schedule_enabled, schedule_frequency, theme_enabled, theme_type):
-        cursor = self.db.execute_query(
-            '''INSERT INTO announcements (subject, message, sending_type, involved_employee, 
-               schedule_enabled, schedule_frequency, theme_enabled, theme_type, 
-               attached_files_count, files_path, created_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-            (subject, message, sending_type, involved_employee, schedule_enabled, 
-             schedule_frequency, theme_enabled, theme_type, 0, "", self.hr_data["employee_id"])
-        )
-        
-        cursor = self.db.execute_query("SELECT id FROM announcements ORDER BY id DESC LIMIT 1")
-        announcement_id = cursor.fetchone()[0] if cursor else None
-
-        if announcement_id:
-            self.handle_attachments(announcement_id)
-
-    def handle_attachments(self, announcement_id):
-        """Handle saving attachments for an announcement"""
-        if not self.attachments:
-            return
-
-        email_files_dir = os.path.join("resources", "email_files", str(announcement_id))
-        if not os.path.exists(email_files_dir):
-            os.makedirs(email_files_dir)
-
-        new_attachment_paths = []
-        for file_path in self.attachments:
-            dest = os.path.join(email_files_dir, os.path.basename(file_path))
-            if not os.path.exists(dest):
-                try:
-                    shutil.copy(file_path, dest)
-                except Exception as e:
-                    print(f"Error copying attachment {file_path}: {e}")
-                    continue
-            new_attachment_paths.append(dest)
-
-        if new_attachment_paths:
-            self.db.execute_query(
-                "UPDATE announcements SET attached_files_count = ?, files_path = ? WHERE id = ?",
-                (len(new_attachment_paths), ";".join(new_attachment_paths), announcement_id)
-            )
-            # Update the attachments list with the new paths
-            self.attachments = new_attachment_paths
-            self.update_attachments_list()
-
-    def clear_announcement_form(self):
-        self.hr_ui.email_subject.clear()
-        self.hr_ui.email_message.clear()
-        self.hr_ui.set_schedule_btn.setChecked(False)
-        self.hr_ui.set_theme_btn.setChecked(False)
-        self.hr_ui.schedule_frequency_box.setCurrentIndex(0)
-        self.hr_ui.theme_design_box.setCurrentIndex(0)
-        for radio in self.radio_buttons:
-            radio.setChecked(False)
-        self.attachments.clear()
-        self.update_attachments_list()
-        self.load_sched_email_table()
-
-    def get_selected_sched_email_row(self):
-        tbl = self.hr_ui.sched_email_list_tbl
-        selected = tbl.selectedIndexes()
-        if selected:
-            return selected[0].row()
-        return None
-
-    def get_sched_email_db_id_by_row(self, row):
-        # Get the announcement id for the selected row in sched_email_list_tbl
-        if row is None or row >= len(self.sched_email_entries):
-            return None
-        subject, created_at, _ = self.sched_email_entries[row]
-        cursor = self.db.execute_query(
-            "SELECT id FROM announcements WHERE subject = ? AND created_at = ? AND schedule_enabled = 1",
-            (subject, created_at)
-        )
-        result = cursor.fetchone() if cursor else None
-        return result[0] if result else None
-
-    def view_selected_sched_email(self):
-        row = self.get_selected_sched_email_row()
-        ann_id = self.get_sched_email_db_id_by_row(row)
-        if ann_id is None:
-            return
-        cursor = self.db.execute_query("SELECT * FROM announcements WHERE id = ?", (ann_id,))
-        ann = cursor.fetchone() if cursor else None
-        if not ann:
-            return
-        # Populate view page fields
-        self.hr_ui.view_email_subject.setText(ann[1])
-        self.hr_ui.view_email_message.setPlainText(ann[2])
-        self.hr_ui.view_set_schedule_btn.setChecked(bool(ann[5]))
-        if ann[5]:
-            self.hr_ui.view_schedule_frequency_box.setCurrentText(str(ann[6]))
-        else:
-            self.hr_ui.view_schedule_frequency_box.setCurrentIndex(0)
-        self.hr_ui.view_set_theme_btn.setChecked(bool(ann[7]))
-        if ann[7]:
-            self.hr_ui.view_theme_design_box.setCurrentText(ann[8] or "")
-        else:
-            self.hr_ui.view_theme_design_box.setCurrentIndex(0)
-        # Employee selection
-        if ann[3] == "All":
-            self.hr_ui.view_employee_send_all_btn.setChecked(True)
-            self.hr_ui.view_employee_choose_btn.setChecked(False)
-            self.hr_ui.view_email_employee_list_tbl.setDisabled(True)
-        else:
-            self.hr_ui.view_employee_send_all_btn.setChecked(False)
-            self.hr_ui.view_employee_choose_btn.setChecked(True)
-            self.hr_ui.view_email_employee_list_tbl.setEnabled(True)
-        # Populate employee table
-        self.populate_view_email_employee_table(ann[3], ann[4])
-        # Attachments
-        self.populate_view_attachments_list(ann[10])
-        # Switch page
-        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_view_page)
-
-    def populate_view_email_employee_table(self, sending_type, involved_employee):
-        tbl = self.hr_ui.view_email_employee_list_tbl
-        tbl.setRowCount(0)
-        if sending_type == "All":
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'")
-        else:
-            cursor = self.db.execute_query("SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE employee_id = ?", (involved_employee,))
-        employees = cursor.fetchall() if cursor else []
-        for emp in employees:
-            row = tbl.rowCount()
-            tbl.insertRow(row)
-            mi = f" {emp[3]}." if emp[3] else ""
-            name = f"{emp[2]}, {emp[1]}{mi}"
-            tbl.setItem(row, 0, QTableWidgetItem(name))
-            tbl.setItem(row, 1, QTableWidgetItem(emp[0]))
-            tbl.setItem(row, 2, QTableWidgetItem(f"{emp[4]} / {emp[5]}"))
-        tbl.resizeColumnsToContents()
-
-    def populate_view_attachments_list(self, files_path):
-        lw = self.hr_ui.view_attachments_list
-        lw.clear()
-        if not files_path:
-            return
-        files = files_path.split(";")
-        for file_path in files:
-            fname = os.path.basename(file_path)
-            item_widget = QWidget()
-            hbox = QHBoxLayout(item_widget)
-            hbox.setContentsMargins(0, 0, 0, 0)
-            label = QLabel(fname)
-            hbox.addWidget(label)
-            hbox.addStretch()
-            item_widget.setLayout(hbox)
-            item = QListWidgetItem()
-            item.setSizeHint(item_widget.sizeHint())
-            lw.addItem(item)
-            lw.setItemWidget(item, item_widget)
-
-    def back_from_view_email(self):
-        # Clear all view fields
-        self.hr_ui.view_email_subject.clear()
-        self.hr_ui.view_email_message.clear()
-        self.hr_ui.view_employee_send_all_btn.setChecked(False)
-        self.hr_ui.view_email_employee_list_tbl.setRowCount(0)
-        self.hr_ui.view_set_schedule_btn.setChecked(False)
-        self.hr_ui.view_schedule_frequency_box.setCurrentIndex(0)
-        self.hr_ui.view_set_theme_btn.setChecked(False)
-        self.hr_ui.view_theme_design_box.setCurrentIndex(0)
-        self.hr_ui.view_attachments_list.clear()
-        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_page)
-
-    def edit_selected_sched_email(self):
-        # --- Failsafe checks before proceeding ---
-        subject = self.hr_ui.edit_email_subject.text()
-        message = self.hr_ui.edit_email_message.toPlainText()
-        if not subject.strip():
-            self.show_error("Missing Subject", "Please enter a subject for the announcement.")
-            return
-        if not message.strip():
-            self.show_error("Missing Message", "Please enter a message for the announcement.")
-            return
-        if not (self.hr_ui.edit_employee_send_all_btn.isChecked() or self.hr_ui.edit_employee_choose_btn.isChecked()):
-            self.show_error("No Recipient Type", "Please select either 'Send to All' or 'Choose Employee'.")
-            return
-        if self.hr_ui.edit_employee_choose_btn.isChecked():
-            tbl = self.hr_ui.edit_email_employee_list_tbl
-            selected = any(
-                tbl.cellWidget(row, 0).isChecked() if tbl.cellWidget(row, 0) else False
-                for row in range(tbl.rowCount())
-            )
-            if not selected:
-                self.show_error("No Employee Selected", "Please select at least one employee from the table.")
-                return
-        row = self.get_selected_sched_email_row()
-        ann_id = self.get_sched_email_db_id_by_row(row)
-        if ann_id is None:
-            return
-        self.editing_announcement_id = ann_id
-        cursor = self.db.execute_query("SELECT * FROM announcements WHERE id = ?", (ann_id,))
-        ann = cursor.fetchone() if cursor else None
-        if not ann:
-            return
-        # Populate edit page fields
-        self.hr_ui.edit_email_subject.setText(ann[1])
-        self.hr_ui.edit_email_message.setPlainText(ann[2])
-        self.hr_ui.edit_set_schedule_btn.setChecked(bool(ann[5]))
-        if ann[5]:
-            self.hr_ui.edit_schedule_frequency_box.setCurrentText(str(ann[6]))
-        else:
-            self.hr_ui.edit_schedule_frequency_box.setCurrentIndex(0)
-        self.hr_ui.edit_set_theme_btn.setChecked(bool(ann[7]))
-        if ann[7]:
-            self.hr_ui.edit_theme_design_box.setCurrentText(ann[8] or "")
-        else:
-            self.hr_ui.edit_theme_design_box.setCurrentIndex(0)
-        # Employee selection
-        if ann[3] == "All":
-            self.hr_ui.edit_employee_send_all_btn.setChecked(True)
-            self.hr_ui.edit_employee_choose_btn.setChecked(False)
-            self.hr_ui.edit_email_employee_list_tbl.setDisabled(True)
-        else:
-            self.hr_ui.edit_employee_send_all_btn.setChecked(False)
-            self.hr_ui.edit_employee_choose_btn.setChecked(True)
-            self.hr_ui.edit_email_employee_list_tbl.setEnabled(True)
-        # Populate employee table
-        self.populate_edit_email_employee_table(ann[3], ann[4])
-        # Attachments
-        self.edit_attachments = ann[10].split(";") if ann[10] else []
-        self.update_edit_attachments_list()
-        # Switch page
-        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_edit_page)
-
-    def populate_edit_email_employee_table(self, sending_type, involved_employee):
-        tbl = self.hr_ui.edit_email_employee_list_tbl
-        tbl.setRowCount(0)
-        
-        # Get all active employees
-        cursor = self.db.execute_query(
-            "SELECT employee_id, first_name, last_name, middle_initial, department, position FROM Employee WHERE is_hr = 0 AND status = 'Active'"
-        )
-        employees = cursor.fetchall() if cursor else []
-        
-        # Create two lists to store selected and unselected employees
-        selected_employees = []
-        unselected_employees = []
-        
-        for emp in employees:
-            emp_data = {
-                "employee_id": emp[0],
-                "first_name": emp[1],
-                "last_name": emp[2],
-                "middle_initial": emp[3],
-                "department": emp[4],
-                "position": emp[5],
-                "selected": emp[0] == involved_employee
-            }
-            if emp_data["selected"]:
-                selected_employees.append(emp_data)
-            else:
-                unselected_employees.append(emp_data)
-        
-        # Sort both lists by name
-        def sort_by_name(emp):
-            return f"{emp['last_name']}, {emp['first_name']}"
-        
-        selected_employees.sort(key=sort_by_name)
-        unselected_employees.sort(key=sort_by_name)
-        
-        # Combine lists with selected employees first
-        all_employees = selected_employees + unselected_employees
-        self.edit_radio_buttons = []
-        
-        # Populate table
-        for emp_data in all_employees:
-            row = tbl.rowCount()
-            tbl.insertRow(row)
-            
-            # Add radio button
-            radio = QRadioButton()
-            radio.setStyleSheet("background-color: white;")
-            radio.toggled.connect(lambda checked, r=row: self.handle_edit_radio_selected(r, checked))
-            radio.setChecked(emp_data["selected"])
-            self.edit_radio_buttons.append(radio)
-            tbl.setCellWidget(row, 0, radio)
-            
-            # Add other columns
-            mi = f" {emp_data['middle_initial']}." if emp_data['middle_initial'] else ""
-            name = f"{emp_data['last_name']}, {emp_data['first_name']}{mi}"
-            tbl.setItem(row, 1, QTableWidgetItem(name))
-            tbl.setItem(row, 2, QTableWidgetItem(emp_data["employee_id"]))
-            tbl.setItem(row, 3, QTableWidgetItem(f"{emp_data['department']} / {emp_data['position']}"))
-        
-        tbl.resizeColumnsToContents()
-
-    def handle_edit_radio_selected(self, row, checked):
-        if checked:
-            # Uncheck all other radios
-            for idx, radio in enumerate(self.edit_radio_buttons):
-                if idx != row:
-                    radio.setChecked(False)
-
-    def update_edit_attachments_list(self):
-        lw = self.hr_ui.edit_attachments_list
-        lw.clear()
-        for file_path in self.edit_attachments:
-            fname = os.path.basename(file_path)
-            item_widget = QWidget()
-            hbox = QHBoxLayout(item_widget)
-            hbox.setContentsMargins(0, 0, 0, 0)
-            label = QLabel(fname)
-            btn = QPushButton("✕")
-            btn.setFixedSize(20, 20)
-            btn.setStyleSheet("color: red; background: transparent; border: none; font-weight: bold;")
-            btn.clicked.connect(lambda _, f=file_path: self.remove_edit_attachment(f))
-            hbox.addWidget(label)
-            hbox.addWidget(btn)
-            hbox.addStretch()
-            item_widget.setLayout(hbox)
-            item = QListWidgetItem()
-            item.setSizeHint(item_widget.sizeHint())
-            lw.addItem(item)
-            lw.setItemWidget(item, item_widget)
-
-    def remove_edit_attachment(self, file_path):
-        if file_path in self.edit_attachments:
-            # If file is in resources/email_files, delete it
-            if os.path.commonpath([os.path.abspath(file_path), os.path.abspath("resources/email_files")]) == os.path.abspath("resources/email_files"):
-                try:
-                    os.remove(file_path)
-                except Exception:
-                    pass
-            self.edit_attachments.remove(file_path)
-            self.update_edit_attachments_list()
-
-    def back_from_edit_email(self):
-        self.hr_ui.edit_email_subject.clear()
-        self.hr_ui.edit_email_message.clear()
-        self.hr_ui.edit_employee_send_all_btn.setChecked(False)
-        self.hr_ui.edit_email_employee_list_tbl.setRowCount(0)
-        self.hr_ui.edit_set_schedule_btn.setChecked(False)
-        self.hr_ui.edit_schedule_frequency_box.setCurrentIndex(0)
-        self.hr_ui.edit_set_theme_btn.setChecked(False)
-        self.hr_ui.edit_theme_design_box.setCurrentIndex(0)
-        self.hr_ui.edit_attachments_list.clear()
-        self.edit_attachments = []
-        self.hr_ui.hr_announcements_pages.setCurrentWidget(self.hr_ui.email_page)
-
-    def save_edited_email(self):
-        ann_id = getattr(self, "editing_announcement_id", None)
-        if not ann_id:
-            return
-        subject = self.hr_ui.edit_email_subject.text()
-        message = self.hr_ui.edit_email_message.toPlainText()
-        schedule_enabled = self.hr_ui.edit_set_schedule_btn.isChecked()
-        schedule_frequency = self.hr_ui.edit_schedule_frequency_box.currentText() if schedule_enabled else None
-        theme_enabled = self.hr_ui.edit_set_theme_btn.isChecked()
-        theme_type = self.hr_ui.edit_theme_design_box.currentText() if theme_enabled else None
-        sending_type = "All" if self.hr_ui.edit_employee_send_all_btn.isChecked() else "Selected"
-        involved_employee = None
-        if sending_type == "Selected":
-            tbl = self.hr_ui.edit_email_employee_list_tbl
-            if tbl.rowCount() > 0:
-                involved_employee = tbl.item(0, 1).text()
-        # Save attachments (already handled in self.edit_attachments)
-        files_path = ";".join(self.edit_attachments)
-        self.db.execute_query(
-            '''UPDATE announcements SET subject=?, message=?, sending_type=?, involved_employee=?, schedule_enabled=?, schedule_frequency=?, theme_enabled=?, theme_type=?, attached_files_count=?, files_path=? WHERE id=?''',
-            (subject, message, sending_type, involved_employee, schedule_enabled, schedule_frequency, theme_enabled, theme_type, len(self.edit_attachments), files_path, ann_id)
-        )
-        self.back_from_edit_email()
-        self.load_sched_email_table()
-
-    def delete_selected_sched_email(self):
-        row = self.get_selected_sched_email_row()
-        ann_id = self.get_sched_email_db_id_by_row(row)
-        if ann_id is None:
-            return
-        # Get files_path to delete attachments
-        cursor = self.db.execute_query("SELECT files_path FROM announcements WHERE id = ?", (ann_id,))
-        result = cursor.fetchone() if cursor else None
-        if result and result[0]:
-            files = result[0].split(";")
-            for file_path in files:
-                try:
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-                except Exception:
-                    pass
-            # Remove the folder if empty
-            folder = os.path.dirname(files[0])
-            try:
-                if os.path.exists(folder) and not os.listdir(folder):
-                    os.rmdir(folder)
-            except Exception:
-                pass
-        # Delete announcement from DB
-        self.db.execute_query("DELETE FROM announcements WHERE id = ?", (ann_id,))
-        self.load_sched_email_table()
-
-class ReportGeneration:
-    def __init__(self, db):
-        self.db = db
-        self.styles = getSampleStyleSheet()
-        self.title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=self.styles['Heading1'],
-            fontSize=24,
-            spaceAfter=30,
-            alignment=1
-        )
-        self.heading_style = ParagraphStyle(
-            'CustomHeading',
-            parent=self.styles['Heading2'],
-            fontSize=16,
-            spaceAfter=12,
-            textColor=colors.HexColor('#2c3e50')
-        )
-
-    def generate_report(self, output_path):
-        doc = SimpleDocTemplate(
-            output_path,
-            pagesize=landscape(letter),
-            rightMargin=50,
-            leftMargin=50,
-            topMargin=50,
-            bottomMargin=50
-        )
-        
-        story = []
-        
-        # Title
-        title = Paragraph(f"Employee Performance Report - {datetime.now().strftime('%B %Y')}", self.title_style)
-        story.append(title)
-        
-        # Employee Table
-        story.append(Paragraph("Employee Overview", self.heading_style))
-        employee_table = self.create_employee_table()
-        story.append(employee_table)
-        story.append(Spacer(1, 20))
-        
-        # Statistics Section
-        story.append(Paragraph("Statistics & Analytics", self.heading_style))
-        
-        # Department Distribution Chart
-        dept_chart = self.create_department_chart()
-        story.append(Image(dept_chart, width=400, height=200))
-        story.append(Spacer(1, 20))
-        
-        # Work Hours Chart
-        hours_chart = self.create_work_hours_chart()
-        story.append(Image(hours_chart, width=400, height=200))
-        story.append(Spacer(1, 20))
-        
-        # Performance Tables
-        story.append(Paragraph("Top Performers", self.heading_style))
-        top_performers = self.create_top_performers_table()
-        story.append(top_performers)
-        story.append(Spacer(1, 20))
-        
-        story.append(Paragraph("Areas for Improvement", self.heading_style))
-        improvement_needed = self.create_improvement_table()
-        story.append(improvement_needed)
-        
-        # Build the PDF
-        doc.build(story)
-        
-        # Cleanup temporary files
-        if os.path.exists(dept_chart):
-            os.remove(dept_chart)
-        if os.path.exists(hours_chart):
-            os.remove(hours_chart)
-
-    def create_employee_table(self):
-        cursor = self.db.execute_query("""
-            SELECT 
-                e.employee_id,
-                e.first_name || ' ' || e.last_name as name,
-                e.department,
-                e.position,
-                e.status,
-                COUNT(DISTINCT a.date) as attendance_days,
-                SUM(CASE WHEN a.is_late = 1 THEN 1 ELSE 0 END) as late_count
-            FROM Employee e
-            LEFT JOIN attendance_logs a ON e.employee_id = a.employee_id
-            WHERE e.is_hr = 0
-            GROUP BY e.employee_id
-        """)
-        
-        data = [["ID", "Name", "Department", "Position", "Status", "Days Present", "Late Count"]]
-        data.extend([list(row) for row in cursor.fetchall()])
-        
-        table = Table(data, repeatRows=1)
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
-            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 1), (-1, -1), 10),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('BOX', (0, 0), (-1, -1), 2, colors.black),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.Color(0.9, 0.9, 0.9)]),
-        ]))
-        
-        return table
-
-    def create_department_chart(self):
-        cursor = self.db.execute_query("""
-            SELECT department, COUNT(*) as count
-            FROM Employee
-            WHERE is_hr = 0
-            GROUP BY department
-        """)
-        
-        departments, counts = zip(*cursor.fetchall())
-        
-        plt.figure(figsize=(10, 5))
-        plt.pie(counts, labels=departments, autopct='%1.1f%%')
-        plt.title('Employee Distribution by Department')
-        
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-        plt.savefig(temp_file.name)
-        plt.close()
-        
-        return temp_file.name
-
-    def create_work_hours_chart(self):
-        cursor = self.db.execute_query("""
-            SELECT DATE(created_at) as date, average_work_hours
-            FROM system_logs
-            WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
-            ORDER BY date
-        """)
-        
-        dates, hours = zip(*cursor.fetchall())
-        
-        plt.figure(figsize=(10, 5))
-        plt.plot(dates, hours, marker='o')
-        plt.title('Average Work Hours Trend')
-        plt.xticks(rotation=45)
-        plt.ylabel('Hours')
-        plt.grid(True)
-        
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-        plt.savefig(temp_file.name, bbox_inches='tight')
-        plt.close()
-        
-        return temp_file.name
-
-    def create_top_performers_table(self):
-        cursor = self.db.execute_query("""
-            SELECT 
-                e.first_name || ' ' || e.last_name as name,
-                e.department,
-                COUNT(DISTINCT a.date) as attendance_days,
-                SUM(CASE WHEN a.is_late = 0 THEN 1 ELSE 0 END) as on_time_days
-            FROM Employee e
-            LEFT JOIN attendance_logs a ON e.employee_id = a.employee_id
-            WHERE e.is_hr = 0
-            GROUP BY e.employee_id
-            ORDER BY attendance_days DESC, on_time_days DESC
-            LIMIT 10
-        """)
-        
-        data = [["Name", "Department", "Days Present", "On-Time Days"]]
-        data.extend([list(row) for row in cursor.fetchall()])
-        
-        table = Table(data, repeatRows=1)
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#27ae60')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ]))
-        
-        return table
-
-    def create_improvement_table(self):
-        cursor = self.db.execute_query("""
-            SELECT 
-                e.first_name || ' ' || e.last_name as name,
-                e.department,
-                COUNT(DISTINCT a.date) as attendance_days,
-                SUM(CASE WHEN a.is_late = 1 THEN 1 ELSE 0 END) as late_days
-            FROM Employee e
-            LEFT JOIN attendance_logs a ON e.employee_id = a.employee_id
-            WHERE e.is_hr = 0
-            GROUP BY e.employee_id
-            HAVING late_days > 0
-            ORDER BY late_days DESC
-            LIMIT 10
-        """)
-        
-        data = [["Name", "Department", "Days Present", "Late Days"]]
-        data.extend([list(row) for row in cursor.fetchall()])
-        
-        table = Table(data, repeatRows=1)
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e74c3c')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ]))
-        
-        return table
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

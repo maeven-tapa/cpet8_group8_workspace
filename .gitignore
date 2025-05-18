@@ -36,6 +36,7 @@ backups/
 
 email_files/
 
+*.tpl
 *copy.py
 # Profile pictures folder
 profile_pictures/
