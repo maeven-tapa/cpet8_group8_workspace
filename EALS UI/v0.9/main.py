@@ -361,6 +361,7 @@ class FingerprintSignals(QObject):
     match_found = Signal(str)
     update_display = Signal(bytes)
     update_status = Signal(str)
+    restart_scan = Signal()
 
 class FingerprintLogic:
     def __init__(self, db):
@@ -374,6 +375,7 @@ class FingerprintLogic:
         self.enrollment_in_progress = False
         self.enrollment_completed = False
         self.employee_id_being_enrolled = None
+        self.scanning_active = False 
 
     def initialize_device(self):
         try:
@@ -401,6 +403,7 @@ class FingerprintLogic:
 
     def terminate_device(self):
         print("Attempting to terminate fingerprint device...")
+        self.scanning_active = False
         try:
             if self.device_open:
                 try:
@@ -559,6 +562,7 @@ class FingerprintLogic:
         if not self.device_open:
             fp_comparison_note_lbl.setText("Device not initialized. Please reinitialize.")
             return
+        self.scanning_active = True
         threading.Thread(
             target=self._compare_1_1_worker,
             args=(fp_image_lbl, fp_comparison_note_lbl, callback),
@@ -567,12 +571,14 @@ class FingerprintLogic:
         
     def _compare_1_1_worker(self, fp_image_lbl, fp_comparison_note_lbl, callback):
         try:
-            while True:
+            while self.scanning_active:  # Only scan if active
                 capture = self.zkfp.AcquireFingerprint()
                 if capture:
                     captured_template, image_data = capture
                     self.signals.update_display.emit(image_data)
                     break
+            else:
+                return
         except Exception as e:
             print(f"Error capturing fingerprint: {str(e)}")
             self.signals.update_status.emit("Error during fingerprint scan. Please try again.")
@@ -1597,7 +1603,8 @@ class HR:
         toast.show()
     
 class ChangePassword(QObject):
-    passwordChanged = Signal(dict)  # Add signal with employee data
+    passwordChanged = Signal(dict)
+    cancelled = Signal()
 
     def __init__(self, db, user_id, user_type="admin"):
         super().__init__()  # Initialize QObject
@@ -1632,6 +1639,7 @@ class ChangePassword(QObject):
     def cancel_change_password(self):
         self.system_logs.log_system_action(f"Password change cancelled by {self.user_type}.", "Admin" if self.user_type == "admin" else "Employee")
         self.change_pass_ui.close()
+        self.cancelled.emit()
 
     def toggle_cp_visibility(self):
         if self.cp_visible:
@@ -2062,6 +2070,7 @@ class Home:
         self.fp_signals.match_found.connect(self.handle_fingerprint_match)
         self.fp_signals.update_display.connect(self.update_fingerprint_display)
         self.fp_signals.update_status.connect(self.update_fingerprint_status)
+        self.fp_signals.restart_scan.connect(self.restart_fingerprint_scanning)  # Add connection for restart_scan signal
         self.fp_logic = FingerprintLogic(self.db)
         self.fp_logic.signals = self.fp_signals
         self.home_ui.home_login_btn.clicked.connect(self.handle_login)
@@ -2128,7 +2137,8 @@ class Home:
             if matched_employee_id:
                 self.fp_signals.match_found.emit(matched_employee_id)
             else:
-                QTimer.singleShot(1000, lambda: self.start_fingerprint_scanning())
+                # QTimer.singleShot(1000, lambda: self.start_fingerprint_scanning())
+                self.fp_signals.restart_scan.emit()
         if hasattr(self, 'fp_logic') and self.fp_logic.device_open:  
             threading.Thread(
                 target=self.fp_logic.compare_1_1,
@@ -2139,6 +2149,9 @@ class Home:
             print("Cannot start scanning - device not open")
             self.home_ui.bio_note_lbl.setText("Sensor not ready. Please reinitialize.")
 
+    def restart_fingerprint_scanning(self):
+        QTimer.singleShot(2000, self.start_fingerprint_scanning)
+
     def handle_fingerprint_match(self, employee_id):
         cursor = self.db.execute_query("""
             SELECT * FROM Employee WHERE employee_id = ?
@@ -2147,6 +2160,7 @@ class Home:
         if cursor:
             result = cursor.fetchone()
             if result:
+                
                 if result[10] == "Inactive":
                     self.show_error("Access Denied", "Your account is inactive. Please contact HR.")
                     return
@@ -2167,38 +2181,20 @@ class Home:
                     "email": result[14]
                 }
 
+                if not self.employee_data["password_changed"]:
+                    self.show_change_password_dialog()
+                    return
+
                 if self.employee_data["is_hr"]:
                     if self.validate_hr_attendance(self.employee_data):
                         self.goto_hr_ui(self.employee_data)
-                    return
-
-                current_time = datetime.now()
-                current_hour = current_time.hour
-                schedule_start, schedule_end = self.parse_schedule(self.employee_data["schedule"])
-
-                current_date = current_time.strftime("%Y-%m-%d")
-                cursor = self.db.execute_query(
-                    "SELECT time, remarks FROM attendance_logs WHERE employee_id = ? AND date = ? ORDER BY time DESC LIMIT 1",
-                    (employee_id, current_date)
-                )
-                last_log = cursor.fetchone() if cursor else None
-
-                if last_log and last_log[1] == "Clock In":
-                    self.employee_data["remarks"] = "Clock Out"
                 else:
-                    if not self.is_within_schedule(schedule_start, schedule_end, current_hour):
-                        self.show_warning("Invalid Login", "You cannot log in outside your scheduled shift.")
-                        return
-                    self.employee_data["remarks"] = "Clock In"
-                    late_threshold = datetime.now().replace(hour=schedule_start, minute=15)
-                    self.employee_data["is_late"] = datetime.now() > late_threshold
-
-                self.update_bio_page_info()
-                self.source_page = "bio_page"
-                if not self.employee_data["password_changed"]:
-                    QTimer.singleShot(2000, lambda: self.show_change_password_dialog())
-                else:
-                    QTimer.singleShot(2000, self.goto_result_prompt)
+                    self.source_page = "bio_page"
+                    if self.validate_attendance():
+                        self.system_logs.log_system_action("A user is logged in as an employee", "Employee")
+                        self.goto_result_prompt()
+                    else:
+                         QTimer.singleShot(2000, self.start_fingerprint_scanning) 
 
     def update_fingerprint_display(self, image_data):
         width, height = 300, 400
@@ -2228,8 +2224,13 @@ class Home:
 
     def show_change_password_dialog(self):
         self.changepass = ChangePassword(self.db, self.employee_data["employee_id"], "employee")
+        self.changepass.change_pass_ui.rejected.connect(self.handle_change_password_cancelled)
         self.changepass.passwordChanged.connect(self.handle_password_changed)
         self.changepass.change_pass_ui.show()
+
+    def handle_change_password_cancelled(self):
+        if self.home_ui.main_page.currentWidget() == self.home_ui.bio_page:
+            self.start_fingerprint_scanning()
 
     def handle_password_changed(self, employee_data):
         self.employee_data = employee_data
@@ -5581,6 +5582,12 @@ class Announcement:
         theme_map = {
             "Default": ("default_theme_header.jpg", "default_theme_footer.jpg"),
             "Christmass Design": ("xmass_theme_header.jpg", "xmass_theme_footer.jpg"),
+            "Christmass Design 2": ("xmass_theme_2_header.jpg", "xmass_theme_2_footer.jpg"),
+            "Valentines Design": ("valentines_header.jpg", "valentines_footer.jpg"),
+            "Halloween Design": ("halloween_header.jpg", "halloween_footer.jpg"),
+            "Easter Design": ("easter_header.jpg", "easter_footer.jpg"),
+            "Labor Day Design": ("labor_header.jpg", "labor_footer.jpg"),
+            "Independence Day Design": ("independence_header.jpg", "independence_footer.jpg"),
             "Design 1": ("theme1_header.jpg", "theme1_footer.jpg"),
             "Design 2": ("theme2_header.jpg", "theme2_footer.jpg"),
         }

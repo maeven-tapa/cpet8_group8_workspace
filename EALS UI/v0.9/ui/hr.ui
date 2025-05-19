@@ -104,7 +104,7 @@ QTabWidget &gt; QWidget {
        <enum>QTabWidget::TabShape::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <property name="iconSize">
        <size>
@@ -2098,7 +2098,7 @@ border-radius:6px;
               <string notr="true">border: none;</string>
              </property>
              <property name="currentIndex">
-              <number>1</number>
+              <number>0</number>
              </property>
              <widget class="QWidget" name="email_page">
               <layout class="QGridLayout" name="gridLayout_19" columnstretch="1,1">
@@ -3098,17 +3098,47 @@ QScrollBar::sub-page:vertical {
                         </item>
                         <item>
                          <property name="text">
-                          <string>Christmass Design</string>
-                         </property>
-                        </item>
-                        <item>
-                         <property name="text">
                           <string>Design 1</string>
                          </property>
                         </item>
                         <item>
                          <property name="text">
                           <string>Design 2</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Independence Day Design</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Labor Day Design</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Easter Design</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Valentines Design</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Halloween Design</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Christmass Design</string>
+                         </property>
+                        </item>
+                        <item>
+                         <property name="text">
+                          <string>Christmass Design 2</string>
                          </property>
                         </item>
                        </widget>
