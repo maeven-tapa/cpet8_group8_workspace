@@ -2,6 +2,7 @@ import sys
 import cv2
 import numpy as np
 import os
+import chime
 from PySide6.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel, QVBoxLayout, QMessageBox,
     QInputDialog, QLineEdit, QProgressBar
@@ -13,24 +14,18 @@ import mediapipe as mp
 class EALS_FACEID_LOGIC(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Face Enrollment App")
+        self.setWindowTitle("EALS - FACE ID WRAPPER")
         self.setGeometry(100, 100, 800, 600)
-
-        # Buttons
         self.init_btn = QPushButton("Initialize Device")
         self.terminate_btn = QPushButton("Terminate Device")
         self.enroll_btn = QPushButton("Enroll Face")
-
-        # Label for video
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
-
         self.instruction_label = QLabel("")
         self.instruction_label.setAlignment(Qt.AlignCenter)
         self.timer_label = QLabel("")
         self.timer_label.setAlignment(Qt.AlignCenter)
-        
-        # Progress bar for enrollment
+
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
         
@@ -38,7 +33,6 @@ class EALS_FACEID_LOGIC(QWidget):
         self.wait_label.setAlignment(Qt.AlignCenter)
         self.wait_label.setVisible(False)
 
-        # Layout
         layout = QVBoxLayout()
         layout.addWidget(self.image_label)
         layout.addWidget(self.instruction_label)
@@ -50,12 +44,10 @@ class EALS_FACEID_LOGIC(QWidget):
         layout.addWidget(self.enroll_btn)
         self.setLayout(layout)
 
-        # Signals
         self.init_btn.clicked.connect(self.initialize_device)
         self.terminate_btn.clicked.connect(self.terminate_device)
         self.enroll_btn.clicked.connect(self.enroll_face)
 
-        # Internal
         self.cap = None
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frame)
@@ -64,18 +56,14 @@ class EALS_FACEID_LOGIC(QWidget):
         self.face_templates_dir = os.path.join(os.path.dirname(__file__), "face_templates")
         os.makedirs(self.face_templates_dir, exist_ok=True)
 
-        # Use OpenCV DNN face detector for higher accuracy
         proto_path = cv2.data.haarcascades.replace('haarcascades', 'dnn') + 'deploy.prototxt'
         model_path = cv2.data.haarcascades.replace('haarcascades', 'dnn') + 'res10_300x300_ssd_iter_140000.caffemodel'
         self.dnn_face_net = cv2.dnn.readNetFromCaffe(proto_path, model_path) if os.path.exists(proto_path) and os.path.exists(model_path) else None
 
-        # Initialize MediaPipe Face Detection
         self.mp_face_detection = mp.solutions.face_detection
         self.mp_drawing = mp.solutions.drawing_utils
-        # Don't initialize face detection here, will do it when needed
         self.face_detection = None
         
-        # Initialize MediaPipe Face Mesh for pose estimation
         self.mp_face_mesh = mp.solutions.face_mesh
         self.face_mesh = None
 
@@ -109,10 +97,8 @@ class EALS_FACEID_LOGIC(QWidget):
 
     def initialize_device(self):
         self.wait_label.setVisible(True)
-        # Force the UI to update and show the wait message immediately
         QApplication.processEvents()
         
-        # Check for available cameras before opening
         try:
             test_cap = cv2.VideoCapture(0)
             if not test_cap.isOpened():
@@ -121,21 +107,18 @@ class EALS_FACEID_LOGIC(QWidget):
                 return
             test_cap.release()
             
-            # Initialize camera
             self.cap = cv2.VideoCapture(0)
             if not self.cap.isOpened():
                 QMessageBox.critical(self, "Error", "Could not open camera.")
                 self.wait_label.setVisible(False)
                 return
                 
-            # Now initialize MediaPipe face detection
             if self.face_detection is None:
                 self.face_detection = self.mp_face_detection.FaceDetection(
                     min_detection_confidence=0.5,
-                    model_selection=0  # Use the shorter-range model
+                    model_selection=0  
                 )
             
-            # Initialize MediaPipe Face Mesh
             if self.face_mesh is None:
                 self.face_mesh = self.mp_face_mesh.FaceMesh(
                     max_num_faces=1,
@@ -148,7 +131,6 @@ class EALS_FACEID_LOGIC(QWidget):
             self.init_btn.setEnabled(False)
             self.terminate_btn.setEnabled(True)
             self.enroll_btn.setEnabled(True)
-            # Hide the wait label after initialization is complete
             self.wait_label.setVisible(False)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to initialize device: {str(e)}")
@@ -161,7 +143,6 @@ class EALS_FACEID_LOGIC(QWidget):
             self.cap.release()
             self.cap = None
         if self.face_detection:
-            # Clean up MediaPipe resources
             self.face_detection.close()
             self.face_detection = None
         if self.face_mesh:
@@ -182,7 +163,6 @@ class EALS_FACEID_LOGIC(QWidget):
         if not results.multi_face_landmarks:
             return None, "No Face"
         
-        # Get image dimensions
         img_h, img_w = frame.shape[:2]
         
         text = "Unknown"
@@ -192,48 +172,41 @@ class EALS_FACEID_LOGIC(QWidget):
             face_3d = []
             
             for idx, lm in enumerate(face_landmarks.landmark):
-                # eyes, the nose, the chin, and mouth
                 if idx == 33 or idx == 263 or idx == 1 or idx == 61 or idx == 291 or idx == 199:
                     x, y = int(lm.x*img_w), int(lm.y*img_h)
 
-                    # get 2d & 3d coords
                     face_2d.append([x,y])
                     face_3d.append([x, y, lm.z])
 
-            # converting to numpy
             face_2d = np.array(face_2d, dtype=np.float64)
             face_3d = np.array(face_3d, dtype=np.float64)
 
-            # camera
             focal_length = img_w
             center = (img_w/2, img_h/2)
-            # helps to project 3d points to 2d
+
             camera_matrix = np.array(
                 [[focal_length, 0, center[0]],
                  [0, focal_length, center[1]],
                  [0,0,1]])
     
-            dist_coeffs = np.zeros((4,1), dtype = np.float64) # Assuming no lens distortion
+            dist_coeffs = np.zeros((4,1), dtype = np.float64) 
             
-            # Perspective n point - solving for the rotation and translation that minimizes the reprojection error from 3D-2D
             (success, rotation_vector, translation_vector) = cv2.solvePnP(face_3d, face_2d, camera_matrix, dist_coeffs)
-            rmat = cv2.Rodrigues(rotation_vector)[0] # rotation matrix
+            rmat = cv2.Rodrigues(rotation_vector)[0] 
 
-            # Get angles
             angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
 
             x_angle = angles[0] * 360
             y_angle = angles[1] * 360
 
-            # See where the user's head tilting
             if y_angle < -15:
-                text = "Facing Right" #L
+                text = "Facing Right" 
             elif y_angle > 15:
-                text = "Facing Left" #R
+                text = "Facing Left" 
             elif x_angle < -7:
-                text = "Facing Down" #D
+                text = "Facing Down" 
             elif x_angle > 20:
-                text = "Facing Up" #U
+                text = "Facing Up" 
             else:
                 text = "Straight face"
                 print(x_angle, y_angle)
@@ -241,20 +214,15 @@ class EALS_FACEID_LOGIC(QWidget):
         return face_landmarks, text
 
     def detect_face(self, frame):
-        # Highly accurate face detection using MediaPipe
         results = []
         
-        # Check for face pose
         face_landmarks, pose_text = self.detect_face_pose(frame)
         self.current_pose = pose_text
-        
-        # Check if MediaPipe face detection is initialized
+
         if self.face_detection is None:
-            # Fall back to other methods if MediaPipe is not initialized
             pass
         else:
             try:
-                # Use MediaPipe for detection first
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 mp_results = self.face_detection.process(rgb_frame)
                 
@@ -267,13 +235,11 @@ class EALS_FACEID_LOGIC(QWidget):
                         w_box = int(bboxC.width * w)
                         h_box = int(bboxC.height * h)
                         
-                        # Make sure coordinates are valid
                         x = max(0, x)
                         y = max(0, y)
                         w_box = min(w - x, w_box)
                         h_box = min(h - y, h_box)
                         
-                        # Name matching as before
                         name = ""
                         template_files = [f for f in os.listdir(self.face_templates_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
                         if template_files and w_box > 0 and h_box > 0:
@@ -300,13 +266,11 @@ class EALS_FACEID_LOGIC(QWidget):
                                 name = best_name
                         results.append((x, y, w_box, h_box, name))
                     
-                    # If MediaPipe found faces, return them
                     if results:
                         return results
             except Exception as e:
                 print(f"MediaPipe detection error: {str(e)}")
         
-        # Fall back to DNN if MediaPipe fails or found no faces
         h, w = frame.shape[:2]
         if self.dnn_face_net:
             blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0,
@@ -319,7 +283,6 @@ class EALS_FACEID_LOGIC(QWidget):
                     box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
                     x, y, x2, y2 = box.astype("int")
                     x, y, w_box, h_box = max(0, x), max(0, y), x2 - x, y2 - y
-                    # Name matching as before
                     name = ""
                     template_files = [f for f in os.listdir(self.face_templates_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
                     if template_files:
@@ -340,14 +303,12 @@ class EALS_FACEID_LOGIC(QWidget):
                             score = cv2.compareHist(input_hist, template_hist, cv2.HISTCMP_CORREL)
                             if score > best_score and score > 0.9:
                                 best_score = score
-                                # Extract only the person's name part (before the first underscore)
                                 file_name = os.path.splitext(template_file)[0]
                                 best_name = file_name.split('_')[0]
                         if best_name:
                             name = best_name
                     results.append((x, y, w_box, h_box, name))
         else:
-            # fallback to Haar cascade
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
             template_files = [f for f in os.listdir(self.face_templates_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
@@ -371,7 +332,6 @@ class EALS_FACEID_LOGIC(QWidget):
                         score = cv2.compareHist(input_hist, template_hist, cv2.HISTCMP_CORREL)
                         if score > best_score and score > 0.9:
                             best_score = score
-                            # Extract only the person's name part (before the first underscore)
                             file_name = os.path.splitext(template_file)[0]
                             best_name = file_name.split('_')[0]
                     if best_name:
@@ -383,16 +343,13 @@ class EALS_FACEID_LOGIC(QWidget):
         ret, frame = self.cap.read()
         if not ret:
             return
-        # Detect face pose
         face_landmarks, pose_text = self.detect_face_pose(frame)
         
-        # Draw bounding boxes and names on detected faces
         faces = self.detect_face(frame)
         for (x, y, w, h, name) in faces:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             if name:
                 cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-            # Add pose text
             cv2.putText(frame, pose_text, (x, y + h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
         
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -405,7 +362,6 @@ class EALS_FACEID_LOGIC(QWidget):
         if not self.cap or self.enroll_active:
             return
             
-        # Prompt for person name
         name, ok = QInputDialog.getText(self, "Face Enrollment", 
                                         "Enter the person's name:", QLineEdit.Normal, "")
         if not ok or not name.strip():
@@ -413,23 +369,19 @@ class EALS_FACEID_LOGIC(QWidget):
             return
             
         self.person_name = name.strip()
-        # Simplified enrollment process: just 5 poses
-        self.enroll_max = 5
+        self.enroll_max = len(self.enroll_prompts) 
         self.enroll_index = 0
         self.enroll_captured = 0
         self.enroll_active = True
         
-        # Configure the progress bar
         self.progress_bar.setMaximum(self.enroll_max)
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
         
-        # Set instruction for first pose
         self.set_enrollment_instruction()
         self.timer.timeout.disconnect()
         self.timer.timeout.connect(self.enroll_update_frame)
         
-        # Auto-capture when the right pose is detected
         self.enroll_timer_count = 3
         self.timer_label.setText(str(self.enroll_timer_count))
         self.enroll_timer_qtimer.start(1000)
@@ -446,7 +398,6 @@ class EALS_FACEID_LOGIC(QWidget):
         if not ret:
             return
             
-        # Get face pose
         face_landmarks, pose_text = self.detect_face_pose(frame)
         faces = self.detect_face(frame)
         
@@ -454,13 +405,11 @@ class EALS_FACEID_LOGIC(QWidget):
             x, y, w, h = faces[0][:4]
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             
-            # Show current pose and required pose
             if self.enroll_index < len(self.enroll_pose_requirements):
                 required_pose = self.enroll_pose_requirements[self.enroll_index]["pose"]
                 cv2.putText(frame, f"Current: {pose_text}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                 cv2.putText(frame, f"Required: {required_pose}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                 
-                # If pose matches the required one, countdown to capture
                 if pose_text == required_pose and self.enroll_timer_count <= 0:
                     self.capture_enroll_image(frame, faces[0])
         
@@ -476,7 +425,6 @@ class EALS_FACEID_LOGIC(QWidget):
             self.enroll_timer_qtimer.stop()
             return
             
-        # Only countdown if we have the correct pose
         if self.enroll_index < len(self.enroll_pose_requirements):
             required_pose = self.enroll_pose_requirements[self.enroll_index]["pose"]
             
@@ -487,7 +435,6 @@ class EALS_FACEID_LOGIC(QWidget):
                 else:
                     self.timer_label.setText("Capturing...")
             else:
-                # Reset timer if pose changes
                 self.enroll_timer_count = 3
                 self.timer_label.setText("Get in position")
 
@@ -510,16 +457,17 @@ class EALS_FACEID_LOGIC(QWidget):
         face_resized = cv2.resize(face_img, (100, 100))
         self.enrolled_faces.append(face_resized)
         
-        # Use a descriptive filename based on pose
         pose_name = self.enroll_pose_requirements[self.enroll_index]["pose"].replace(" ", "_").lower()
         save_path = os.path.join(self.face_templates_dir, f"{self.person_name}_{pose_name}.png")
         cv2.imwrite(save_path, face_resized)
+
+        chime.theme('chime')
+        chime.success()
         
         self.enroll_captured += 1
         self.enroll_index += 1
         self.progress_bar.setValue(self.enroll_index)
         
-        # Reset timer for next pose
         self.enroll_timer_count = 3
         
         if self.enroll_index < self.enroll_max:
