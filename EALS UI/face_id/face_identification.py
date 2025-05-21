@@ -100,14 +100,14 @@ class EALS_FACEID_LOGIC(QWidget):
         QApplication.processEvents()
         
         try:
-            test_cap = cv2.VideoCapture(0)
+            test_cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
             if not test_cap.isOpened():
                 QMessageBox.critical(self, "Error", "No camera found or camera index out of range.")
                 self.wait_label.setVisible(False)
                 return
             test_cap.release()
             
-            self.cap = cv2.VideoCapture(0)
+            self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
             if not self.cap.isOpened():
                 QMessageBox.critical(self, "Error", "Could not open camera.")
                 self.wait_label.setVisible(False)

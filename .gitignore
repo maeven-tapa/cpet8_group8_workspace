@@ -36,6 +36,8 @@ backups/
 
 email_files/
 
+face_templates/
+
 *.tpl
 *copy.py
 # Profile pictures folder
