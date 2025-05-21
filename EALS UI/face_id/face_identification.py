@@ -29,9 +29,14 @@ class EALS_FACEID_LOGIC(QWidget):
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
         
+        # Keep the label but don't show it - will update UI during initialization without displaying text
         self.wait_label = QLabel("Reloading TensorFlow ML Model... Please wait 1 min and 30 secs or about 2 mins on initializing device")
         self.wait_label.setAlignment(Qt.AlignCenter)
         self.wait_label.setVisible(False)
+
+        # Add smooth bounding box tracking
+        self.prev_boxes = []
+        self.smooth_factor = 0.7  # Lower = smoother but more lag, higher = more responsive
 
         layout = QVBoxLayout()
         layout.addWidget(self.image_label)
@@ -51,14 +56,9 @@ class EALS_FACEID_LOGIC(QWidget):
         self.cap = None
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frame)
-        self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         self.enrolled_faces = []
         self.face_templates_dir = os.path.join(os.path.dirname(__file__), "face_templates")
         os.makedirs(self.face_templates_dir, exist_ok=True)
-
-        proto_path = cv2.data.haarcascades.replace('haarcascades', 'dnn') + 'deploy.prototxt'
-        model_path = cv2.data.haarcascades.replace('haarcascades', 'dnn') + 'res10_300x300_ssd_iter_140000.caffemodel'
-        self.dnn_face_net = cv2.dnn.readNetFromCaffe(proto_path, model_path) if os.path.exists(proto_path) and os.path.exists(model_path) else None
 
         self.mp_face_detection = mp.solutions.face_detection
         self.mp_drawing = mp.solutions.drawing_utils
@@ -96,27 +96,24 @@ class EALS_FACEID_LOGIC(QWidget):
         self.current_pose = "Unknown"
 
     def initialize_device(self):
-        self.wait_label.setVisible(True)
         QApplication.processEvents()
         
         try:
             test_cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
             if not test_cap.isOpened():
                 QMessageBox.critical(self, "Error", "No camera found or camera index out of range.")
-                self.wait_label.setVisible(False)
                 return
             test_cap.release()
             
             self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
             if not self.cap.isOpened():
                 QMessageBox.critical(self, "Error", "Could not open camera.")
-                self.wait_label.setVisible(False)
                 return
                 
             if self.face_detection is None:
                 self.face_detection = self.mp_face_detection.FaceDetection(
-                    min_detection_confidence=0.5,
-                    model_selection=0  
+                    min_detection_confidence=1,
+                    model_selection=1  
                 )
             
             if self.face_mesh is None:
@@ -131,10 +128,8 @@ class EALS_FACEID_LOGIC(QWidget):
             self.init_btn.setEnabled(False)
             self.terminate_btn.setEnabled(True)
             self.enroll_btn.setEnabled(True)
-            self.wait_label.setVisible(False)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to initialize device: {str(e)}")
-            self.wait_label.setVisible(False)
             self.terminate_device()
 
     def terminate_device(self):
@@ -199,19 +194,66 @@ class EALS_FACEID_LOGIC(QWidget):
             x_angle = angles[0] * 360
             y_angle = angles[1] * 360
 
-            if y_angle < -15:
+            if y_angle < -10:
                 text = "Facing Right" 
-            elif y_angle > 15:
+            elif y_angle > 10:
                 text = "Facing Left" 
             elif x_angle < -7:
                 text = "Facing Down" 
-            elif x_angle > 20:
+            elif x_angle > 10:
                 text = "Facing Up" 
             else:
                 text = "Straight face"
-                print(x_angle, y_angle)
                 
         return face_landmarks, text
+
+    def smooth_bounding_boxes(self, current_boxes):
+        """Apply smoothing to bounding boxes to reduce jitter"""
+        if not self.prev_boxes:
+            self.prev_boxes = current_boxes
+            return current_boxes
+            
+        smooth_boxes = []
+        
+        # Match boxes between frames and apply smoothing
+        for curr_box in current_boxes:
+            x, y, w, h, name = curr_box
+            
+            # Find best matching previous box
+            best_match = None
+            min_dist = float('inf')
+            
+            for prev_box in self.prev_boxes:
+                px, py, pw, ph, pname = prev_box
+                # Calculate center points
+                curr_center = (x + w/2, y + h/2)
+                prev_center = (px + pw/2, py + ph/2)
+                
+                # Square distance between centers
+                dist = (curr_center[0] - prev_center[0])**2 + (curr_center[1] - prev_center[1])**2
+                
+                # If this is a better match and names are compatible
+                if dist < min_dist and (not name or not pname or name == pname):
+                    min_dist = dist
+                    best_match = prev_box
+            
+            if best_match and min_dist < 10000: 
+                px, py, pw, ph, pname = best_match
+                
+                sx = int(px * self.smooth_factor + x * (1-self.smooth_factor))
+                sy = int(py * self.smooth_factor + y * (1-self.smooth_factor))
+                sw = int(pw * self.smooth_factor + w * (1-self.smooth_factor))
+                sh = int(ph * self.smooth_factor + h * (1-self.smooth_factor))
+                
+                sname = name if name else pname
+                
+                smooth_boxes.append((sx, sy, sw, sh, sname))
+            else:
+                smooth_boxes.append(curr_box)
+        
+        # Update previous boxes for next frame
+        self.prev_boxes = smooth_boxes
+        return smooth_boxes
 
     def detect_face(self, frame):
         results = []
@@ -220,72 +262,29 @@ class EALS_FACEID_LOGIC(QWidget):
         self.current_pose = pose_text
 
         if self.face_detection is None:
-            pass
-        else:
-            try:
-                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                mp_results = self.face_detection.process(rgb_frame)
-                
-                if mp_results and mp_results.detections:
-                    h, w = frame.shape[:2]
-                    for detection in mp_results.detections:
-                        bboxC = detection.location_data.relative_bounding_box
-                        x = int(bboxC.xmin * w)
-                        y = int(bboxC.ymin * h)
-                        w_box = int(bboxC.width * w)
-                        h_box = int(bboxC.height * h)
-                        
-                        x = max(0, x)
-                        y = max(0, y)
-                        w_box = min(w - x, w_box)
-                        h_box = min(h - y, h_box)
-                        
-                        name = ""
-                        template_files = [f for f in os.listdir(self.face_templates_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-                        if template_files and w_box > 0 and h_box > 0:
-                            input_face = cv2.resize(frame[y:y+h_box, x:x+w_box], (100, 100))
-                            input_gray = cv2.cvtColor(input_face, cv2.COLOR_BGR2GRAY)
-                            input_hist = cv2.calcHist([input_gray], [0], None, [256], [0, 256])
-                            input_hist = cv2.normalize(input_hist, input_hist).flatten()
-                            best_score = 0.0
-                            best_name = ""
-                            for template_file in template_files:
-                                template_path = os.path.join(self.face_templates_dir, template_file)
-                                template_img = cv2.imread(template_path)
-                                if template_img is None:
-                                    continue
-                                template_gray = cv2.cvtColor(template_img, cv2.COLOR_BGR2GRAY)
-                                template_hist = cv2.calcHist([template_gray], [0], None, [256], [0, 256])
-                                template_hist = cv2.normalize(template_hist, template_hist).flatten()
-                                score = cv2.compareHist(input_hist, template_hist, cv2.HISTCMP_CORREL)
-                                if score > best_score and score > 0.8:
-                                    best_score = score
-                                    file_name = os.path.splitext(template_file)[0]
-                                    best_name = file_name.split('_')[0]
-                            if best_name:
-                                name = best_name
-                        results.append((x, y, w_box, h_box, name))
-                    
-                    if results:
-                        return results
-            except Exception as e:
-                print(f"MediaPipe detection error: {str(e)}")
+            return results
         
-        h, w = frame.shape[:2]
-        if self.dnn_face_net:
-            blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0,
-                                         (300, 300), (104.0, 177.0, 123.0))
-            self.dnn_face_net.setInput(blob)
-            detections = self.dnn_face_net.forward()
-            for i in range(detections.shape[2]):
-                confidence = detections[0, 0, i, 2]
-                if confidence > 0.7:
-                    box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-                    x, y, x2, y2 = box.astype("int")
-                    x, y, w_box, h_box = max(0, x), max(0, y), x2 - x, y2 - y
+        try:
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            mp_results = self.face_detection.process(rgb_frame)
+            
+            if mp_results and mp_results.detections:
+                h, w = frame.shape[:2]
+                for detection in mp_results.detections:
+                    bboxC = detection.location_data.relative_bounding_box
+                    x = int(bboxC.xmin * w)
+                    y = int(bboxC.ymin * h)
+                    w_box = int(bboxC.width * w)
+                    h_box = int(bboxC.height * h)
+                    
+                    x = max(0, x)
+                    y = max(0, y)
+                    w_box = min(w - x, w_box)
+                    h_box = min(h - y, h_box)
+                    
                     name = ""
                     template_files = [f for f in os.listdir(self.face_templates_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-                    if template_files:
+                    if template_files and w_box > 0 and h_box > 0:
                         input_face = cv2.resize(frame[y:y+h_box, x:x+w_box], (100, 100))
                         input_gray = cv2.cvtColor(input_face, cv2.COLOR_BGR2GRAY)
                         input_hist = cv2.calcHist([input_gray], [0], None, [256], [0, 256])
@@ -301,43 +300,18 @@ class EALS_FACEID_LOGIC(QWidget):
                             template_hist = cv2.calcHist([template_gray], [0], None, [256], [0, 256])
                             template_hist = cv2.normalize(template_hist, template_hist).flatten()
                             score = cv2.compareHist(input_hist, template_hist, cv2.HISTCMP_CORREL)
-                            if score > best_score and score > 0.9:
+                            if score > best_score and score > 0.8:
                                 best_score = score
                                 file_name = os.path.splitext(template_file)[0]
                                 best_name = file_name.split('_')[0]
                         if best_name:
                             name = best_name
                     results.append((x, y, w_box, h_box, name))
-        else:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-            template_files = [f for f in os.listdir(self.face_templates_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-            for (x, y, w_box, h_box) in faces:
-                name = ""
-                if template_files:
-                    input_face = cv2.resize(frame[y:y+h_box, x:x+w_box], (100, 100))
-                    input_gray = cv2.cvtColor(input_face, cv2.COLOR_BGR2GRAY)
-                    input_hist = cv2.calcHist([input_gray], [0], None, [256], [0, 256])
-                    input_hist = cv2.normalize(input_hist, input_hist).flatten()
-                    best_score = 0.0
-                    best_name = ""
-                    for template_file in template_files:
-                        template_path = os.path.join(self.face_templates_dir, template_file)
-                        template_img = cv2.imread(template_path)
-                        if template_img is None:
-                            continue
-                        template_gray = cv2.cvtColor(template_img, cv2.COLOR_BGR2GRAY)
-                        template_hist = cv2.calcHist([template_gray], [0], None, [256], [0, 256])
-                        template_hist = cv2.normalize(template_hist, template_hist).flatten()
-                        score = cv2.compareHist(input_hist, template_hist, cv2.HISTCMP_CORREL)
-                        if score > best_score and score > 0.9:
-                            best_score = score
-                            file_name = os.path.splitext(template_file)[0]
-                            best_name = file_name.split('_')[0]
-                    if best_name:
-                        name = best_name
-                results.append((x, y, w_box, h_box, name))
-        return results
+        except Exception as e:
+            print(f"MediaPipe detection error: {str(e)}")
+        
+        # Apply smoothing before returning results
+        return self.smooth_bounding_boxes(results)
 
     def update_frame(self):
         ret, frame = self.cap.read()
@@ -347,10 +321,20 @@ class EALS_FACEID_LOGIC(QWidget):
         
         faces = self.detect_face(frame)
         for (x, y, w, h, name) in faces:
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # Draw smoother rectangle with slightly rounded corners
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2, cv2.LINE_AA)
+            
+            # Add slightly darker background behind text for better visibility
             if name:
-                cv2.putText(frame, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-            cv2.putText(frame, pose_text, (x, y + h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
+                text_size = cv2.getTextSize(name, cv2.FONT_HERSHEY_SIMPLEX, 0.9, 2)[0]
+                cv2.rectangle(frame, (x, y - text_size[1] - 10), 
+                            (x + text_size[0], y), (0, 200, 0), -1)
+                cv2.putText(frame, name, (x, y - 10), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2, cv2.LINE_AA)
+            
+            # Draw pose text with better visibility
+            cv2.putText(frame, pose_text, (x, y + h + 20), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
         
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb_image.shape
