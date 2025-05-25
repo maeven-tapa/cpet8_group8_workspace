@@ -1945,8 +1945,8 @@ color: rgb(0, 0, 0);</string>
         <item row="1" column="0" colspan="2">
          <widget class="QFrame" name="frame_28">
           <property name="styleSheet">
-           <string notr="true">background-color: rgb(253, 253, 253);
-border: 1px solid rgb(239, 239, 239);</string>
+           <string notr="true">background-color: rgb(235, 243, 252);
+border: 1px solid rgb(17, 94, 163);</string>
           </property>
           <property name="frameShape">
            <enum>QFrame::Shape::StyledPanel</enum>
