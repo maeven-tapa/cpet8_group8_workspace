@@ -32,6 +32,8 @@ MANIFEST
 # Logs folder
 logs/
 
+registered_fingerprint/
+
 backups/
 
 email_files/

@@ -70,7 +70,6 @@ class EALS_FACEID_LOGIC(QWidget):
         self.enroll_active = False
         self.enroll_prompts = [
             "Neutral face",
-            "Smile",
             "Turn head left",
             "Turn head right",
             "Tilt head up",
@@ -79,12 +78,11 @@ class EALS_FACEID_LOGIC(QWidget):
         ]
         self.enroll_pose_requirements = {
             0: {"description": "Neutral face", "pose": "Straight face"},
-            1: {"description": "Smile", "pose": "Straight face"},
-            2: {"description": "Turn head left", "pose": "Facing Left"},
-            3: {"description": "Turn head right", "pose": "Facing Right"},
-            4: {"description": "Tilt head up", "pose": "Facing Up"},
-            5: {"description": "Tilt head down", "pose": "Facing Down"},
-            6: {"description": "With glasses (if you wear them)", "pose": "Straight face"},
+            1: {"description": "Turn head left", "pose": "Facing Left"},
+            2: {"description": "Turn head right", "pose": "Facing Right"},
+            3: {"description": "Tilt head up", "pose": "Facing Up"},
+            4: {"description": "Tilt head down", "pose": "Facing Down"},
+            5: {"description": "With glasses (if you wear them)", "pose": "Straight face"},
         }
         self.enroll_max = min(5, len(self.enroll_prompts))
         self.enroll_index = 0
@@ -95,42 +93,28 @@ class EALS_FACEID_LOGIC(QWidget):
         self.person_name = ""
         self.current_pose = "Unknown"
 
-    def initialize_device(self):
-        QApplication.processEvents()
+def initialize_device(self):
+    QApplication.processEvents()
+    try:
+        self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        if not self.cap.isOpened():
+            QMessageBox.critical(self, "Error", "Could not open camera.")
+            return
+            
+        self.face_detection = self.face_detection or self.mp_face_detection.FaceDetection(
+            min_detection_confidence=1, model_selection=1)
         
-        try:
-            test_cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-            if not test_cap.isOpened():
-                QMessageBox.critical(self, "Error", "No camera found or camera index out of range.")
-                return
-            test_cap.release()
-            
-            self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-            if not self.cap.isOpened():
-                QMessageBox.critical(self, "Error", "Could not open camera.")
-                return
-                
-            if self.face_detection is None:
-                self.face_detection = self.mp_face_detection.FaceDetection(
-                    min_detection_confidence=1,
-                    model_selection=1  
-                )
-            
-            if self.face_mesh is None:
-                self.face_mesh = self.mp_face_mesh.FaceMesh(
-                    max_num_faces=1,
-                    refine_landmarks=True,
-                    min_detection_confidence=0.5,
-                    min_tracking_confidence=0.5
-                )
-                
-            self.timer.start(30)
-            self.init_btn.setEnabled(False)
-            self.terminate_btn.setEnabled(True)
-            self.enroll_btn.setEnabled(True)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to initialize device: {str(e)}")
-            self.terminate_device()
+        self.face_mesh = self.face_mesh or self.mp_face_mesh.FaceMesh(
+            max_num_faces=1, refine_landmarks=True,
+            min_detection_confidence=0.5, min_tracking_confidence=0.5)
+
+        self.timer.start(30)
+        self.init_btn.setEnabled(False)
+        self.terminate_btn.setEnabled(True)
+        self.enroll_btn.setEnabled(True)
+    except Exception as e:
+        QMessageBox.critical(self, "Error", f"Failed to initialize device: {str(e)}")
+        self.terminate_device()
 
     def terminate_device(self):
         self.timer.stop()
