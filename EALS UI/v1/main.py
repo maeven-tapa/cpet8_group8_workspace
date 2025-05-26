@@ -2891,9 +2891,6 @@ class Home:
                     "email": result[14]
                 }
                 self.update_bio_page_info()  
-                if not self.employee_data["password_changed"]:
-                    self.show_change_password_dialog()
-                    return
                 if self.employee_data["is_hr"]:
                     if self.validate_hr_attendance(self.employee_data):
                         self.terminate_faceid()
@@ -2961,9 +2958,6 @@ class Home:
                     "email": result[14]
                 }
                 self.update_bio_page_info()
-                if not self.employee_data["password_changed"]:
-                    self.show_change_password_dialog()
-                    return
                 if self.employee_data["is_hr"]:
                     if self.validate_hr_attendance(self.employee_data):
                         self.goto_hr_ui(self.employee_data)
