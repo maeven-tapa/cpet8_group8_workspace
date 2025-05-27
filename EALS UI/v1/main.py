@@ -2915,12 +2915,8 @@ class Home:
                     "profile_picture": result[13],
                     "email": result[14]
                 }
-<<<<<<< HEAD
                 self.update_bio_page_info()
                 QTimer.singleShot(2000, self.clear_bio_page_employee_info)
-=======
-                self.update_bio_page_info()  
->>>>>>> 37eadd49198d6e625c035078ff3a8c63248472c9
                 if self.employee_data["is_hr"]:
                     if self.validate_hr_attendance(self.employee_data):
                         self.terminate_faceid()
