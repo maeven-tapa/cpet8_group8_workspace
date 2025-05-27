@@ -24,7 +24,10 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from PIL import Image
+import matplotlib.pyplot as plt
+import tempfile
+import secrets
+from PIL import Image as PILImage
 from PySide6.QtGui import QPixmap
 from pyzkfp import ZKFP2
 import numpy as np
@@ -42,7 +45,6 @@ import io
 import smtplib
 import socket
 import chime
-# New imports for advanced face recognition
 import insightface
 from sklearn.metrics.pairwise import cosine_similarity
 from skimage.metrics import structural_similarity as ssim
@@ -876,102 +878,88 @@ class FaceIdLogic:
         results = []
         face_landmarks, pose_text = self.detect_face_pose(frame)
         self.current_pose = pose_text
-        
+
         if self.face_app is None:
             return results
-        
+
         try:
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             faces = self.face_app.get(rgb_frame)
             h, w = frame.shape[:2]
-            
-            for face in faces:
+
+            if faces:  # Only process the first detected face
+                face = faces[0]
                 x1, y1, x2, y2 = [int(v) for v in face.bbox]
                 x = max(0, x1)
                 y = max(0, y1)
                 w_box = min(w - x, x2 - x1)
                 h_box = min(h - y, y2 - y1)
-                
+
                 name = ""
                 confidence = 0
-                
+
                 if w_box > 0 and h_box > 0:
                     face_roi = frame[y:y+h_box, x:x+w_box]
                     if face_roi.size > 0:
                         # Get all enrolled employee IDs
                         enrolled_employees = set()
-                        
                         for f in os.listdir(self.face_templates_dir):
                             if f.endswith('.npy') or f.lower().endswith('.jpg'):
                                 emp_id = f.split('_')[0]
                                 enrolled_employees.add(emp_id)
-                        
+
                         best_score = 0.0
                         best_employee = ""
-                        
-                        # Use the embedding from ArcFace directly
                         current_embedding = face.embedding
                         input_embedding = current_embedding.reshape(1, -1)
-                        
+
                         for emp_id in enrolled_employees:
-                            # Initialize scores
                             embedding_score = 0.0
                             visual_score = 0.0
-                            
-                            # Check stored embeddings
-                            embedding_files = [f for f in os.listdir(self.face_templates_dir) 
+
+                            embedding_files = [f for f in os.listdir(self.face_templates_dir)
                                             if f.startswith(f"{emp_id}_") and f.endswith('.npy')]
-                            
+
                             if embedding_files:
                                 best_embedding_score = 0.0
                                 for emb_file in embedding_files:
                                     try:
                                         stored_embedding = np.load(os.path.join(self.face_templates_dir, emb_file), allow_pickle=True)
-                                        # Calculate cosine similarity
                                         from sklearn.metrics.pairwise import cosine_similarity
                                         score = cosine_similarity(input_embedding, stored_embedding.reshape(1, -1))[0][0]
                                         best_embedding_score = max(best_embedding_score, score)
                                     except Exception as e:
                                         print(f"Error loading embedding {emb_file}: {e}")
                                 embedding_score = best_embedding_score
-                            
-                            # Calculate visual similarity using stored face images
-                            image_files = [f for f in os.listdir(self.face_templates_dir) 
+
+                            image_files = [f for f in os.listdir(self.face_templates_dir)
                                         if f.startswith(f"{emp_id}_") and f.lower().endswith('.jpg')]
-                            
+
                             if image_files and face_roi.size > 0:
                                 best_visual_score = 0.0
-                                # Resize current face for comparison
                                 face_resized = cv2.resize(face_roi, (160, 160))
-                                
                                 for img_file in image_files:
                                     try:
                                         stored_img = cv2.imread(os.path.join(self.face_templates_dir, img_file))
                                         if stored_img is not None:
-                                            # Convert both images to grayscale for comparison
                                             gray_current = cv2.cvtColor(face_resized, cv2.COLOR_BGR2GRAY)
                                             gray_stored = cv2.cvtColor(stored_img, cv2.COLOR_BGR2GRAY)
-                                            
-                                            # Calculate structural similarity
                                             try:
                                                 from skimage.metrics import structural_similarity as ssim
                                                 visual_score_single = ssim(gray_current, gray_stored)
                                             except ImportError:
-                                                # Fallback to simple correlation if SSIM fails
                                                 result = cv2.matchTemplate(gray_current, gray_stored, cv2.TM_CCOEFF_NORMED)
                                                 visual_score_single = np.max(result)
-                                            
                                             best_visual_score = max(best_visual_score, visual_score_single)
                                     except Exception as e:
                                         print(f"Error loading image {img_file}: {e}")
                                 visual_score = best_visual_score
-                            
-                            # Combine embedding and visual scores (weighted average)
+
                             combined_score = (embedding_score * 1.0) + (visual_score * 0.3)
                             final_score = combined_score
-                            
+
                             print(f"Employee {emp_id}: final_score={final_score:.3f}, embedding={embedding_score:.3f}, visual={visual_score:.3f}")
-                            
+
                             if final_score > best_score and final_score > 0.60:
                                 best_score = final_score
                                 best_employee = emp_id
@@ -982,12 +970,14 @@ class FaceIdLogic:
                         else:
                             best_employee = None
                             best_score = 0
-                
+
                 results.append((x, y, w_box, h_box, name))
-                
+                # Only process the first face
+                return self.smooth_bounding_boxes(results)
+
         except Exception as e:
             print(f"ArcFace detection error: {str(e)}")
-        
+
         return self.smooth_bounding_boxes(results)
 
     def update_frame(self):
@@ -1079,7 +1069,7 @@ class FaceIdLogic:
         self.enroll_captured = 0
         self.enroll_active = True
 
-    def enroll_update_frame(self):
+    def enroll_update_frame(self, webcam_enrollment_note_lbl=None):
         if not self.cap or not self.cap.isOpened():
             return None, []
 
@@ -1099,21 +1089,21 @@ class FaceIdLogic:
                 cv2.putText(frame, f"Required: {required_pose}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                 if self.current_pose == required_pose and self.capture_ready:
                     self.capture_ready = False
-                    self.capture_enroll_image(frame, faces_data[0])
+                    self.capture_enroll_image(frame, faces_data[0], webcam_enrollment_note_lbl)
         return frame, faces_data
 
-    def capture_enroll_image(self, frame, face=None):
+    def capture_enroll_image(self, frame, face=None, webcam_enrollment_note_lbl=None):
         if not self.enroll_active or self.enroll_index >= self.enroll_max:
             self.finish_enrollment()
             return
-        
+
         current_pose_description = "Unknown pose"
         if self.enroll_index < len(self.enroll_pose_requirements):
             current_pose_description = self.enroll_pose_requirements[self.enroll_index]["description"]
             pose_name = self.enroll_pose_requirements[self.enroll_index]["pose"].replace(" ", "_").lower()
         else:
             pose_name = f"pose_{self.enroll_index}"
-        
+
         # If face parameter is provided (from detect_face), use its bbox
         if face and len(face) >= 4:
             x, y, w, h = face[:4]
@@ -1125,20 +1115,20 @@ class FaceIdLogic:
             if len(faces) == 0:
                 print("No face detected for enrollment")
                 return
-            
+
             # Use the first detected face
             arcface_face = faces[0]
             x1, y1, x2, y2 = [int(v) for v in arcface_face.bbox]
             face_img = frame[y1:y2, x1:x2]
-        
+
         if face_img.size == 0:
             print("Invalid face crop, skipping...")
             return
-        
+
         # Resize face crop to standard size for consistency (160x160)
         face_resized = cv2.resize(face_img, (160, 160))
         self.enrolled_faces.append(face_resized)
-        
+
         # Get face embedding using ArcFace
         if face is None or len(face) < 4:
             # Re-detect face to get embedding
@@ -1156,23 +1146,42 @@ class FaceIdLogic:
                 print("No face detected for embedding extraction")
                 return
             arcface_face = faces[0]
-        
+
         # Save both embedding and image in face_templates directory with matching names
         base_filename = f"{self.person_name}_{pose_name}"
-        
+
         # 1. Save face embedding
         embedding = arcface_face.embedding
+
+        # --- DUPLICATE CHECK: Prevent enrolling a face already enrolled by another employee ---
+        for fname in os.listdir(self.face_templates_dir):
+            if fname.endswith('.npy'):
+                emp_id = fname.split('_')[0]
+                if emp_id == self.person_name:
+                    continue  # Skip current employee
+                emb_path = os.path.join(self.face_templates_dir, fname)
+                try:
+                    existing_emb = np.load(emb_path, allow_pickle=True)
+                    score = cosine_similarity(embedding.reshape(1, -1), existing_emb.reshape(1, -1))[0][0]
+                    if score > 0.65:  # Threshold, adjust as needed
+                        print(f"Duplicate face detected with employee {emp_id}, score={score:.3f}")
+                        webcam_enrollment_note_lbl.setText("Duplicate face detected. This face is already enrolled for another employee.")
+                        return  # Abort saving
+                except Exception as e:
+                    print(f"Error checking duplicate face: {e}")
+        # --- END DUPLICATE CHECK ---
+
         embedding_path = os.path.join(self.face_templates_dir, f"{base_filename}.npy")
         np.save(embedding_path, embedding)
-        
+
         # 2. Save face image in face_templates directory
         image_path = os.path.join(self.face_templates_dir, f"{base_filename}.jpg")
         cv2.imwrite(image_path, face_resized)
-        
+
         self.enroll_captured += 1
         if self.success_callback:
             self.success_callback(current_pose_description)
-        
+
         self.enroll_index += 1
         if self.enroll_index >= self.enroll_max:
             self.finish_enrollment()
@@ -2626,6 +2635,7 @@ class ForgotPassword:
 class Home:
     password_changed = False
     failed_attempts = 0 
+    faceid_last_attendance_times = {}
     def __init__(self, db):
         self.db = db
         self.system_logs = SystemLogs(db)
@@ -2764,12 +2774,27 @@ class Home:
                 self.start_fingerprint_scanning()
                 self.start_faceid_scanning()
             elif faceid_ok:
+                # Update DB: fingerprint not available
+                try:
+                    self.db.execute_query("UPDATE system_settings SET is_fingerprintid_on = 0 WHERE id = 1")
+                except Exception as e:
+                    print(f"Error updating fingerprint flag: {e}")
                 self.home_ui.bio_note_lbl.setText("Look at the camera to login.")
                 self.start_faceid_scanning()
             elif fp_ok:
+                # Update DB: faceid not available
+                try:
+                    self.db.execute_query("UPDATE system_settings SET is_faceid_on = 0 WHERE id = 1")
+                except Exception as e:
+                    print(f"Error updating faceid flag: {e}")
                 self.home_ui.bio_note_lbl.setText("Please use fingerprint.")
                 self.start_fingerprint_scanning()
             else:
+                # Update DB: both not available
+                try:
+                    self.db.execute_query("UPDATE system_settings SET is_fingerprintid_on = 0, is_faceid_on = 0 WHERE id = 1")
+                except Exception as e:
+                    print(f"Error updating both flags: {e}")
                 self.home_ui.bio_note_lbl.setText("No biometric devices available. Please use default login.")
                 self.show_error("Device Error", "Failed to initialize biometric devices.")
                 self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
@@ -2890,10 +2915,8 @@ class Home:
                     "profile_picture": result[13],
                     "email": result[14]
                 }
-                self.update_bio_page_info()  
-                if not self.employee_data["password_changed"]:
-                    self.show_change_password_dialog()
-                    return
+                self.update_bio_page_info()
+                QTimer.singleShot(2000, self.clear_bio_page_employee_info)
                 if self.employee_data["is_hr"]:
                     if self.validate_hr_attendance(self.employee_data):
                         self.terminate_faceid()
@@ -2961,9 +2984,6 @@ class Home:
                     "email": result[14]
                 }
                 self.update_bio_page_info()
-                if not self.employee_data["password_changed"]:
-                    self.show_change_password_dialog()
-                    return
                 if self.employee_data["is_hr"]:
                     if self.validate_hr_attendance(self.employee_data):
                         self.goto_hr_ui(self.employee_data)
@@ -3390,6 +3410,16 @@ class Home:
     def validate_attendance(self):
         if not self.employee_data:
             return False
+        
+        if self.source_page == "bio_page" and self.faceid_last_match == self.employee_data["employee_id"]:
+            now = time.time()
+            last_time = Home.faceid_last_attendance_times.get(self.employee_data["employee_id"], 0)
+            if now - last_time < self.faceid_cooldown_period:
+                remaining = int(self.faceid_cooldown_period - (now - last_time))
+                self.show_warning("Cooldown Active", f"Please wait {remaining} seconds before logging attendance again with FaceID.")
+                return False
+            # Update last attendance time
+            Home.faceid_last_attendance_times[self.employee_data["employee_id"]] = now
 
         current_time = datetime.now()
         current_date = current_time.strftime("%Y-%m-%d")
@@ -3414,6 +3444,7 @@ class Home:
                 night_logs = cursor.fetchone()[0] if cursor else 0
                 if night_logs >= 2:
                     self.show_warning("Attendance Error", "You have already completed your attendance for tonight's shift.")
+                    QTimer.singleShot(2000, self.clear_bio_page_employee_info)
                     return False
             elif current_hour < 6:
                 previous_date = (current_time - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -3432,6 +3463,7 @@ class Home:
                 total_logs = previous_night_logs + early_morning_logs
                 if total_logs >= 2:
                     self.show_warning("Attendance Error", "You have already completed your attendance for this shift.")
+                    QTimer.singleShot(2000, self.clear_bio_page_employee_info)
                     return False
         else:
             cursor = self.db.execute_query(
@@ -3442,6 +3474,7 @@ class Home:
             
             if attendance_count >= 2:
                 self.show_warning("Attendance Error", "You have already logged your attendance twice today.")
+                QTimer.singleShot(2000, self.clear_bio_page_employee_info)
                 return False
 
         cursor = self.db.execute_query(
@@ -3743,9 +3776,9 @@ class Home:
 
             def return_to_source():
                 if self.source_page == "bio_page":
+                    self.clear_bio_page_employee_info()
+                    self.initialize_bio_page()
                     self.home_ui.main_page.setCurrentWidget(self.home_ui.bio_page)
-                    self.clear_bio_page()
-                    self.start_fingerprint_scanning()
                 else:
                     self.home_ui.main_page.setCurrentWidget(self.home_ui.home_page)
                 
@@ -4333,7 +4366,7 @@ class Admin:
     def update_webcam_enroll_frame(self):
         if not self.webcam_enroll_in_progress:
             return
-        frame, faces = self.faceid_logic.enroll_update_frame()
+        frame, faces = self.faceid_logic.enroll_update_frame(self.admin_ui.webcam_enrollment_note_lbl)
         if frame is not None:
             rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             h, w, ch = rgb_image.shape
@@ -4827,6 +4860,7 @@ class Admin:
         id_year = self.admin_ui.edit_employee_id_year.currentText()
         id_no = self.admin_ui.edit_employee_id_no.currentText()
         email = self.admin_ui.edit_employee_email.text().strip()
+        current_employee_id = self.current_employee_data["employee_id"]
 
         if not first_name:
             self.show_error("Validation Error", "First Name is required")
@@ -4888,6 +4922,26 @@ class Admin:
         except ValueError:
             self.show_error("Validation Error", "Invalid Birthday format")
             return False, "Invalid Birthday format"
+        
+        try:
+            cursor = self.db.execute_query(
+                "SELECT employee_id FROM Employee WHERE substr(employee_id, instr(employee_id, '-')+1) = ? AND employee_id != ?",
+                (f"{id_year}-{id_no}", current_employee_id)
+            )
+            if cursor.fetchone():
+                self.show_error("Validation Error", f"ID number {id_year}-{id_no} is already used by another employee.")
+                return False, f"ID number {id_year}-{id_no} already exists"
+            # --- NEW: Check if email is unique (excluding self) ---
+            cursor = self.db.execute_query(
+                "SELECT employee_id FROM Employee WHERE email = ? AND employee_id != ?",
+                (email, current_employee_id)
+            )
+            if cursor.fetchone():
+                self.show_error("Validation Error", f"Email address {email} is already used by another employee.")
+                return False, f"Email {email} already exists"
+        except sqlite3.Error as e:
+            self.show_error("Database Error", "An error occurred while validating the data")
+            return False, "Database error during validation"
 
         is_hr = self.admin_ui.edit_is_hr_yes.isChecked()
         department = self.admin_ui.edit_employee_department_box.currentText()
@@ -4953,7 +5007,6 @@ class Admin:
         
         valid, result = self.validate_edited_employee_data()
         if not valid:
-            self.show_error("Edit Error", "Validation Error.")
             return
 
         try:
@@ -5112,6 +5165,26 @@ class Admin:
         except ValueError:
             self.show_error("Validation Error", "Invalid Birthday format")
             return False, "Invalid Birthday format"
+        
+        try:
+            cursor = self.db.execute_query(
+                "SELECT employee_id FROM Employee WHERE substr(employee_id, instr(employee_id, '-')+1) = ?",
+                (f"{id_year}-{id_no}",)
+            )
+            if cursor.fetchone():
+                self.show_error("Validation Error", f"ID number {id_year}-{id_no} is already used by another employee.")
+                return False, f"ID number {id_year}-{id_no} already exists"
+            # --- NEW: Check if email is unique ---
+            cursor = self.db.execute_query(
+                "SELECT employee_id FROM Employee WHERE email = ?",
+                (email,)
+            )
+            if cursor.fetchone():
+                self.show_error("Validation Error", f"Email address {email} is already used by another employee.")
+                return False, f"Email {email} already exists"
+        except sqlite3.Error as e:
+            self.show_error("Database Error", "An error occurred while validating the data")
+            return False, "Database error during validation"
 
         is_hr = self.admin_ui.is_hr_yes.isChecked()
         department = self.admin_ui.employee_department_box.currentText()
@@ -8242,6 +8315,7 @@ class ReportGeneration:
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon("logo.ico")) 
     controller = EALS()
     sys.exit(app.exec())
 
