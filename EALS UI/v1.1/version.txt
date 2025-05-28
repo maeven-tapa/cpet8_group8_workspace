@@ -1,0 +1,30 @@
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(1, 0, 0, 0),
+    prodvers=(1, 0, 0, 0),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x4,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo([
+      StringTable(
+        '040904B0',
+        [
+          StringStruct('CompanyName', 'Group 8 | CPET8/L'),
+          StringStruct('FileDescription', 'Employee Attendance & Logging System (EALS)'),
+          StringStruct('FileVersion', '1.0'),
+          StringStruct('InternalName', 'Employee Attendance & Logging System'),
+          StringStruct('LegalCopyright', 'Group 8 | CPET8/L © 2025'),
+          StringStruct('OriginalFilename', 'EALS.exe'),
+          StringStruct('ProductName', 'EALS'),
+          StringStruct('ProductVersion', '1.0')
+        ]
+      )
+    ]),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])])
+  ]
+)
